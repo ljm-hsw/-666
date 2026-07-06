@@ -12,6 +12,7 @@ This is the repository-level instruction set for this workspace. Read it before 
 ## Repository Map
 
 - `AGENTS.md`: stable repository-wide workflow and safety rules.
+- `DEVELOPMENT.md`: five-person collaboration, branch, review, test, and delivery rules.
 - `CONTEXT.md`: shared product-domain vocabulary and invariants.
 - `docs/README.md`: documentation map and source-of-truth order.
 - `docs/PROJECT_PLAN.md`: P0-P4 milestone gates and issue dependency map.
@@ -20,6 +21,10 @@ This is the repository-level instruction set for this workspace. Read it before 
 - `docs/agents/`: repository-local issue tracker, triage, and domain-doc conventions.
 - `.scratch/`: local PRDs and implementation issues, grouped by feature.
 - `skills/`: repository-local agent skills copied for this workspace only.
+- `src/`: C++17 game source, with raylib-free rules and configuration under `src/core/`.
+- `tests/`: headless doctest coverage registered through CTest.
+- `third_party/`: locked raylib/doctest sources and their licenses; builds must not download replacements.
+- `.github/workflows/`: Windows and macOS continuous-integration checks.
 
 Update this map when the repository gains stable top-level source, test, documentation, or tooling directories. Do not put temporary task status here.
 
@@ -31,7 +36,8 @@ Before making changes:
 2. Inspect `git status --short`; preserve unrelated and user-authored changes.
 3. Use `rg --files` and relevant manifests, README files, CI configuration, and tests to discover the project structure and commands.
 4. Read only the smallest relevant set of documentation and code.
-5. State assumptions, acceptance criteria, non-goals, and the validation plan for non-trivial work.
+5. Read `DEVELOPMENT.md` before implementation or review work involving team delivery.
+6. State assumptions, acceptance criteria, non-goals, and the validation plan for non-trivial work.
 
 If sources conflict, prefer current executable code, tests, and configuration over active task contracts, current documentation and runbooks, and finally historical notes. Surface material conflicts instead of silently choosing one.
 

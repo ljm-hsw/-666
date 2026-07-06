@@ -17,6 +17,7 @@ Desktop.ini
 *.VC.VC.opendb
 
 # CMake and build output
+/.tools/
 /build/
 /out/
 /dist/

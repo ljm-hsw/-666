@@ -6,12 +6,12 @@
 
 ## 当前状态
 
-项目处于 **P0 工程基线开始前**：
+项目处于 **P0 工程基线验证阶段**：
 
 - 产品范围、领域语言和核心设计已确认。
 - P0-P4 已拆分为 18 个本地实施 issue。
-- GitHub 远端和规划基线分支已建立。
-- C++ 源码、CMake、raylib/doctest 依赖和 CI 尚未初始化，由 P0 Issue 01 负责。
+- C++17/CMake 应用、raylib 6.0、doctest 2.5.2 和跨平台 CI 已初始化。
+- macOS 本地配置、构建和 CTest 已通过；Windows 基线由 GitHub Actions 验证。
 
 当前不应把文档中的临时数值视为最终平衡承诺。
 
@@ -35,6 +35,7 @@
 | 文档 | 用途 |
 | --- | --- |
 | [`AGENTS.md`](AGENTS.md) | 仓库级工作流、安全边界和验证规则 |
+| [`DEVELOPMENT.md`](DEVELOPMENT.md) | 五人团队协作、分支、评审、测试和交付规范 |
 | [`CONTEXT.md`](CONTEXT.md) | 统一领域术语、关系和不变量 |
 | [`docs/README.md`](docs/README.md) | 文档地图与事实来源顺序 |
 | [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) | P0-P4 阶段门槛、依赖图和 issue 索引 |
@@ -52,21 +53,42 @@
 - 目标平台：Windows 10/11 x64
 - 开发支持：macOS
 
-raylib 和 doctest 将以锁定版本随仓库保存，确保首次构建不依赖网络或用户全局安装。具体约束见 [ADR-0001](docs/adr/0001-adopt-raylib-and-doctest.md)。
+raylib 和 doctest 以锁定版本随仓库保存在 [`third_party/`](third_party/)，确保首次构建不依赖网络或用户全局安装。具体约束见 [ADR-0001](docs/adr/0001-adopt-raylib-and-doctest.md)。
 
 ## 开始协作
 
 1. 阅读 `AGENTS.md`。
-2. 从 `docs/README.md` 定位当前任务需要的文档。
-3. 阅读 `CONTEXT.md` 和目标 issue。
-4. 检查 issue 的 `Blocked by`；只有真实阻塞项完成后才能开始。
-5. 使用短期 feature branch，完成验收标准和相关测试后再请求合并。
+2. 阅读 `DEVELOPMENT.md`。
+3. 从 `docs/README.md` 定位当前任务需要的文档。
+4. 阅读 `CONTEXT.md` 和目标 issue。
+5. 检查 issue 的 `Blocked by`；只有真实阻塞项完成后才能开始。
+6. 使用短期 feature branch，完成验收标准和相关测试后再请求合并。
 
 issue 和 PRD 使用仓库内 `.scratch/` Markdown 文件管理，不发布为 GitHub Issues。代码通过私有 GitHub 仓库协作。
 
 ## 构建说明
 
-构建系统尚未由 P0 Issue 01 创建，因此当前没有可执行构建命令。完成 [P0 Issue 01](.scratch/pixel-town-ten-day-plan/issues/01-p0-offline-app-baseline.md) 时，必须在此补充经过 Windows 和 macOS 实际验证的配置、构建和测试命令。
+前提：CMake 3.25 或更高版本，以及支持 C++17 的编译器。raylib 与 doctest 已随仓库提供；配置和构建过程不需要网络，也不要求全局安装这两个依赖。
+
+macOS（Apple Clang）：
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+./build/pixel_town
+```
+
+Windows 10/11 x64（Visual Studio 2022 Developer PowerShell）：
+
+```powershell
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+cmake --build build --config Debug --parallel
+ctest --test-dir build -C Debug --output-on-failure
+.\build\Debug\pixel_town.exe
+```
+
+应用默认创建 1280×720 窗口，并用点采样放大 640×360 逻辑画布。删除 `build/` 后重复以上命令即可验证干净构建；构建目录和本机工具目录 `.tools/` 均不会提交。
 
 ## 范围边界
 

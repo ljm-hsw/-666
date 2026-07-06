@@ -9,5 +9,8 @@
 
 *.png binary
 
+# Preserve vendored upstream sources without applying project whitespace rules.
+third_party/** -text -whitespace
+
 # Preserve the upstream workspace form while storing canonical text in Git.
 skills/playwright/LICENSE.txt text eol=crlf

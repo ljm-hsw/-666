@@ -24,6 +24,7 @@
 
 ## 工作流文档
 
+- [`../DEVELOPMENT.md`](../DEVELOPMENT.md)：五人团队的协作、分支、评审、测试与交付规范。
 - [`agents/issue-tracker.md`](agents/issue-tracker.md)：本地 Markdown issue 规则。
 - [`agents/triage-labels.md`](agents/triage-labels.md)：issue 状态映射。
 - [`agents/domain.md`](agents/domain.md)：领域文档读取规则。
