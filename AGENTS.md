@@ -23,6 +23,7 @@ This is the repository-level instruction set for this workspace. Read it before 
 - `skills/`: repository-local agent skills copied for this workspace only.
 - `src/`: C++17 game source, with raylib-free rules and configuration under `src/core/`.
 - `tests/`: headless doctest coverage registered through CTest.
+- `assets/`: project-owned runtime resources; final visual and audio specifications require HITL approval.
 - `third_party/`: locked raylib/doctest sources and their licenses; builds must not download replacements.
 - `.github/workflows/`: Windows and macOS continuous-integration checks.
 
