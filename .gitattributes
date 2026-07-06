@@ -1,0 +1,13 @@
+* text=auto
+
+*.md text eol=lf
+*.sh text eol=lf
+*.svg text eol=lf
+*.txt text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+*.png binary
+
+# Preserve the upstream workspace form while storing canonical text in Git.
+skills/playwright/LICENSE.txt text eol=crlf

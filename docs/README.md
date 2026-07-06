@@ -1,0 +1,46 @@
+# 项目文档索引
+
+本目录是《像素小镇：十日经营计划》的工程文档入口。开始规划、实现或审查前，只读取与当前任务直接相关的文档。
+
+## 事实来源顺序
+
+出现冲突时按以下顺序处理，并明确报告冲突：
+
+1. 当前可执行代码、自动化测试和构建配置。
+2. 已接受的 ADR。
+3. 当前阶段对应的本地 issue 和验收标准。
+4. PRD、核心设计和领域上下文。
+5. 阶段计划、运行说明和历史记录。
+
+当前仓库尚未进入实现阶段，因此在代码出现前，PRD、`CONTEXT.md`、ADR 和已批准 issue 共同构成执行契约。
+
+## 核心文档
+
+- [`../CONTEXT.md`](../CONTEXT.md)：领域语言、关系、不变量及已澄清歧义。
+- [`../.scratch/pixel-town-ten-day-plan/PRD.md`](../.scratch/pixel-town-ten-day-plan/PRD.md)：产品范围、用户故事、实现决策和测试决策。
+- [`PROJECT_PLAN.md`](PROJECT_PLAN.md)：P0-P4 阶段目标、门槛、依赖和 issue 总览。
+- [`DESIGN.md`](DESIGN.md)：核心架构、状态机、模块契约、存档、随机性和测试边界。
+- [`adr/0001-adopt-raylib-and-doctest.md`](adr/0001-adopt-raylib-and-doctest.md)：raylib、doctest 与离线依赖策略。
+
+## 工作流文档
+
+- [`agents/issue-tracker.md`](agents/issue-tracker.md)：本地 Markdown issue 规则。
+- [`agents/triage-labels.md`](agents/triage-labels.md)：issue 状态映射。
+- [`agents/domain.md`](agents/domain.md)：领域文档读取规则。
+
+## 实施入口
+
+实施 issue 位于 [`../.scratch/pixel-town-ten-day-plan/issues/`](../.scratch/pixel-town-ten-day-plan/issues/)，按编号和依赖关系执行。
+
+- AFK issue 使用 `Status: ready-for-agent`，可由 Agent 按验收标准独立完成。
+- HITL issue 使用 `Status: ready-for-human`，必须等待人工评审、试玩或视觉确认。
+- issue 是否可启动以其 `Blocked by` 为准；阶段门槛未满足时，不得把该阶段标记为完成或交付。
+
+## 文档维护规则
+
+- 产品范围变化：先更新 PRD，再更新受影响 issue。
+- 领域术语或关系变化：更新 `CONTEXT.md`。
+- 难以逆转且存在真实取舍的架构决定：新增 ADR。
+- 阶段边界或依赖变化：更新 `PROJECT_PLAN.md` 和对应 issue。
+- 实现细节变化但契约不变：优先通过代码和测试表达，不扩写稳定文档。
+- 数值平衡参数在 P4 固化；此前只记录可运行基线，不把临时值写成产品承诺。
