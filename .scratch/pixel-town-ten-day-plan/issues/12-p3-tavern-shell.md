@@ -22,6 +22,6 @@ User stories: 28, 29, 34, 36
 
 ## Blocked by
 
-- [09 P2：接入完整餐馆白天工作](09-p2-restaurant-work.md)
-- [10 P2：接入跨日库存的便利店经营](10-p2-convenience-store.md)
-- [11 P2：接入数据驱动的图书馆工作](11-p2-library-work.md)
+- [04 P1：跑通一个完整游戏日](04-p1-one-day-vertical-loop.md)
+- [06 P1：实现阶段边界自动存档与恢复](06-p1-save-and-resume.md)
+- [07 P1：完成窗口、输入、暂停与静音外壳](07-p1-interaction-shell.md)

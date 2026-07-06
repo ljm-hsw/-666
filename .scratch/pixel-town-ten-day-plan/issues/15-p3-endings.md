@@ -27,5 +27,4 @@ User stories: 42-50
 - [05 P1：扩展为十日周期与占位主结局](05-p1-ten-day-cycle.md)
 - [06 P1：实现阶段边界自动存档与恢复](06-p1-save-and-resume.md)
 - [10 P2：接入跨日库存的便利店经营](10-p2-convenience-store.md)
-- [13 P3：接入自由五子棋和启发式电脑对手](13-p3-gomoku.md)
-- [14 P3：接入 1v1 骗子骰子](14-p3-liars-dice.md)
+- [12 P3：接入酒馆选择、赌注与夜晚结算](12-p3-tavern-shell.md)
