@@ -10,7 +10,7 @@ struct VisualPrototypeState {
     bool modal_open{true};
 };
 
-[[nodiscard]] const char* visual_prototype_glyphs() noexcept;
+[[nodiscard]] const char* visual_prototype_glyphs();
 void update_visual_prototype(VisualPrototypeState& state, Vector2 logical_mouse);
 void draw_visual_prototype(const Font& font, const Texture2D& town_marker,
                            const Texture2D& tiny_farm_tiles,

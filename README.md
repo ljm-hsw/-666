@@ -11,7 +11,7 @@
 - 产品范围、领域语言和核心设计已确认。
 - P0-P4 已拆分为 18 个本地实施 issue。
 - C++17/CMake 应用、raylib 6.0、doctest 2.5.2 和跨平台 CI 已初始化。
-- macOS 本地配置、构建和 CTest 已通过；Windows 基线由 GitHub Actions 验证。
+- macOS 本地配置、构建和 CTest 已通过；GitHub Actions workflow 已存在，Windows/MSVC 与远端 CI 实际通过证据仍需补齐后才能勾选 Issue 01 对应验收项。
 
 当前不应把文档中的临时数值视为最终平衡承诺。
 

@@ -52,7 +52,14 @@ int main(int argc, char* argv[]) {
     SetTargetFPS(60);
 
     RenderTexture2D canvas = LoadRenderTexture(display.logical_width, display.logical_height);
-    SetTextureFilter(canvas.texture, TEXTURE_FILTER_POINT);
+    const bool canvas_loaded = canvas.texture.id != 0;
+    if (canvas_loaded) {
+        SetTextureFilter(canvas.texture, TEXTURE_FILTER_POINT);
+    } else {
+        resources.can_start = false;
+        resources.issues.push_back(
+            {"render_texture", "raylib could not create render target", true});
+    }
     Texture2D town_marker{};
     Font ui_font{};
     if (resources.can_start) {
@@ -104,9 +111,16 @@ int main(int argc, char* argv[]) {
     }
 
     pixel_town::VisualPrototypeState prototype;
+    bool capture_ready = capture_prototype;
     if (capture_prototype) {
         prototype.modal_open = false;
-        std::filesystem::create_directories("prototype-captures");
+        std::error_code capture_error;
+        std::filesystem::create_directories("prototype-captures", capture_error);
+        capture_ready =
+            !capture_error && std::filesystem::is_directory("prototype-captures", capture_error);
+        if (!capture_ready) {
+            TraceLog(LOG_WARNING, "CAPTURE: Could not create prototype-captures directory");
+        }
     }
     const std::array<const char*, 4> capture_paths{
         "prototype-captures/variant-a.png",
@@ -117,6 +131,16 @@ int main(int argc, char* argv[]) {
     std::size_t capture_index = 0;
     int capture_delay = 0;
     while (!WindowShouldClose()) {
+        if (!canvas_loaded) {
+            BeginDrawing();
+            draw_resource_error(resources, log_written);
+            EndDrawing();
+            if (capture_prototype) {
+                break;
+            }
+            continue;
+        }
+
         const float scale = std::max(
             1.0F,
             std::floor(std::min(
@@ -152,8 +176,15 @@ int main(int argc, char* argv[]) {
             Vector2{0.0F, 0.0F}, 0.0F, WHITE);
         EndDrawing();
 
-        if (capture_prototype && ++capture_delay >= 3) {
-            TakeScreenshot(capture_paths[capture_index]);
+        if (capture_prototype && !capture_ready) {
+            break;
+        }
+        if (capture_ready && ++capture_delay >= 3) {
+            const char* capture_path = capture_paths[capture_index];
+            TakeScreenshot(capture_path);
+            if (!std::filesystem::is_regular_file(capture_path)) {
+                TraceLog(LOG_WARNING, "CAPTURE: Screenshot was not written: %s", capture_path);
+            }
             ++capture_index;
             capture_delay = 0;
             if (capture_index == 1) {
@@ -178,7 +209,9 @@ int main(int argc, char* argv[]) {
     if (tiny_farm_tiles.id != 0) {
         UnloadTexture(tiny_farm_tiles);
     }
-    UnloadRenderTexture(canvas);
+    if (canvas_loaded) {
+        UnloadRenderTexture(canvas);
+    }
     CloseWindow();
     return 0;
 }

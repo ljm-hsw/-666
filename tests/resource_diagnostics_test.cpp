@@ -1,5 +1,8 @@
 #include <doctest/doctest.h>
 
+#include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -12,10 +15,17 @@
 
 namespace {
 
+std::filesystem::path unique_temp_path(const std::string& name) {
+    static std::atomic<unsigned long long> sequence{0};
+    const auto timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
+    return std::filesystem::temp_directory_path() /
+           (name + "-" + std::to_string(timestamp) + "-" +
+            std::to_string(sequence.fetch_add(1)));
+}
+
 class TemporaryDirectory {
 public:
-    explicit TemporaryDirectory(std::string name)
-        : path_(std::filesystem::temp_directory_path() / std::move(name)) {
+    explicit TemporaryDirectory(const std::string& name) : path_(unique_temp_path(name)) {
         std::filesystem::remove_all(path_);
         std::filesystem::create_directories(path_);
     }
@@ -53,6 +63,29 @@ std::vector<pixel_town::ResourceSpec> baseline_manifest() {
 }
 
 }  // namespace
+
+TEST_CASE("production baseline manifest keeps the startup resource contract") {
+    const auto manifest = pixel_town::baseline_resource_manifest();
+
+    auto require_spec = [&](const std::filesystem::path& relative_path,
+                            pixel_town::ResourceKind kind, bool required) {
+        const auto match = std::find_if(
+            manifest.begin(), manifest.end(), [&](const pixel_town::ResourceSpec& spec) {
+                return spec.relative_path == relative_path;
+            });
+        REQUIRE(match != manifest.end());
+        CHECK(match->kind == kind);
+        CHECK(match->required == required);
+    };
+
+    using pixel_town::ResourceKind;
+    require_spec("fonts/fusion-pixel-12px-proportional-zh_hans.ttf", ResourceKind::font, true);
+    require_spec("textures/town_marker.png", ResourceKind::texture, true);
+    require_spec("textures/kenney_tiny_farm/Tilemap/tilemap_packed.png", ResourceKind::texture,
+                 false);
+    require_spec("data/baseline.txt", ResourceKind::data, true);
+    require_spec("audio/theme.ogg", ResourceKind::audio, false);
+}
 
 TEST_CASE("complete required resources allow normal startup") {
     TemporaryDirectory resources("pixel-town-resource-test-complete");

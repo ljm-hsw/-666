@@ -30,4 +30,4 @@ User stories: 64, 70
 - Debug 完整构建通过，CTest 1/1 通过；同一测试程序覆盖资源完整、必要资源缺失、必要资源无效、可选音频缺失和日志覆盖写入。
 - 正常资源启动持续运行到主动终止，raylib 成功加载 8×8 PNG 必要贴图；`latest.log` 记录 `startup_stage=baseline_scene`、`resource_status=ready` 和 `audio_status=muted`。
 - 从临时工作目录移除必要数据后启动持续停留在错误页，日志记录 `startup_stage=resource_error` 和缺失资源相对路径。
-- Issue 03 已加入待审 Fusion Pixel Font 简体中文候选；启动清单现在将该字体作为必要资源，并在实际加载后检查原型所需字形是否完整。字体仍需 HITL 批准才能成为最终资源。
+- Issue 03 已加入待审 Fusion Pixel Font 简体中文候选；启动清单现在将该字体作为 P0 视觉原型路线的必要运行时资源，并在实际加载后检查原型所需字形是否完整。字体仍需 HITL 批准才能成为最终 UI 资源。

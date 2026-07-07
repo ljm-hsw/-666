@@ -12,7 +12,7 @@
 - 仓库字体 SHA-256：`5b27e9eb9d9dd93cff727d8919ddd2e7a482b19314b62991cb1e7806852e8734`
 - 许可证文件：[`assets/fonts/OFL.txt`](assets/fonts/OFL.txt) 及 [`assets/fonts/LICENSES/`](assets/fonts/LICENSES/)
 
-该字体融合多个 OFL 字形来源，因此随仓库保留上游提供的完整许可证集合。它当前仅作为 P0 Issue 03 视觉原型候选，人工批准后才能成为正式 UI 资源。
+该字体融合多个 OFL 字形来源，因此随仓库保留上游提供的完整许可证集合。它当前是 P0 视觉原型路线的必要运行时字体，用于阻止缺字或替代字形进入评审；最终 UI 字体是否沿用仍需 Issue 03 人工批准。
 
 ## Kenney Tiny Farm
 

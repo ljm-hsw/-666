@@ -33,7 +33,7 @@ User stories: 56, 58, 63, 67
 - 已提供 A 地图优先、B 日程侧栏、C 地点卡片三套可切换方案；点击地点显示典型说明弹窗。
 - 默认 1280×720 窗口使用 640×360 RenderTexture 和点采样；正文统一使用字体原生 12 px，标题使用整数 2× 的 24 px。
 - 窗口缩放实现限定为整数倍并居中留黑边，但仍需人工拖动窗口确认视觉结果。
-- 候选字体为 Fusion Pixel Font 12px Proportional zh_hans 2026.07.01；运行时检查的 206 个原型字形全部加载，SIL OFL 1.1 许可证、上游摘要和子资源许可证已登记在 `CREDITS.md`。
+- 候选字体为 Fusion Pixel Font 12px Proportional zh_hans 2026.07.01；运行时从集中 UI 文案生成原型必需字形清单并逐字检查，SIL OFL 1.1 许可证、上游摘要和子资源许可证已登记在 `CREDITS.md`。
 - 已按用户确认接入 Kenney Tiny Farm 1.0 作为 16×16 tile 视觉参考；官方页面标注 CC0，仓库保留 `assets/textures/kenney_tiny_farm/Tilemap/`、`Tiles/`、`License.txt` 和 `Tilesheet.txt`，来源与 SHA-256 已登记在 `CREDITS.md`。
 - 原型运行时优先使用 `Tilemap/tilemap_packed.png` 绘制地图装饰和地点图标；缺失时回退到代码绘制形状，不阻塞启动。
 - 候选调色板、16×16 tile、16/32 px sprite、4 px UI 网格和资源命名规则见 `docs/VISUAL_PROTOTYPE.md`，尚未获得团队批准。
