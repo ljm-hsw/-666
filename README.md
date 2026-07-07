@@ -91,7 +91,7 @@ ctest --test-dir build -C Debug --output-on-failure
 
 应用默认创建 1280×720 窗口，并用点采样放大 640×360 逻辑画布。删除 `build/` 后重复以上命令即可验证干净构建；构建目录和本机工具目录 `.tools/` 均不会提交。
 
-当前 P0 视觉原型可使用左右方向键或窗口底部切换条在 A/B/C 三种布局间切换；点击地点可查看典型弹窗。原型已接入 Kenney Tiny Farm 作为 CC0 视觉参考素材，来源见 [`CREDITS.md`](CREDITS.md)。原型仍需人工批准，不代表最终 UI。
+当前 P0 视觉原型可使用左右方向键或窗口底部切换条在 A/B/C 三种布局间切换；点击地点可查看典型弹窗。原型已接入 Kenney Tiny Town 和 Tiny Farm 作为 CC0 视觉参考素材，来源见 [`CREDITS.md`](CREDITS.md)。原型仍需人工批准，不代表最终 UI。
 
 原型评审截图可通过 `./build/pixel_town --capture-prototype` 生成到被 Git 忽略的 `prototype-captures/`。
 

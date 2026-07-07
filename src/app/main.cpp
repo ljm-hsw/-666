@@ -100,13 +100,21 @@ int main(int argc, char* argv[]) {
     const bool log_written =
         pixel_town::write_latest_log("logs/latest.log", PIXEL_TOWN_VERSION, startup_stage, resources);
 
-    Texture2D tiny_farm_tiles{};
-    const std::filesystem::path tiny_farm_tiles_path{
-        "assets/textures/kenney_tiny_farm/Tilemap/tilemap_packed.png"};
-    if (resources.can_start && std::filesystem::is_regular_file(tiny_farm_tiles_path)) {
-        tiny_farm_tiles = LoadTexture(tiny_farm_tiles_path.string().c_str());
-        if (tiny_farm_tiles.id != 0) {
-            SetTextureFilter(tiny_farm_tiles, TEXTURE_FILTER_POINT);
+    Texture2D kenney_tiles{};
+    const std::array<std::filesystem::path, 2> kenney_tiles_paths{
+        "assets/textures/kenney_tiny_town/Tilemap/tilemap_packed.png",
+        "assets/textures/kenney_tiny_farm/Tilemap/tilemap_packed.png",
+    };
+    if (resources.can_start) {
+        for (const std::filesystem::path& tiles_path : kenney_tiles_paths) {
+            if (!std::filesystem::is_regular_file(tiles_path)) {
+                continue;
+            }
+            kenney_tiles = LoadTexture(tiles_path.string().c_str());
+            if (kenney_tiles.id != 0) {
+                SetTextureFilter(kenney_tiles, TEXTURE_FILTER_POINT);
+                break;
+            }
         }
     }
 
@@ -159,7 +167,7 @@ int main(int argc, char* argv[]) {
         }
         BeginTextureMode(canvas);
         if (resources.can_start && log_written) {
-            pixel_town::draw_visual_prototype(ui_font, town_marker, tiny_farm_tiles, prototype,
+            pixel_town::draw_visual_prototype(ui_font, town_marker, kenney_tiles, prototype,
                                               resources.audio_enabled, logical_mouse);
         } else {
             draw_resource_error(resources, log_written);
@@ -206,8 +214,8 @@ int main(int argc, char* argv[]) {
     if (ui_font.texture.id != 0) {
         UnloadFont(ui_font);
     }
-    if (tiny_farm_tiles.id != 0) {
-        UnloadTexture(tiny_farm_tiles);
+    if (kenney_tiles.id != 0) {
+        UnloadTexture(kenney_tiles);
     }
     if (canvas_loaded) {
         UnloadRenderTexture(canvas);

@@ -81,6 +81,8 @@ TEST_CASE("production baseline manifest keeps the startup resource contract") {
     using pixel_town::ResourceKind;
     require_spec("fonts/fusion-pixel-12px-proportional-zh_hans.ttf", ResourceKind::font, true);
     require_spec("textures/town_marker.png", ResourceKind::texture, true);
+    require_spec("textures/kenney_tiny_town/Tilemap/tilemap_packed.png", ResourceKind::texture,
+                 false);
     require_spec("textures/kenney_tiny_farm/Tilemap/tilemap_packed.png", ResourceKind::texture,
                  false);
     require_spec("data/baseline.txt", ResourceKind::data, true);

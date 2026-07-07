@@ -18,19 +18,20 @@
 | UI 间距 | 4 px 基线网格 |
 | 中文字体 | Fusion Pixel Font 12px Proportional zh_hans |
 | 正文基准 | 12 px；小型状态文字不得低于 9 px |
-| 参考 tileset | Kenney Tiny Farm 1.0，16×16，CC0 |
+| 参考 tileset | Kenney Tiny Town 1.1 优先，Kenney Tiny Farm 1.0 备用，均为 16×16、CC0 |
 
 ## 待审视觉素材参考
 
-当前原型接入 Kenney Tiny Farm 作为小镇地图和地点卡片的低风险参考素材：
+当前原型优先接入 Kenney Tiny Town，并保留 Kenney Tiny Farm 作为备用参考素材：
 
-- 官方页面：`https://www.kenney.nl/assets/tiny-farm`
-- 仓库路径：`assets/textures/kenney_tiny_farm/`
-- 使用方式：运行时优先加载 `Tilemap/tilemap_packed.png` 绘制地图装饰、道路参考和地点图标；素材缺失时回退到代码绘制形状。
+- Tiny Town 官方页面：`https://www.kenney.nl/assets/tiny-town`
+- Tiny Farm 官方页面：`https://www.kenney.nl/assets/tiny-farm`
+- 仓库路径：`assets/textures/kenney_tiny_town/`、`assets/textures/kenney_tiny_farm/`
+- 使用方式：运行时优先加载 Tiny Town 的 `Tilemap/tilemap_packed.png` 铺设草地、道路参考、房体纹理、地图装饰和地点图标；Tiny Town 缺失时尝试 Tiny Farm；两者都缺失时回退到代码绘制形状。
 - 保留范围：`Tilemap/`、`Tiles/`、`License.txt`、`Tilesheet.txt`。
 - 剔除范围：上游 `.url` 快捷方式、预览图、下载 ZIP。
 
-Tiny Farm 的优势是与当前 16×16 tile 基线一致、许可证简单、素材体量小；限制是它偏农场/RPG 题材，餐馆、便利店、图书馆、酒馆的专用建筑与室内图标仍需要后续原创或补充素材。Issue 03 评审时只确认它是否作为 P0 视觉参考和临时开发素材，不把它直接视为最终美术全集。
+Tiny Town 的优势是与当前 16×16 tile 基线一致、许可证简单、素材体量小，且比 Tiny Farm 更贴近小镇地图、建筑、道路和门窗语义；Tiny Farm 继续作为农场/草地风格参考。两套素材仍不能完整表达餐馆、便利店、图书馆、酒馆的最终专用建筑与室内图标，后续需要原创或补充素材。Issue 03 评审时只确认它们是否作为 P0 视觉参考和临时开发素材，不把它们直接视为最终美术全集。
 
 ## 待审调色板
 

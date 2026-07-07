@@ -34,9 +34,9 @@ User stories: 56, 58, 63, 67
 - 默认 1280×720 窗口使用 640×360 RenderTexture 和点采样；正文统一使用字体原生 12 px，标题使用整数 2× 的 24 px。
 - 窗口缩放实现限定为整数倍并居中留黑边，但仍需人工拖动窗口确认视觉结果。
 - 候选字体为 Fusion Pixel Font 12px Proportional zh_hans 2026.07.01；运行时从集中 UI 文案生成原型必需字形清单并逐字检查，SIL OFL 1.1 许可证、上游摘要和子资源许可证已登记在 `CREDITS.md`。
-- 已按用户确认接入 Kenney Tiny Farm 1.0 作为 16×16 tile 视觉参考；官方页面标注 CC0，仓库保留 `assets/textures/kenney_tiny_farm/Tilemap/`、`Tiles/`、`License.txt` 和 `Tilesheet.txt`，来源与 SHA-256 已登记在 `CREDITS.md`。
-- 原型运行时优先使用 `Tilemap/tilemap_packed.png` 绘制地图装饰和地点图标；缺失时回退到代码绘制形状，不阻塞启动。
+- 已按用户确认接入 Kenney Tiny Town 1.1 与 Kenney Tiny Farm 1.0 作为 16×16 tile 视觉参考；官方页面均标注 CC0，仓库保留各自 `Tilemap/`、`Tiles/`、`License.txt` 和 `Tilesheet.txt`，来源与 SHA-256 已登记在 `CREDITS.md`。
+- 原型运行时优先使用 Tiny Town 的 `Tilemap/tilemap_packed.png` 铺设草地、道路参考、房体纹理、地图装饰和地点图标；Tiny Town 缺失时尝试 Tiny Farm；两者都缺失时回退到代码绘制形状，不阻塞启动。
 - 候选调色板、16×16 tile、16/32 px sprite、4 px UI 网格和资源命名规则见 `docs/VISUAL_PROTOTYPE.md`，尚未获得团队批准。
 - macOS Debug 构建和 CTest 通过。可运行 `./build/pixel_town --capture-prototype` 生成评审截图，或直接启动应用进行窗口缩放、中文可读性和热点层级评审。
 
-人工评审需明确记录：选择 A、B、C 或组合方案；中文字体是否可读；窗口缩放是否锐利；是否批准 Kenney Tiny Farm 作为 P0 参考素材；是否批准调色板、尺寸和命名规则。未得到这些结论前，本 issue 保持 `ready-for-human`。
+人工评审需明确记录：选择 A、B、C 或组合方案；中文字体是否可读；窗口缩放是否锐利；是否批准 Kenney Tiny Town / Tiny Farm 作为 P0 参考素材；是否批准调色板、尺寸和命名规则。未得到这些结论前，本 issue 保持 `ready-for-human`。

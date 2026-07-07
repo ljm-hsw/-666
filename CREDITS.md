@@ -30,3 +30,20 @@
 - `Tilemap/tilemap.png` SHA-256：`af7608d355329f0ca3b61981eca963ffdf3509a00983f7c424b28f2ee4fb0f11`
 
 当前仓库保留 `Tilemap/`、`Tiles/`、`License.txt` 和 `Tilesheet.txt`；未保留上游 `.url` 快捷方式、预览图和下载 ZIP。Tiny Farm 作为 P0 视觉原型参考素材，用于验证 16×16 tile 规格、小镇地图质感和 CC0 第三方素材接入流程。正式美术仍需 Issue 03 人工批准后锁定。
+
+## Kenney Tiny Town
+
+- 名称：Tiny Town
+- 作者：Kenney
+- 版本：1.1
+- 来源：`https://www.kenney.nl/assets/tiny-town`
+- 下载包：`https://www.kenney.nl/media/pages/assets/tiny-town/a415fbeb49-1735736916/kenney_tiny-town.zip`
+- 许可证：Creative Commons Zero，CC0 1.0
+- 上游页面标注：16×16 tile，130 个素材文件，CC0；包内 `Tilesheet.txt` 标注 tilesheet 为 12×11，共 132 个 tile。
+- 上游 ZIP SHA-256：`9768692dccff1d706408a5aedd6ca4f6cd1409506cbc84cb2f862919764be977`
+- 仓库路径：[`assets/textures/kenney_tiny_town/`](assets/textures/kenney_tiny_town/)
+- 许可证文件 SHA-256：`c483c167cc3bdfe17c15f957ff847d409f64d81b410b28783636cf3b2b7814c5`
+- `Tilemap/tilemap_packed.png` SHA-256：`3a54d99ecde790d4fdea207a3644cf130fc56fa838f1beb1507c185a95b8e902`
+- `Tilemap/tilemap.png` SHA-256：`b9e9fb80b95d0b90b52f12d914f000cf16f8b22c1faa815aa94500abfa57bc50`
+
+当前仓库保留 `Tilemap/`、`Tiles/`、`License.txt` 和 `Tilesheet.txt`；未保留上游 `.url` 快捷方式、预览图和下载 ZIP。Tiny Town 与当前小镇地图语义更匹配，P0 原型优先使用它绘制草地、道路、房体纹理、门窗和地点图标；最终是否作为正式小镇美术仍需 Issue 03 人工批准。
