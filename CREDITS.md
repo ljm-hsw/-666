@@ -48,6 +48,19 @@
 
 当前仓库保留 `Tilemap/`、`Tiles/`、`License.txt` 和 `Tilesheet.txt`；未保留上游 `.url` 快捷方式、预览图和下载 ZIP。Tiny Town 与当前小镇地图语义更匹配，P0 原型优先使用它绘制草地、道路、房体纹理、门窗和地点图标；最终是否作为正式小镇美术仍需 Issue 03 人工批准。
 
+## Imagegen P1 Town Map Background
+
+- 名称：P1 town map background
+- 生成方式：内置 imagegen，按项目 960×540 地图页主背景需求生成
+- 生成日期：2026-07-07
+- 候选原图：[`assets/textures/imagegen_backgrounds/town_map_background_source.png`](assets/textures/imagegen_backgrounds/town_map_background_source.png)
+- 候选原图 SHA-256：`935bffd470845cd17a397191385a6633033009d453c6f730f906e1355706781d`
+- 处理后运行时背景：[`assets/textures/imagegen_backgrounds/town_map_background.png`](assets/textures/imagegen_backgrounds/town_map_background.png)
+- 处理后运行时背景 SHA-256：`386c7087135e21ba2cf7ad03f322567d8359965383c32e907977a7a96ebdf770`
+- 原始生成文件：`/Users/quhongye/.codex/generated_images/019f3531-521a-7541-a0e7-03eaae59f588/ig_0bf9c0faeb9bc89b016a4c70734cc0819aacb55bc4a939dd7e.png`
+
+该资源是 P1 地图页的当前主体背景资产。运行时代码优先加载该背景；缺失时才回退到 Kenney/代码拼接地图。它仍属于候选美术资产，是否进入最终交付需后续美术验收确认。
+
 ## Imagegen P1 Building Candidates
 
 - 名称：P1 building candidates
@@ -55,8 +68,8 @@
 - 生成日期：2026-07-07
 - 候选原图：[`assets/textures/imagegen_buildings/p1_building_candidates.png`](assets/textures/imagegen_buildings/p1_building_candidates.png)
 - 候选原图 SHA-256：`98d97717d4c2f1e0a1a2a72c3094e8ebfa07b188afb785d0174cd83ef5910a1b`
-- 处理后 sprite sheet：[`assets/textures/imagegen_buildings/p1_building_sprites.png`](assets/textures/imagegen_buildings/p1_building_sprites.png)
+- 处理后运行时 sprite sheet：[`assets/textures/imagegen_buildings/p1_building_sprites.png`](assets/textures/imagegen_buildings/p1_building_sprites.png)
 - 处理后 sprite sheet SHA-256：`836388b286b25b946d93b587765ede67adf80f3b9de7eb8a98219ce014ae3e37`
 - 原始生成文件：`/Users/quhongye/.codex/generated_images/019f3531-521a-7541-a0e7-03eaae59f588/ig_062e8dc727820bc0016a4c6b564ba0819887591b961e35f264.png`
 
-该资源是项目内 P1 地图 UI 的候选生成资产，不是第三方素材，也不是最终美术批准结果。当前代码仅把处理后的 sprite sheet 作为可选优先显示资源；缺失时仍回退到 Kenney/代码绘制方案。是否进入最终交付仍需 Issue 03 或后续美术验收确认。
+该资源是项目内 P1 地图 UI 的候选生成资产，不是第三方素材，也不是最终美术批准结果。当前代码把处理后的 sprite sheet 作为地图页主体建筑资源优先显示；缺失时仍回退到 Kenney/代码绘制方案。是否进入最终交付仍需 Issue 03 或后续美术验收确认。

@@ -16,7 +16,7 @@ User stories: 60, 68, 69
 - [x] Windows 10/11 x64 使用 Visual Studio 2022/MSVC 和 CMake 可从干净检出完成配置与构建。
 - [x] macOS 使用同一 CMake 入口可完成配置与构建。
 - [x] 首次配置和构建在依赖已随仓库存在的情况下不访问网络，也不要求全局安装 raylib 或 doctest。
-- [x] 应用启动单一窗口，以 640×360 逻辑画布清晰显示一个可识别的基线场景，并默认呈现在 1280×720 窗口中。
+- [x] 应用启动单一窗口，以 960×540 逻辑画布清晰显示一个可识别的基线场景，并默认呈现在 1920×1080 窗口中。
 - [x] CTest 能发现并运行至少一个不创建图形窗口的 doctest 测试。
 - [x] Windows 与 macOS GitHub Actions 执行配置、构建和 CTest。
 - [x] 第三方版本与许可证可从仓库直接确认。
@@ -32,9 +32,11 @@ None - can start immediately.
 
 - 从独立空构建目录执行 Release 配置、完整构建和 CTest，1/1 测试通过。
 - CMake 配置只使用仓库 `third_party/`，未定义 `FetchContent` 或 `ExternalProject` 下载路径。
-- 原生应用持续运行 3 秒，raylib 6.0 成功创建 1280×720 窗口和 640×360 RenderTexture。
+- 原生应用持续运行 3 秒，raylib 6.0 成功创建当时的 1280×720 窗口和 640×360 RenderTexture；该尺寸已在 2026-07-07 迁移为当前 1920×1080 窗口和 960×540 RenderTexture。
 
 2026-07-07 在 GitHub Actions run [28836570723](https://github.com/ljm-hsw/-666/actions/runs/28836570723) 上完成提交 `551e62b9aff8104ee00d34ed669d39241e810444` 的远端验证：
 
 - [Windows 2022 / MSVC](https://github.com/ljm-hsw/-666/actions/runs/28836570723/job/85521523988) 完成 `cmake -S . -B build -G "Visual Studio 17 2022" -A x64`、`cmake --build build --config Release --parallel` 和 `ctest --test-dir build -C Release --output-on-failure`，结论为 `success`。
 - [macOS / Apple Clang](https://github.com/ljm-hsw/-666/actions/runs/28836570723/job/85521524005) 完成 Release 配置、构建和 CTest，结论为 `success`。
+
+2026-07-07 当前显示基线迁移为 960×540 逻辑画布和 1920×1080 默认窗口；旧 640×360 UI 坐标按 1.5× 迁移到新逻辑画布，后续 UI 和 imagegen 背景规划以新尺寸为准。

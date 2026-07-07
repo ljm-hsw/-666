@@ -99,9 +99,9 @@ bool activated(Rectangle bounds, Vector2 mouse, KeyboardKey key) {
 }
 
 std::array<Rectangle, 5> location_bounds() {
-    return {Rectangle{48, 110, 112, 68}, Rectangle{190, 92, 112, 68},
-            Rectangle{332, 110, 112, 68}, Rectangle{476, 194, 112, 68},
-            Rectangle{82, 204, 112, 68}};
+    return {Rectangle{80, 104, 112, 68}, Rectangle{394, 104, 112, 68},
+            Rectangle{78, 202, 112, 68}, Rectangle{424, 202, 112, 68},
+            Rectangle{264, 202, 112, 68}};
 }
 
 Rectangle source_tile(int tile_index) {
@@ -226,13 +226,21 @@ void draw_location_building(const Font& font, const Texture2D& tiles,
 }
 
 void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
-              const Texture2D& generated_buildings, const GameAppState& state,
-              bool audio_enabled, Vector2 mouse) {
+              const Texture2D& generated_map_background, const Texture2D& generated_buildings,
+              const GameAppState& state, bool audio_enabled, Vector2 mouse) {
     ClearBackground(Color{221, 211, 174, 255});
+    if (generated_map_background.id != 0) {
+        DrawTexturePro(
+            generated_map_background,
+            Rectangle{0.0F, 0.0F, static_cast<float>(generated_map_background.width),
+                      static_cast<float>(generated_map_background.height)},
+            Rectangle{0.0F, 0.0F, 640.0F, 360.0F}, Vector2{0.0F, 0.0F}, 0.0F, WHITE);
+    } else {
+        panel(Rectangle{18, 66, 604, 224}, paper);
+        draw_tiled_grass(tiles, Rectangle{28, 76, 584, 204});
+        draw_map_decoration(marker, tiles);
+    }
     draw_status(font, state.session, audio_enabled);
-    panel(Rectangle{18, 66, 604, 224}, paper);
-    draw_tiled_grass(tiles, Rectangle{28, 76, 584, 204});
-    draw_map_decoration(marker, tiles);
 
     const auto bounds = location_bounds();
     const std::array<Color, 5> colors{Color{231, 151, 103, 255}, gold,
@@ -425,8 +433,9 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
 }
 
 void draw_game_flow(const Font& font, const Texture2D& town_marker,
-                    const Texture2D& kenney_tiles, const Texture2D& generated_buildings,
-                    const GameAppState& state, bool audio_enabled, Vector2 logical_mouse) {
+                    const Texture2D& kenney_tiles, const Texture2D& generated_map_background,
+                    const Texture2D& generated_buildings, const GameAppState& state,
+                    bool audio_enabled, Vector2 logical_mouse) {
     if (!state.has_session) {
         draw_title(font, logical_mouse);
         return;
@@ -434,8 +443,8 @@ void draw_game_flow(const Font& font, const Texture2D& town_marker,
 
     if (state.session.phase() == GamePhase::day_choice ||
         state.session.phase() == GamePhase::night_choice) {
-        draw_map(font, town_marker, kenney_tiles, generated_buildings, state, audio_enabled,
-                 logical_mouse);
+        draw_map(font, town_marker, kenney_tiles, generated_map_background, generated_buildings,
+                 state, audio_enabled, logical_mouse);
     } else if (state.session.phase() == GamePhase::day_location ||
                state.session.phase() == GamePhase::night_location) {
         draw_location(font, state, logical_mouse);

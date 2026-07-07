@@ -21,6 +21,7 @@
 - [`PROJECT_PLAN.md`](PROJECT_PLAN.md)：P0-P4 阶段目标、门槛、依赖和 issue 总览。
 - [`DESIGN.md`](DESIGN.md)：核心架构、状态机、模块契约、存档、随机性和测试边界。
 - [`VISUAL_PROTOTYPE.md`](VISUAL_PROTOTYPE.md)：P0 待审视觉方案、调色板、像素尺寸与资源命名候选。
+- [`IMAGEGEN_VISUAL_PLAN.md`](IMAGEGEN_VISUAL_PLAN.md)：960×540 画布迁移与 imagegen 页面背景/建筑资产规划。
 - [`adr/0001-adopt-raylib-and-doctest.md`](adr/0001-adopt-raylib-and-doctest.md)：raylib、doctest 与离线依赖策略。
 - [`../CREDITS.md`](../CREDITS.md)：第三方字体、贴图和许可证来源登记。
 

@@ -15,6 +15,9 @@
 
 namespace {
 
+constexpr int legacy_ui_width = 640;
+constexpr int legacy_ui_height = 360;
+
 void draw_resource_error(const pixel_town::ResourceReport& report, bool log_written) {
     ClearBackground(Color{47, 30, 35, 255});
     DrawText("PIXEL TOWN COULD NOT START", 34, 34, 24, Color{255, 205, 122, 255});
@@ -66,10 +69,28 @@ void advance_to_placeholder_ending(pixel_town::GameAppState& state) {
     state.notice = "十日计划完成。";
 }
 
+bool export_canvas_capture(RenderTexture2D canvas, const char* capture_path, int output_width,
+                           int output_height) {
+    Image image = LoadImageFromTexture(canvas.texture);
+    if (image.data == nullptr) {
+        return false;
+    }
+    ImageFlipVertical(&image);
+    ImageResizeNN(&image, output_width, output_height);
+    const bool exported = ExportImage(image, capture_path);
+    UnloadImage(image);
+    return exported;
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
     constexpr auto display = pixel_town::default_display_config();
+    constexpr float legacy_ui_scale =
+        static_cast<float>(display.logical_width) / static_cast<float>(legacy_ui_width);
+    static_assert(display.logical_width * legacy_ui_height ==
+                      display.logical_height * legacy_ui_width,
+                  "legacy UI scale requires the same 16:9 aspect ratio");
     const bool capture_prototype =
         argc == 2 && std::string_view{argv[1]} == "--capture-prototype";
     const bool capture_game_flow =
@@ -136,6 +157,7 @@ int main(int argc, char* argv[]) {
         pixel_town::write_latest_log("logs/latest.log", PIXEL_TOWN_VERSION, startup_stage, resources);
 
     Texture2D kenney_tiles{};
+    Texture2D generated_map_background{};
     Texture2D generated_buildings{};
     const std::array<std::filesystem::path, 2> kenney_tiles_paths{
         "assets/textures/kenney_tiny_town/Tilemap/tilemap_packed.png",
@@ -150,6 +172,14 @@ int main(int argc, char* argv[]) {
             if (kenney_tiles.id != 0) {
                 SetTextureFilter(kenney_tiles, TEXTURE_FILTER_POINT);
                 break;
+            }
+        }
+        if (std::filesystem::is_regular_file(
+                "assets/textures/imagegen_backgrounds/town_map_background.png")) {
+            generated_map_background =
+                LoadTexture("assets/textures/imagegen_backgrounds/town_map_background.png");
+            if (generated_map_background.id != 0) {
+                SetTextureFilter(generated_map_background, TEXTURE_FILTER_POINT);
             }
         }
         if (std::filesystem::is_regular_file(
@@ -213,23 +243,30 @@ int main(int argc, char* argv[]) {
         const Vector2 screen_mouse = GetMousePosition();
         const Vector2 logical_mouse{(screen_mouse.x - offset_x) / scale,
                                     (screen_mouse.y - offset_y) / scale};
+        const Vector2 legacy_ui_mouse{logical_mouse.x / legacy_ui_scale,
+                                      logical_mouse.y / legacy_ui_scale};
 
         if (resources.can_start && log_written && !capture_game_flow) {
             if (capture_prototype) {
-                pixel_town::update_visual_prototype(prototype, logical_mouse);
+                pixel_town::update_visual_prototype(prototype, legacy_ui_mouse);
             } else {
-                pixel_town::update_game_flow(game_flow, logical_mouse);
+                pixel_town::update_game_flow(game_flow, legacy_ui_mouse);
             }
         }
         BeginTextureMode(canvas);
         if (resources.can_start && log_written) {
+            const Camera2D legacy_ui_camera{Vector2{0.0F, 0.0F}, Vector2{0.0F, 0.0F}, 0.0F,
+                                            legacy_ui_scale};
+            BeginMode2D(legacy_ui_camera);
             if (capture_prototype) {
                 pixel_town::draw_visual_prototype(ui_font, town_marker, kenney_tiles, prototype,
-                                                  resources.audio_enabled, logical_mouse);
+                                                  resources.audio_enabled, legacy_ui_mouse);
             } else {
-                pixel_town::draw_game_flow(ui_font, town_marker, kenney_tiles, generated_buildings,
-                                           game_flow, resources.audio_enabled, logical_mouse);
+                pixel_town::draw_game_flow(ui_font, town_marker, kenney_tiles,
+                                           generated_map_background, generated_buildings, game_flow,
+                                           resources.audio_enabled, legacy_ui_mouse);
             }
+            EndMode2D();
         } else {
             draw_resource_error(resources, log_written);
         }
@@ -251,8 +288,9 @@ int main(int argc, char* argv[]) {
         if (capture_ready && ++capture_delay >= 3) {
             const char* capture_path = capture_prototype ? prototype_capture_paths[capture_index]
                                                          : game_flow_capture_paths[capture_index];
-            TakeScreenshot(capture_path);
-            if (!std::filesystem::is_regular_file(capture_path)) {
+            if (!export_canvas_capture(canvas, capture_path, display.window_width,
+                                       display.window_height) ||
+                !std::filesystem::is_regular_file(capture_path)) {
                 TraceLog(LOG_WARNING, "CAPTURE: Screenshot was not written: %s", capture_path);
             }
             ++capture_index;
@@ -288,6 +326,9 @@ int main(int argc, char* argv[]) {
     }
     if (kenney_tiles.id != 0) {
         UnloadTexture(kenney_tiles);
+    }
+    if (generated_map_background.id != 0) {
+        UnloadTexture(generated_map_background);
     }
     if (generated_buildings.id != 0) {
         UnloadTexture(generated_buildings);
