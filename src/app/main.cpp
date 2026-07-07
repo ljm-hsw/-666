@@ -136,6 +136,7 @@ int main(int argc, char* argv[]) {
         pixel_town::write_latest_log("logs/latest.log", PIXEL_TOWN_VERSION, startup_stage, resources);
 
     Texture2D kenney_tiles{};
+    Texture2D generated_buildings{};
     const std::array<std::filesystem::path, 2> kenney_tiles_paths{
         "assets/textures/kenney_tiny_town/Tilemap/tilemap_packed.png",
         "assets/textures/kenney_tiny_farm/Tilemap/tilemap_packed.png",
@@ -149,6 +150,14 @@ int main(int argc, char* argv[]) {
             if (kenney_tiles.id != 0) {
                 SetTextureFilter(kenney_tiles, TEXTURE_FILTER_POINT);
                 break;
+            }
+        }
+        if (std::filesystem::is_regular_file(
+                "assets/textures/imagegen_buildings/p1_building_sprites.png")) {
+            generated_buildings =
+                LoadTexture("assets/textures/imagegen_buildings/p1_building_sprites.png");
+            if (generated_buildings.id != 0) {
+                SetTextureFilter(generated_buildings, TEXTURE_FILTER_POINT);
             }
         }
     }
@@ -218,8 +227,8 @@ int main(int argc, char* argv[]) {
                 pixel_town::draw_visual_prototype(ui_font, town_marker, kenney_tiles, prototype,
                                                   resources.audio_enabled, logical_mouse);
             } else {
-                pixel_town::draw_game_flow(ui_font, town_marker, kenney_tiles, game_flow,
-                                           resources.audio_enabled, logical_mouse);
+                pixel_town::draw_game_flow(ui_font, town_marker, kenney_tiles, generated_buildings,
+                                           game_flow, resources.audio_enabled, logical_mouse);
             }
         } else {
             draw_resource_error(resources, log_written);
@@ -279,6 +288,9 @@ int main(int argc, char* argv[]) {
     }
     if (kenney_tiles.id != 0) {
         UnloadTexture(kenney_tiles);
+    }
+    if (generated_buildings.id != 0) {
+        UnloadTexture(generated_buildings);
     }
     if (canvas_loaded) {
         UnloadRenderTexture(canvas);
