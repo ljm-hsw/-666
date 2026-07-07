@@ -95,6 +95,8 @@ ctest --test-dir build -C Debug --output-on-failure
 
 普通启动进入 P1 核心闭环界面：标题页点击“新游戏”进入第一日地图，选择白天地点后可完成模拟工作或主动放弃，夜晚回家休息后进入每日总结；第十日总结后进入占位主结局，不进入第十一日。
 
+当前快捷键：`Enter` 确认/继续，`Esc` 返回或取消覆盖确认，`Space` 开始/完成地点模拟，`P` 暂停/继续，`M` 切换全局静音。鼠标仍是主要操作方式；窗口缩放使用整数倍显示，黑边区域点击不会触发控件。静音设置保存到应用目录旁的 `saves/settings.ini`。
+
 P0 视觉原型仍可通过 `./build/pixel_town --capture-prototype` 生成评审截图。原型已接入 Kenney Tiny Town 和 Tiny Farm 作为 CC0 视觉参考素材，来源见 [`CREDITS.md`](CREDITS.md)。原型仍需人工批准，不代表最终 UI。
 
 原型评审截图可通过 `./build/pixel_town --capture-prototype` 生成到被 Git 忽略的 `prototype-captures/`。

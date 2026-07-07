@@ -12,6 +12,7 @@ add_library(pixel_town_core
 target_include_directories(pixel_town_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 add_library(pixel_town_io
+  src/io/app_settings.cpp
   src/io/resource_diagnostics.cpp
   src/io/save_game.cpp
   src/io/startup_log.cpp
@@ -37,6 +38,8 @@ enable_testing()
 add_executable(pixel_town_tests
   tests/display_config_test.cpp
   tests/game_session_test.cpp
+  tests/interaction_runtime_test.cpp
+  tests/app_settings_test.cpp
   tests/resource_diagnostics_test.cpp
   tests/save_game_test.cpp
 )

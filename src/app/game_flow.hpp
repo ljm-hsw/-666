@@ -22,6 +22,6 @@ void draw_game_flow(const Font& font, const Texture2D& town_marker,
                     const Texture2D& kenney_tiles, const Texture2D& generated_full_map_scene,
                     const Texture2D& generated_map_background,
                     const Texture2D& generated_buildings, const GameAppState& state,
-                    bool audio_enabled, Vector2 logical_mouse);
+                    bool audio_enabled, bool paused, Vector2 logical_mouse);
 
 }  // namespace pixel_town

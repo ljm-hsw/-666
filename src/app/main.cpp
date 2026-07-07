@@ -21,6 +21,8 @@
 #include "app/game_flow.hpp"
 #include "app/visual_prototype.hpp"
 #include "core/display_config.hpp"
+#include "core/interaction_runtime.hpp"
+#include "io/app_settings.hpp"
 #include "io/resource_diagnostics.hpp"
 #include "io/save_game.hpp"
 #include "io/startup_log.hpp"
@@ -308,8 +310,15 @@ int main(int argc, char* argv[]) {
     pixel_town::VisualPrototypeState prototype;
     pixel_town::GameAppState game_flow;
     const bool persistence_enabled = !capture_prototype && !capture_game_flow;
-    const std::filesystem::path save_path =
-        pixel_town::default_save_path(application_directory_from_argv(argv[0]));
+    const std::filesystem::path application_directory = application_directory_from_argv(argv[0]);
+    const std::filesystem::path save_path = pixel_town::default_save_path(application_directory);
+    const std::filesystem::path settings_path =
+        pixel_town::default_settings_path(application_directory);
+    pixel_town::InteractionRuntime interaction_runtime;
+    if (const auto loaded_settings = pixel_town::load_app_settings(settings_path);
+        loaded_settings.has_value()) {
+        interaction_runtime.set_muted(loaded_settings->muted);
+    }
     bool has_persisted_snapshot = false;
     pixel_town::GameSessionSnapshot persisted_snapshot{};
     if (persistence_enabled) {
@@ -367,22 +376,34 @@ int main(int argc, char* argv[]) {
             continue;
         }
 
-        const float scale = std::max(
-            1.0F,
-            std::floor(std::min(
-                static_cast<float>(GetScreenWidth()) / static_cast<float>(display.logical_width),
-                static_cast<float>(GetScreenHeight()) / static_cast<float>(display.logical_height))));
-        const float width = static_cast<float>(display.logical_width) * scale;
-        const float height = static_cast<float>(display.logical_height) * scale;
-        const float offset_x = (static_cast<float>(GetScreenWidth()) - width) / 2.0F;
-        const float offset_y = (static_cast<float>(GetScreenHeight()) - height) / 2.0F;
+        const pixel_town::IntegerViewport viewport =
+            pixel_town::integer_scaled_viewport(display, GetScreenWidth(), GetScreenHeight());
+        const float width = static_cast<float>(viewport.width);
+        const float height = static_cast<float>(viewport.height);
+        const float offset_x = static_cast<float>(viewport.x);
+        const float offset_y = static_cast<float>(viewport.y);
         const Vector2 screen_mouse = GetMousePosition();
-        const Vector2 logical_mouse{(screen_mouse.x - offset_x) / scale,
-                                    (screen_mouse.y - offset_y) / scale};
+        const auto logical_point = pixel_town::screen_to_logical_point(
+            viewport, static_cast<int>(screen_mouse.x), static_cast<int>(screen_mouse.y));
+        const Vector2 logical_mouse =
+            logical_point.has_value()
+                ? Vector2{static_cast<float>(logical_point->x), static_cast<float>(logical_point->y)}
+                : Vector2{-1.0F, -1.0F};
         const Vector2 legacy_ui_mouse{logical_mouse.x / legacy_ui_scale,
                                       logical_mouse.y / legacy_ui_scale};
+        const auto interaction_frame = interaction_runtime.update(pixel_town::InteractionFrameInput{
+            GetFrameTime(), IsKeyPressed(KEY_P), IsKeyPressed(KEY_M), IsWindowFocused(),
+            IsWindowState(FLAG_WINDOW_MINIMIZED)});
+        if (interaction_frame.mute_toggled &&
+            !pixel_town::save_app_settings(
+                settings_path, pixel_town::AppSettings{interaction_runtime.muted()}) &&
+            game_flow.has_session) {
+            game_flow.notice = "设置写入失败：静音只在本次运行中生效。";
+        }
+        const bool audio_enabled = resources.audio_enabled && !interaction_runtime.muted();
 
-        if (resources.can_start && log_written && !capture_game_flow) {
+        if (resources.can_start && log_written && !capture_game_flow &&
+            interaction_frame.game_updates_enabled) {
             if (capture_prototype) {
                 pixel_town::update_visual_prototype(prototype, legacy_ui_mouse);
             } else {
@@ -412,12 +433,12 @@ int main(int argc, char* argv[]) {
             BeginMode2D(legacy_ui_camera);
             if (capture_prototype) {
                 pixel_town::draw_visual_prototype(ui_font, town_marker, kenney_tiles, prototype,
-                                                  resources.audio_enabled, legacy_ui_mouse);
+                                                  audio_enabled, legacy_ui_mouse);
             } else {
                 pixel_town::draw_game_flow(ui_font, town_marker, kenney_tiles,
                                            generated_full_map_scene, generated_map_background,
-                                           generated_buildings, game_flow, resources.audio_enabled,
-                                           legacy_ui_mouse);
+                                           generated_buildings, game_flow, audio_enabled,
+                                           interaction_runtime.paused(), legacy_ui_mouse);
             }
             EndMode2D();
         } else {

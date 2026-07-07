@@ -403,6 +403,15 @@ void draw_ending(const Font& font, const GameAppState& state) {
          Color{78, 78, 72, 255});
 }
 
+void draw_pause_overlay(const Font& font, bool audio_enabled) {
+    DrawRectangle(0, 0, 640, 360, Color{20, 24, 28, 150});
+    panel(Rectangle{194, 110, 252, 126}, Color{250, 238, 203, 245});
+    text(font, "已暂停", 284, 132, 28, red);
+    text(font, "按 P 继续", 258, 176, 18, ink);
+    text(font, audio_enabled ? "按 M 切换静音" : "按 M 恢复声音", 232, 202, 18,
+         Color{78, 78, 72, 255});
+}
+
 }  // namespace
 
 const char* game_flow_glyphs() {
@@ -421,7 +430,7 @@ const char* game_flow_glyphs() {
             "午餐客流获得金钱与声望便利店模拟经营完成一次进货与销售结算图书馆帮助读者找书并提升"
             "知识行动完成回家休息恢复体力并结束今天主动放弃阶段已消耗本次无收益确认后进入下一游戏日"
             "占位主结局最终状态成长路线摘要均衡体验小镇生活十日经营计划已经结束不能继续选择地点"
-            "点击地点查看原因成长路线均衡体验";
+            "点击地点查看原因成长路线均衡体验已暂停按P继续按M切换静音恢复声音";
         return result;
     }();
     return glyphs.c_str();
@@ -528,9 +537,12 @@ void draw_game_flow(const Font& font, const Texture2D& town_marker,
                     const Texture2D& kenney_tiles, const Texture2D& generated_full_map_scene,
                     const Texture2D& generated_map_background,
                     const Texture2D& generated_buildings, const GameAppState& state,
-                    bool audio_enabled, Vector2 logical_mouse) {
+                    bool audio_enabled, bool paused, Vector2 logical_mouse) {
     if (!state.has_session) {
         draw_title(font, state.notice, logical_mouse);
+        if (paused) {
+            draw_pause_overlay(font, audio_enabled);
+        }
         return;
     }
 
@@ -550,6 +562,9 @@ void draw_game_flow(const Font& font, const Texture2D& town_marker,
 
     if (!audio_enabled && state.has_session) {
         text(font, "静音", 586, 330, 18, red);
+    }
+    if (paused) {
+        draw_pause_overlay(font, audio_enabled);
     }
 }
 
