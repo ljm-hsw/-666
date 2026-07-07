@@ -39,12 +39,41 @@ void draw_resource_error(const pixel_town::ResourceReport& report, bool log_writ
              Color{205, 211, 215, 255});
 }
 
+bool complete_day_with_rest(pixel_town::GameSession& session, pixel_town::Location location) {
+    if (!session.enter_location(location)) {
+        return false;
+    }
+    if (session.start_location() == 0) {
+        return false;
+    }
+    if (!session.apply_action_result(session.simulated_success_result()).accepted) {
+        return false;
+    }
+    if (!session.apply_action_result(session.home_rest_result()).accepted) {
+        return false;
+    }
+    return session.finish_day_summary();
+}
+
+void advance_to_placeholder_ending(pixel_town::GameAppState& state) {
+    state.has_session = true;
+    state.session = pixel_town::GameSession::new_game();
+    for (int day = 1; day <= 10 && !state.session.is_ended(); ++day) {
+        if (!complete_day_with_rest(state.session, pixel_town::Location::restaurant)) {
+            break;
+        }
+    }
+    state.notice = "十日计划完成。";
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
     constexpr auto display = pixel_town::default_display_config();
     const bool capture_prototype =
         argc == 2 && std::string_view{argv[1]} == "--capture-prototype";
+    const bool capture_game_flow =
+        argc == 2 && std::string_view{argv[1]} == "--capture-game-flow";
     auto resources = pixel_town::validate_resources("assets", pixel_town::baseline_resource_manifest());
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -76,8 +105,9 @@ int main(int argc, char* argv[]) {
             std::string{pixel_town::visual_prototype_glyphs()} + pixel_town::game_flow_glyphs();
         int codepoint_count = 0;
         int* codepoints = LoadCodepoints(required_glyphs.c_str(), &codepoint_count);
-        ui_font = LoadFontEx("assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf", 12,
-                             codepoints, codepoint_count);
+        const int font_pixel_size = capture_prototype ? 12 : 20;
+        ui_font = LoadFontEx("assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf",
+                             font_pixel_size, codepoints, codepoint_count);
         bool required_glyphs_available = ui_font.texture.id != 0;
         if (required_glyphs_available) {
             for (int index = 0; index < codepoint_count; ++index) {
@@ -125,22 +155,29 @@ int main(int argc, char* argv[]) {
 
     pixel_town::VisualPrototypeState prototype;
     pixel_town::GameAppState game_flow;
-    bool capture_ready = capture_prototype;
-    if (capture_prototype) {
+    bool capture_ready = capture_prototype || capture_game_flow;
+    if (capture_ready) {
         prototype.modal_open = false;
         std::error_code capture_error;
-        std::filesystem::create_directories("prototype-captures", capture_error);
+        const std::filesystem::path capture_directory =
+            capture_prototype ? "prototype-captures" : "game-flow-captures";
+        std::filesystem::create_directories(capture_directory, capture_error);
         capture_ready =
-            !capture_error && std::filesystem::is_directory("prototype-captures", capture_error);
+            !capture_error && std::filesystem::is_directory(capture_directory, capture_error);
         if (!capture_ready) {
-            TraceLog(LOG_WARNING, "CAPTURE: Could not create prototype-captures directory");
+            TraceLog(LOG_WARNING, "CAPTURE: Could not create capture directory");
         }
     }
-    const std::array<const char*, 4> capture_paths{
+    const std::array<const char*, 4> prototype_capture_paths{
         "prototype-captures/variant-a.png",
         "prototype-captures/variant-b.png",
         "prototype-captures/variant-c.png",
         "prototype-captures/modal.png",
+    };
+    const std::array<const char*, 3> game_flow_capture_paths{
+        "game-flow-captures/title.png",
+        "game-flow-captures/map.png",
+        "game-flow-captures/ending.png",
     };
     std::size_t capture_index = 0;
     int capture_delay = 0;
@@ -168,7 +205,7 @@ int main(int argc, char* argv[]) {
         const Vector2 logical_mouse{(screen_mouse.x - offset_x) / scale,
                                     (screen_mouse.y - offset_y) / scale};
 
-        if (resources.can_start && log_written) {
+        if (resources.can_start && log_written && !capture_game_flow) {
             if (capture_prototype) {
                 pixel_town::update_visual_prototype(prototype, logical_mouse);
             } else {
@@ -199,11 +236,12 @@ int main(int argc, char* argv[]) {
             Vector2{0.0F, 0.0F}, 0.0F, WHITE);
         EndDrawing();
 
-        if (capture_prototype && !capture_ready) {
+        if ((capture_prototype || capture_game_flow) && !capture_ready) {
             break;
         }
         if (capture_ready && ++capture_delay >= 3) {
-            const char* capture_path = capture_paths[capture_index];
+            const char* capture_path = capture_prototype ? prototype_capture_paths[capture_index]
+                                                         : game_flow_capture_paths[capture_index];
             TakeScreenshot(capture_path);
             if (!std::filesystem::is_regular_file(capture_path)) {
                 TraceLog(LOG_WARNING, "CAPTURE: Screenshot was not written: %s", capture_path);
@@ -217,7 +255,17 @@ int main(int argc, char* argv[]) {
             } else if (capture_index == 3) {
                 prototype.variant = 0;
                 prototype.modal_open = true;
-            } else if (capture_index == capture_paths.size()) {
+            }
+            if (capture_game_flow && capture_index == 1) {
+                game_flow.has_session = true;
+                game_flow.session = pixel_town::GameSession::new_game();
+                game_flow.notice = "第 1 天开始：请选择一个白天工作地点。";
+            } else if (capture_game_flow && capture_index == 2) {
+                advance_to_placeholder_ending(game_flow);
+            }
+            const std::size_t capture_count =
+                capture_prototype ? prototype_capture_paths.size() : game_flow_capture_paths.size();
+            if (capture_index == capture_count) {
                 break;
             }
         }

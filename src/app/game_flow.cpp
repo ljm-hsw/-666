@@ -10,16 +10,19 @@ constexpr Color ink{45, 52, 54, 255};
 constexpr Color paper{250, 238, 203, 255};
 constexpr Color cream{255, 248, 226, 255};
 constexpr Color green{82, 137, 92, 255};
+constexpr Color grass{144, 190, 119, 255};
+constexpr Color road{194, 170, 121, 255};
 constexpr Color disabled{145, 143, 132, 255};
 constexpr Color red{183, 83, 72, 255};
 constexpr Color gold{224, 169, 74, 255};
 constexpr Color shadow{39, 48, 53, 120};
+constexpr Color slate{60, 79, 82, 255};
 
 constexpr std::array<Location, 5> map_locations{
     Location::restaurant, Location::convenience_store, Location::library, Location::tavern,
     Location::home};
 
-constexpr std::array<const char*, 32> ui_texts{
+constexpr std::array<const char*, 43> ui_texts{
     "像素小镇",
     "十日经营计划",
     "新游戏",
@@ -41,7 +44,8 @@ constexpr std::array<const char*, 32> ui_texts{
     "图书馆",
     "酒馆",
     "家",
-    "进入地点",
+    "开放",
+    "未开放",
     "返回地图",
     "开始模拟",
     "完成模拟",
@@ -52,6 +56,16 @@ constexpr std::array<const char*, 32> ui_texts{
     "主结局",
     "最终状态",
     "静音",
+    "平凡小镇新人",
+    "结局之后不能继续提交地点行动或推进天数",
+    "晴天",
+    "多云",
+    "小雨",
+    "微风",
+    "餐馆客流增加",
+    "便利店零食更受欢迎",
+    "图书馆读者变多",
+    "小镇节奏平稳",
 };
 
 void text(const Font& font, const char* value, float x, float y, float size, Color color = ink) {
@@ -61,6 +75,13 @@ void text(const Font& font, const char* value, float x, float y, float size, Col
 void text(const Font& font, const std::string& value, float x, float y, float size,
           Color color = ink) {
     text(font, value.c_str(), x, y, size, color);
+}
+
+void centered_text(const Font& font, const char* value, Rectangle bounds, float size,
+                   Color color = ink) {
+    const Vector2 measured = MeasureTextEx(font, value, size, 1.0F);
+    text(font, value, bounds.x + (bounds.width - measured.x) / 2.0F,
+         bounds.y + (bounds.height - measured.y) / 2.0F, size, color);
 }
 
 void panel(Rectangle bounds, Color fill, Color border = ink) {
@@ -78,9 +99,9 @@ bool activated(Rectangle bounds, Vector2 mouse, KeyboardKey key) {
 }
 
 std::array<Rectangle, 5> location_bounds() {
-    return {Rectangle{34, 122, 112, 52}, Rectangle{164, 122, 112, 52},
-            Rectangle{294, 122, 112, 52}, Rectangle{424, 122, 112, 52},
-            Rectangle{237, 198, 112, 52}};
+    return {Rectangle{48, 110, 112, 68}, Rectangle{190, 92, 112, 68},
+            Rectangle{332, 110, 112, 68}, Rectangle{476, 194, 112, 68},
+            Rectangle{82, 204, 112, 68}};
 }
 
 Rectangle source_tile(int tile_index) {
@@ -101,44 +122,91 @@ void draw_tile(const Texture2D& tiles, int tile_index, Rectangle destination) {
 
 void draw_status(const Font& font, const GameSession& session, bool audio_enabled) {
     const auto& player = session.player();
-    DrawRectangle(0, 0, 640, 48, Color{60, 79, 82, 255});
-    text(font, "像素小镇", 16, 9, 18, RAYWHITE);
+    DrawRectangle(0, 0, 640, 56, slate);
+    text(font, "像素小镇", 16, 9, 22, RAYWHITE);
     text(font, std::string{"第 "} + std::to_string(session.day()) + " 天 · " +
                    phase_label(session.phase()),
-         132, 14, 12, Color{255, 224, 154, 255});
-    text(font,
-         std::string{"金钱 "} + std::to_string(player.money) + "  体力 " +
-             std::to_string(player.stamina) + "  声望 " + std::to_string(player.reputation),
-         318, 6, 12, RAYWHITE);
-    text(font,
-         std::string{"知识 "} + std::to_string(player.knowledge) + "  心情 " +
-             std::to_string(player.mood),
-         318, 26, 12, RAYWHITE);
+         132, 16, 18, Color{255, 224, 154, 255});
+    text(font, std::string{"金钱 "} + std::to_string(player.money), 316, 6, 18, RAYWHITE);
+    text(font, std::string{"体力 "} + std::to_string(player.stamina), 410, 6, 18, RAYWHITE);
+    text(font, std::string{"声望 "} + std::to_string(player.reputation), 504, 6, 18, RAYWHITE);
+    text(font, std::string{"知识 "} + std::to_string(player.knowledge), 316, 30, 18, RAYWHITE);
+    text(font, std::string{"心情 "} + std::to_string(player.mood), 410, 30, 18, RAYWHITE);
     if (!audio_enabled) {
-        text(font, "静音", 590, 26, 12, Color{255, 208, 166, 255});
+        text(font, "静音", 548, 30, 18, Color{255, 208, 166, 255});
     }
 }
 
 void draw_title(const Font& font, Vector2 mouse) {
     ClearBackground(Color{37, 50, 57, 255});
-    text(font, "像素小镇", 214, 78, 36, RAYWHITE);
-    text(font, "十日经营计划", 226, 124, 18, Color{255, 224, 154, 255});
-    const Rectangle start_button{244, 190, 152, 42};
+    text(font, "像素小镇", 210, 78, 36, RAYWHITE);
+    text(font, "十日经营计划", 220, 126, 22, Color{255, 224, 154, 255});
+    const Rectangle start_button{232, 190, 176, 48};
     panel(start_button, CheckCollisionPointRec(mouse, start_button) ? cream : green);
-    text(font, "新游戏", 294, 202, 14, CheckCollisionPointRec(mouse, start_button) ? ink : RAYWHITE);
-    text(font, "Enter / 点击开始", 254, 254, 12, Color{205, 211, 215, 255});
+    centered_text(font, "新游戏", start_button, 18,
+                  CheckCollisionPointRec(mouse, start_button) ? ink : RAYWHITE);
+    text(font, "Enter / 点击开始", 238, 260, 18, Color{205, 211, 215, 255});
+}
+
+void draw_tiled_grass(const Texture2D& tiles, Rectangle bounds) {
+    if (tiles.id == 0) {
+        DrawRectangleRec(bounds, grass);
+        return;
+    }
+    for (float y = bounds.y; y < bounds.y + bounds.height; y += 16.0F) {
+        for (float x = bounds.x; x < bounds.x + bounds.width; x += 16.0F) {
+            draw_tile(tiles, 0, Rectangle{x, y, 16.0F, 16.0F});
+        }
+    }
+}
+
+void draw_road_tiles(const Texture2D& tiles, Rectangle bounds) {
+    DrawRectangleRec(bounds, road);
+    if (tiles.id == 0) {
+        return;
+    }
+    for (float y = bounds.y; y < bounds.y + bounds.height; y += 16.0F) {
+        for (float x = bounds.x; x < bounds.x + bounds.width; x += 16.0F) {
+            draw_tile(tiles, 48, Rectangle{x, y, 16.0F, 16.0F});
+        }
+    }
+}
+
+void draw_map_decoration(const Texture2D& marker, const Texture2D& tiles) {
+    draw_road_tiles(tiles, Rectangle{78, 178, 498, 18});
+    draw_road_tiles(tiles, Rectangle{132, 126, 18, 138});
+    draw_road_tiles(tiles, Rectangle{244, 126, 18, 66});
+    draw_road_tiles(tiles, Rectangle{386, 142, 18, 52});
+    draw_road_tiles(tiles, Rectangle{528, 194, 18, 60});
+    for (int x = 44; x < 594; x += 42) {
+        draw_tile(tiles, 4, Rectangle{static_cast<float>(x), 78.0F, 16.0F, 16.0F});
+        draw_tile(tiles, 5, Rectangle{static_cast<float>(x + 16), 272.0F, 16.0F, 16.0F});
+    }
+    DrawTextureEx(marker, Vector2{306, 184}, 0.0F, 2.0F, WHITE);
+}
+
+void draw_location_building(const Font& font, const Texture2D& tiles, Rectangle bounds,
+                            Location location, Color color, bool allowed, bool hovered,
+                            int icon_tile) {
+    const Color fill = allowed ? (hovered ? cream : color) : disabled;
+    DrawTriangle(Vector2{bounds.x - 6, bounds.y + 8},
+                 Vector2{bounds.x + bounds.width + 6, bounds.y + 8},
+                 Vector2{bounds.x + bounds.width / 2.0F, bounds.y - 22}, red);
+    panel(bounds, fill);
+    draw_tile(tiles, icon_tile, Rectangle{bounds.x + 10, bounds.y + 11, 32.0F, 32.0F});
+    text(font, location_label(location), bounds.x + 48, bounds.y + 12, 20,
+         allowed ? ink : Color{78, 78, 72, 255});
+    text(font, allowed ? "开放" : "未开放", bounds.x + 48, bounds.y + 40, 18,
+         allowed ? Color{35, 83, 51, 255} : Color{78, 78, 72, 255});
 }
 
 void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
               const GameAppState& state, bool audio_enabled, Vector2 mouse) {
     ClearBackground(Color{221, 211, 174, 255});
     draw_status(font, state.session, audio_enabled);
-    panel(Rectangle{18, 62, 604, 230}, paper);
-    DrawRectangle(28, 72, 584, 210, Color{144, 190, 119, 255});
-    for (int x = 36; x < 600; x += 32) {
-        draw_tile(tiles, 4, Rectangle{static_cast<float>(x), 82.0F, 16.0F, 16.0F});
-    }
-    DrawTextureEx(marker, Vector2{306, 162}, 0.0F, 2.0F, WHITE);
+    panel(Rectangle{18, 66, 604, 224}, paper);
+    draw_tiled_grass(tiles, Rectangle{28, 76, 584, 204});
+    draw_map_decoration(marker, tiles);
 
     const auto bounds = location_bounds();
     const std::array<Color, 5> colors{Color{231, 151, 103, 255}, gold,
@@ -149,19 +217,15 @@ void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
         const auto permission = state.session.can_enter(map_locations[index]);
         const Rectangle button = bounds[index];
         const bool hovered = CheckCollisionPointRec(mouse, button);
-        panel(button, permission.allowed ? (hovered ? cream : colors[index]) : disabled);
-        text(font, location_label(map_locations[index]), button.x + 12, button.y + 9, 12,
-             permission.allowed ? ink : Color{78, 78, 72, 255});
-        text(font, permission.allowed ? "进入地点" : "不可进入", button.x + 12, button.y + 30, 12,
-             permission.allowed ? ink : Color{78, 78, 72, 255});
-        draw_tile(tiles, icons[index], Rectangle{button.x + 80, button.y + 10, 24, 24});
+        draw_location_building(font, tiles, button, map_locations[index], colors[index],
+                               permission.allowed, hovered, icons[index]);
     }
 
-    panel(Rectangle{28, 296, 584, 44}, Color{65, 91, 89, 245});
+    panel(Rectangle{28, 300, 584, 42}, Color{65, 91, 89, 245});
     const auto context = state.session.current_day_context();
-    text(font, std::string{"今日提示："} + context.weather + " · " + context.event, 42, 304, 12,
+    text(font, std::string{"今日提示："} + context.weather + " · " + context.event, 42, 304, 18,
          Color{255, 224, 154, 255});
-    text(font, state.notice, 42, 322, 12, RAYWHITE);
+    text(font, state.notice, 42, 324, 18, RAYWHITE);
 }
 
 void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
@@ -169,25 +233,25 @@ void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
     draw_status(font, state.session, true);
     panel(Rectangle{96, 78, 448, 210}, cream);
     const Location location = state.session.pending_location();
-    text(font, location_label(location), 126, 106, 28, red);
+    text(font, location_label(location), 126, 106, 30, red);
     text(font,
          state.session.location_started() ? "地点已开始：完成模拟或主动放弃都会消耗本阶段。"
                                           : "尚未开始：现在返回地图不会消耗本阶段。",
-         126, 154, 12, ink);
+         126, 154, 16, ink);
 
     const Rectangle back_button{126, 228, 112, 34};
     const Rectangle start_button{264, 228, 112, 34};
     const Rectangle abandon_button{402, 228, 112, 34};
     if (!state.session.location_started()) {
         panel(back_button, CheckCollisionPointRec(mouse, back_button) ? paper : Color{211, 202, 174, 255});
-        text(font, "返回地图", 154, 238, 12, ink);
+        centered_text(font, "返回地图", back_button, 16, ink);
         panel(start_button, CheckCollisionPointRec(mouse, start_button) ? paper : green);
-        text(font, "开始模拟", 292, 238, 12, RAYWHITE);
+        centered_text(font, "开始模拟", start_button, 16, RAYWHITE);
     } else {
         panel(start_button, CheckCollisionPointRec(mouse, start_button) ? paper : green);
-        text(font, "完成模拟", 292, 238, 12, RAYWHITE);
+        centered_text(font, "完成模拟", start_button, 16, RAYWHITE);
         panel(abandon_button, CheckCollisionPointRec(mouse, abandon_button) ? paper : red);
-        text(font, "主动放弃", 430, 238, 12, RAYWHITE);
+        centered_text(font, "主动放弃", abandon_button, 16, RAYWHITE);
     }
 }
 
@@ -195,24 +259,33 @@ void draw_summary(const Font& font, const GameAppState& state, Vector2 mouse) {
     ClearBackground(Color{37, 50, 57, 255});
     draw_status(font, state.session, true);
     panel(Rectangle{90, 88, 460, 188}, cream);
-    text(font, "每日总结", 124, 116, 24, red);
-    text(font, state.session.last_summary(), 124, 162, 12, ink);
+    text(font, "每日总结", 124, 116, 28, red);
+    text(font, state.session.last_summary(), 124, 162, 16, ink);
     text(font, state.session.day() == 10 ? "确认后进入占位主结局。"
                                          : "确认后进入下一游戏日。",
-         124, 190, 12, ink);
+         124, 194, 16, ink);
     const Rectangle next_button{242, 224, 156, 34};
     panel(next_button, CheckCollisionPointRec(mouse, next_button) ? paper : green);
-    text(font, "继续到下一天", 280, 234, 12, RAYWHITE);
+    centered_text(font, "继续到下一天", next_button, 16, RAYWHITE);
 }
 
 void draw_ending(const Font& font, const GameAppState& state) {
     ClearBackground(Color{37, 50, 57, 255});
     draw_status(font, state.session, true);
     panel(Rectangle{72, 82, 496, 218}, cream);
-    text(font, "十日计划完成", 118, 112, 24, red);
-    text(font, std::string{"主结局："} + state.session.main_ending(), 118, 154, 18, ink);
-    text(font, state.session.final_summary(), 118, 194, 12, ink);
-    text(font, "结局之后不能继续提交地点行动或推进天数。", 118, 246, 12,
+    const auto& player = state.session.player();
+    text(font, "十日计划完成", 118, 112, 28, red);
+    text(font, std::string{"主结局："} + state.session.main_ending(), 118, 154, 20, ink);
+    text(font, "最终状态", 118, 194, 18, Color{35, 83, 51, 255});
+    text(font,
+         std::string{"金钱 "} + std::to_string(player.money) + "  体力 " +
+             std::to_string(player.stamina) + "  声望 " + std::to_string(player.reputation),
+         118, 220, 16, ink);
+    text(font,
+         std::string{"知识 "} + std::to_string(player.knowledge) + "  心情 " +
+             std::to_string(player.mood) + "  成长路线：均衡体验",
+         118, 244, 16, ink);
+    text(font, "结局之后不能继续提交地点行动或推进天数。", 118, 272, 16,
          Color{78, 78, 72, 255});
 }
 
@@ -233,7 +306,8 @@ const char* game_flow_glyphs() {
             "已经结束不能再进入该地点当前正在处理另一个阶段不能选择新地点餐馆模拟工作完成服务了"
             "午餐客流获得金钱与声望便利店模拟经营完成一次进货与销售结算图书馆帮助读者找书并提升"
             "知识行动完成回家休息恢复体力并结束今天主动放弃阶段已消耗本次无收益确认后进入下一游戏日"
-            "占位主结局最终状态成长路线摘要均衡体验小镇生活十日经营计划已经结束不能继续选择地点";
+            "占位主结局最终状态成长路线摘要均衡体验小镇生活十日经营计划已经结束不能继续选择地点"
+            "点击地点查看原因成长路线均衡体验";
         return result;
     }();
     return glyphs.c_str();
@@ -345,7 +419,7 @@ void draw_game_flow(const Font& font, const Texture2D& town_marker,
     }
 
     if (!audio_enabled && state.has_session) {
-        text(font, "静音", 590, 332, 12, red);
+        text(font, "静音", 586, 330, 18, red);
     }
 }
 

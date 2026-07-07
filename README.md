@@ -98,6 +98,7 @@ ctest --test-dir build -C Debug --output-on-failure
 P0 视觉原型仍可通过 `./build/pixel_town --capture-prototype` 生成评审截图。原型已接入 Kenney Tiny Town 和 Tiny Farm 作为 CC0 视觉参考素材，来源见 [`CREDITS.md`](CREDITS.md)。原型仍需人工批准，不代表最终 UI。
 
 原型评审截图可通过 `./build/pixel_town --capture-prototype` 生成到被 Git 忽略的 `prototype-captures/`。
+P1 核心闭环截图可通过 `./build/pixel_town --capture-game-flow` 生成到被 Git 忽略的 `game-flow-captures/`，用于复查标题、地图和结局页的文字可读性。
 
 ## 启动资源与日志
 
