@@ -1,9 +1,28 @@
 #include "io/app_settings.hpp"
 
+#include <cstdio>
 #include <fstream>
 #include <string>
 
+#ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
+
 namespace pixel_town {
+namespace {
+
+bool replace_file_atomically(const std::filesystem::path& temporary,
+                             const std::filesystem::path& destination) {
+#ifdef _WIN32
+    return MoveFileExW(temporary.wstring().c_str(), destination.wstring().c_str(),
+                       MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
+    return std::rename(temporary.c_str(), destination.c_str()) == 0;
+#endif
+}
+
+}  // namespace
 
 std::filesystem::path default_settings_path(const std::filesystem::path& application_directory) {
     return application_directory / "saves" / "settings.ini";
@@ -35,9 +54,11 @@ std::optional<AppSettings> load_app_settings(const std::filesystem::path& path) 
 
 bool save_app_settings(const std::filesystem::path& path, const AppSettings& settings) {
     std::error_code error;
-    std::filesystem::create_directories(path.parent_path(), error);
-    if (error) {
-        return false;
+    if (!path.parent_path().empty()) {
+        std::filesystem::create_directories(path.parent_path(), error);
+        if (error) {
+            return false;
+        }
     }
 
     const std::filesystem::path temporary = path.string() + ".tmp";
@@ -53,10 +74,7 @@ bool save_app_settings(const std::filesystem::path& path, const AppSettings& set
         }
     }
 
-    std::filesystem::remove(path, error);
-    error.clear();
-    std::filesystem::rename(temporary, path, error);
-    if (error) {
+    if (!replace_file_atomically(temporary, path)) {
         std::filesystem::remove(temporary, error);
         return false;
     }

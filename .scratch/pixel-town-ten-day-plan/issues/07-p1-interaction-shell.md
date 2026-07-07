@@ -1,8 +1,8 @@
 # P1：完成窗口、输入、暂停与静音外壳
 
-Status: done
+Status: ready-for-human
 Milestone: P1
-Type: AFK
+Type: HITL
 User stories: 56, 57, 59
 
 ## What to build
@@ -17,7 +17,7 @@ User stories: 56, 57, 59
 - [x] 暂停菜单打开时，地点计时、动画推进和规则更新冻结。
 - [x] 窗口失焦或最小化时同样冻结，恢复焦点后继续而不补算失去时间。
 - [x] 全局静音开关即时生效并可持久保存。
-- [x] 交互控件遵循已批准的视觉原型和中文字体规范。
+- [ ] 交互控件遵循已批准的视觉原型和中文字体规范。
 - [x] 坐标转换、暂停时钟和设置往返具有自动化测试；像素清晰度由人工检查。
 
 ## Blocked by
@@ -36,3 +36,7 @@ User stories: 56, 57, 59
 - `.tools/CMake.app/Contents/bin/cmake --build build --parallel 4` 通过。
 - `.tools/CMake.app/Contents/bin/ctest --test-dir build --output-on-failure` 通过，1/1 测试成功。
 - `./build/pixel_town --capture-game-flow` 通过，输出标题、地图和结局截图。
+
+### HITL pending
+
+- 交互外壳的自动化实现已完成，但 Issue 03 视觉原型仍未获得人工批准；本 issue 保持 `ready-for-human`，等待团队确认中文字体、窗口缩放、热点层级和视觉规格后再关闭。

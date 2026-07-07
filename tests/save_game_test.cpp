@@ -167,6 +167,76 @@ TEST_CASE("field-complete saves with unreachable phase state are rejected") {
     CHECK(std::filesystem::is_regular_file(save_path));
 }
 
+TEST_CASE("saves with invalid player ranges are rejected") {
+    TempSaveDir temp;
+    const auto save_path = temp.path() / "invalid-player.sav";
+
+    write_text(save_path,
+               "format_version=1\n"
+               "seed=42\n"
+               "day=1\n"
+               "phase=day_choice\n"
+               "next_result_id=1\n"
+               "active_result_id=0\n"
+               "player_money=-99\n"
+               "player_stamina=80\n"
+               "player_reputation=0\n"
+               "player_knowledge=0\n"
+               "player_mood=999\n"
+               "has_pending_location=0\n"
+               "pending_location=home\n"
+               "location_started=0\n"
+               "day_action_done=0\n"
+               "night_action_done=0\n"
+               "last_summary=\n"
+               "main_ending=\n"
+               "final_summary=\n"
+               "applied_result_ids=\n"
+               "store_inventory=none\n"
+               "tavern_wins=0\n"
+               "tavern_losses=0\n");
+
+    const auto loaded = pixel_town::load_session(save_path);
+
+    CHECK(loaded.status == pixel_town::SaveStatus::corrupt);
+    CHECK(std::filesystem::is_regular_file(save_path));
+}
+
+TEST_CASE("ending saves require an ending label and final summary") {
+    TempSaveDir temp;
+    const auto save_path = temp.path() / "empty-ending.sav";
+
+    write_text(save_path,
+               "format_version=1\n"
+               "seed=42\n"
+               "day=10\n"
+               "phase=ending\n"
+               "next_result_id=21\n"
+               "active_result_id=0\n"
+               "player_money=170\n"
+               "player_stamina=50\n"
+               "player_reputation=20\n"
+               "player_knowledge=10\n"
+               "player_mood=60\n"
+               "has_pending_location=0\n"
+               "pending_location=home\n"
+               "location_started=0\n"
+               "day_action_done=1\n"
+               "night_action_done=1\n"
+               "last_summary=\n"
+               "main_ending=\n"
+               "final_summary=\n"
+               "applied_result_ids=1,2\n"
+               "store_inventory=none\n"
+               "tavern_wins=0\n"
+               "tavern_losses=0\n");
+
+    const auto loaded = pixel_town::load_session(save_path);
+
+    CHECK(loaded.status == pixel_town::SaveStatus::corrupt);
+    CHECK(std::filesystem::is_regular_file(save_path));
+}
+
 TEST_CASE("default save path stays beside the application directory") {
     const auto base = std::filesystem::path{"portable"};
     CHECK(pixel_town::default_save_path(base) == base / "saves" / "slot1.sav");

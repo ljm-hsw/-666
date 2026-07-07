@@ -45,3 +45,16 @@ TEST_CASE("mute setting round trips beside the application directory") {
     CHECK(loaded->muted);
     CHECK(settings_path == temp.path() / "saves" / "settings.ini");
 }
+
+TEST_CASE("saving settings replaces an existing value") {
+    TempSettingsDir temp;
+    const auto settings_path = pixel_town::default_settings_path(temp.path());
+
+    REQUIRE(pixel_town::save_app_settings(settings_path, pixel_town::AppSettings{true}));
+    REQUIRE(pixel_town::save_app_settings(settings_path, pixel_town::AppSettings{false}));
+
+    const auto loaded = pixel_town::load_app_settings(settings_path);
+
+    REQUIRE(loaded.has_value());
+    CHECK_FALSE(loaded->muted);
+}

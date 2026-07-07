@@ -1,6 +1,6 @@
 # P0：建立可离线复现的应用基线
 
-Status: ready-for-agent
+Status: done
 Milestone: P0
 Type: AFK
 User stories: 60, 68, 69

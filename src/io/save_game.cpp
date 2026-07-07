@@ -258,7 +258,17 @@ bool is_day_work_location(Location location) {
            location == Location::library;
 }
 
+bool is_valid_player_state(const PlayerState& player) {
+    return player.money >= 0 && player.money <= 999 && player.stamina >= 0 &&
+           player.stamina <= 100 && player.reputation >= 0 && player.reputation <= 100 &&
+           player.knowledge >= 0 && player.knowledge <= 100 && player.mood >= 0 &&
+           player.mood <= 100;
+}
+
 bool is_valid_snapshot_combination(const GameSessionSnapshot& snapshot) {
+    if (!is_valid_player_state(snapshot.player)) {
+        return false;
+    }
     for (std::size_t index = 0; index < snapshot.applied_result_ids.size(); ++index) {
         const int result_id = snapshot.applied_result_ids[index];
         if (result_id <= 0 || result_id >= snapshot.next_result_id ||
@@ -302,7 +312,8 @@ bool is_valid_snapshot_combination(const GameSessionSnapshot& snapshot) {
             return !snapshot.has_pending_location && snapshot.day_action_done &&
                    snapshot.night_action_done;
         case GamePhase::ending:
-            return snapshot.day == 10 && !snapshot.has_pending_location;
+            return snapshot.day == 10 && !snapshot.has_pending_location &&
+                   !snapshot.main_ending.empty() && !snapshot.final_summary.empty();
     }
     return false;
 }

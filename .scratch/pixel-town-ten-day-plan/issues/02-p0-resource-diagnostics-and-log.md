@@ -1,6 +1,6 @@
 # P0：提供启动资源诊断与本地日志
 
-Status: ready-for-agent
+Status: done
 Milestone: P0
 Type: AFK
 User stories: 64, 70
