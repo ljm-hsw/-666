@@ -156,7 +156,8 @@ TEST_CASE("startup log overwrites the previous launch with diagnostic state") {
     report.audio_enabled = false;
     report.issues.push_back({"audio/theme.ogg", "missing resource", false});
 
-    REQUIRE(pixel_town::write_latest_log(log_path, "0.1.0", "baseline_scene", report));
+    REQUIRE(pixel_town::write_latest_log(log_path, "0.1.0", "baseline_scene", report,
+                                         "demo_preset_error=missing"));
 
     std::ifstream input(log_path);
     const std::string contents((std::istreambuf_iterator<char>(input)),
@@ -164,6 +165,7 @@ TEST_CASE("startup log overwrites the previous launch with diagnostic state") {
     CHECK(contents.find("previous launch") == std::string::npos);
     CHECK(contents.find("app_version=0.1.0") != std::string::npos);
     CHECK(contents.find("startup_stage=baseline_scene") != std::string::npos);
+    CHECK(contents.find("launch_note=demo_preset_error=missing") != std::string::npos);
     CHECK(contents.find("audio_status=muted") != std::string::npos);
     CHECK(contents.find("optional,audio/theme.ogg,missing resource") != std::string::npos);
 }

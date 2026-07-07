@@ -13,6 +13,7 @@ target_include_directories(pixel_town_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/s
 
 add_library(pixel_town_io
   src/io/app_settings.cpp
+  src/io/demo_preset.cpp
   src/io/resource_diagnostics.cpp
   src/io/save_game.cpp
   src/io/startup_log.cpp
@@ -37,6 +38,7 @@ enable_testing()
 
 add_executable(pixel_town_tests
   tests/display_config_test.cpp
+  tests/demo_preset_test.cpp
   tests/game_session_test.cpp
   tests/interaction_runtime_test.cpp
   tests/app_settings_test.cpp
@@ -47,6 +49,7 @@ target_link_libraries(pixel_town_tests PRIVATE pixel_town_io)
 target_include_directories(pixel_town_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/doctest")
 
 add_test(NAME pixel_town_tests COMMAND pixel_town_tests)
+set_tests_properties(pixel_town_tests PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
 if(MSVC)
   target_compile_options(pixel_town PRIVATE /W4 /permissive-)

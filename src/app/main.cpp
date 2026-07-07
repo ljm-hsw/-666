@@ -23,6 +23,7 @@
 #include "core/display_config.hpp"
 #include "core/interaction_runtime.hpp"
 #include "io/app_settings.hpp"
+#include "io/demo_preset.hpp"
 #include "io/resource_diagnostics.hpp"
 #include "io/save_game.hpp"
 #include "io/startup_log.hpp"
@@ -197,10 +198,11 @@ int main(int argc, char* argv[]) {
     static_assert(display.logical_width * legacy_ui_height ==
                       display.logical_height * legacy_ui_width,
                   "legacy UI scale requires the same 16:9 aspect ratio");
+    const auto demo_args = pixel_town::parse_demo_preset_args(argc, argv);
     const bool capture_prototype =
-        argc == 2 && std::string_view{argv[1]} == "--capture-prototype";
+        !demo_args.requested && argc == 2 && std::string_view{argv[1]} == "--capture-prototype";
     const bool capture_game_flow =
-        argc == 2 && std::string_view{argv[1]} == "--capture-game-flow";
+        !demo_args.requested && argc == 2 && std::string_view{argv[1]} == "--capture-game-flow";
     auto resources = pixel_town::validate_resources("assets", pixel_town::baseline_resource_manifest());
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -256,11 +258,25 @@ int main(int argc, char* argv[]) {
             SetTextureFilter(ui_font.texture, TEXTURE_FILTER_POINT);
         }
     }
+    pixel_town::DemoPresetLoadResult demo_load;
+    std::string launch_note;
+    if (demo_args.requested && !demo_args.error.empty()) {
+        launch_note = "demo_preset_error=" + demo_args.error;
+    } else if (demo_args.requested) {
+        demo_load = pixel_town::load_demo_preset("assets/data", demo_args.id);
+        launch_note = "demo_preset=" + demo_args.id + "," + demo_load.message;
+    }
+
+    const bool demo_loaded =
+        demo_args.requested && demo_load.status == pixel_town::DemoPresetStatus::ok;
     const std::string startup_stage =
-        resources.can_start ? (capture_prototype ? "visual_prototype" : "p1_game_flow")
-                            : "resource_error";
+        resources.can_start
+            ? (demo_args.requested ? (demo_loaded ? "demo_preset" : "demo_preset_error")
+                                   : (capture_prototype ? "visual_prototype" : "p1_game_flow"))
+            : "resource_error";
     const bool log_written =
-        pixel_town::write_latest_log("logs/latest.log", PIXEL_TOWN_VERSION, startup_stage, resources);
+        pixel_town::write_latest_log("logs/latest.log", PIXEL_TOWN_VERSION, startup_stage, resources,
+                                     launch_note);
 
     Texture2D kenney_tiles{};
     Texture2D generated_full_map_scene{};
@@ -309,7 +325,7 @@ int main(int argc, char* argv[]) {
 
     pixel_town::VisualPrototypeState prototype;
     pixel_town::GameAppState game_flow;
-    const bool persistence_enabled = !capture_prototype && !capture_game_flow;
+    const bool persistence_enabled = !capture_prototype && !capture_game_flow && !demo_args.requested;
     const std::filesystem::path application_directory = application_directory_from_argv(argv[0]);
     const std::filesystem::path save_path = pixel_town::default_save_path(application_directory);
     const std::filesystem::path settings_path =
@@ -321,7 +337,18 @@ int main(int argc, char* argv[]) {
     }
     bool has_persisted_snapshot = false;
     pixel_town::GameSessionSnapshot persisted_snapshot{};
-    if (persistence_enabled) {
+    if (demo_args.requested) {
+        game_flow.save_present = false;
+        if (!demo_args.error.empty()) {
+            game_flow.notice = "演示参数错误：" + demo_args.error;
+        } else if (demo_loaded) {
+            game_flow.has_session = true;
+            game_flow.session = demo_load.session;
+            game_flow.notice = "已加载演示预设：" + demo_args.id + "。正式存档不会被读取或覆盖。";
+        } else {
+            game_flow.notice = "演示预设加载失败：" + demo_load.message;
+        }
+    } else if (persistence_enabled) {
         const auto loaded = pixel_town::load_session(save_path);
         if (loaded.status == pixel_town::SaveStatus::ok) {
             game_flow.has_session = true;
