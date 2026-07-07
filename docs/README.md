@@ -19,6 +19,7 @@
 - [`../CONTEXT.md`](../CONTEXT.md)：领域语言、关系、不变量及已澄清歧义。
 - [`../.scratch/pixel-town-ten-day-plan/PRD.md`](../.scratch/pixel-town-ten-day-plan/PRD.md)：产品范围、用户故事、实现决策和测试决策。
 - [`PROJECT_PLAN.md`](PROJECT_PLAN.md)：P0-P4 阶段目标、门槛、依赖和 issue 总览。
+- [`BUILD_AND_RUN.md`](BUILD_AND_RUN.md)：Windows/macOS 从零编译、测试、运行、截图和常见问题。
 - [`DESIGN.md`](DESIGN.md)：核心架构、状态机、模块契约、存档、随机性和测试边界。
 - [`VISUAL_PROTOTYPE.md`](VISUAL_PROTOTYPE.md)：P0 待审视觉方案、调色板、像素尺寸与资源命名候选。
 - [`IMAGEGEN_VISUAL_PLAN.md`](IMAGEGEN_VISUAL_PLAN.md)：960×540 画布迁移与 imagegen 页面背景/建筑资产规划。

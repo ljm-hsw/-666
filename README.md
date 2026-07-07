@@ -44,6 +44,7 @@
 | [`DEVELOPMENT.md`](DEVELOPMENT.md) | 五人团队协作、分支、评审、测试和交付规范 |
 | [`CONTEXT.md`](CONTEXT.md) | 统一领域术语、关系和不变量 |
 | [`docs/README.md`](docs/README.md) | 文档地图与事实来源顺序 |
+| [`docs/BUILD_AND_RUN.md`](docs/BUILD_AND_RUN.md) | Windows/macOS 从零编译、测试和运行指南 |
 | [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) | P0-P4 阶段门槛、依赖图和 issue 索引 |
 | [`docs/DESIGN.md`](docs/DESIGN.md) | 核心架构、状态机、模块契约和数据流 |
 | [`docs/VISUAL_PROTOTYPE.md`](docs/VISUAL_PROTOTYPE.md) | P0 三套视觉原型、候选调色板和资源规范 |
@@ -76,6 +77,8 @@ issue 和 PRD 使用仓库内 `.scratch/` Markdown 文件管理，不发布为 G
 ## 构建说明
 
 前提：CMake 3.25 或更高版本，以及支持 C++17 的编译器。raylib 与 doctest 已随仓库提供；配置和构建过程不需要网络，也不要求全局安装这两个依赖。
+
+完整的 Windows/macOS 从零配置、构建、测试、运行和故障排查流程见 [`docs/BUILD_AND_RUN.md`](docs/BUILD_AND_RUN.md)。常用命令如下。
 
 macOS（Apple Clang）：
 
