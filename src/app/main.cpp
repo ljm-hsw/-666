@@ -7,6 +7,7 @@
 
 #include <raylib.h>
 
+#include "app/game_flow.hpp"
 #include "app/visual_prototype.hpp"
 #include "core/display_config.hpp"
 #include "io/resource_diagnostics.hpp"
@@ -47,7 +48,7 @@ int main(int argc, char* argv[]) {
     auto resources = pixel_town::validate_resources("assets", pixel_town::baseline_resource_manifest());
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(display.window_width, display.window_height, "Pixel Town: Ten-Day Plan - P0 Prototype");
+    InitWindow(display.window_width, display.window_height, "Pixel Town: Ten-Day Plan");
     SetWindowMinSize(display.logical_width, display.logical_height);
     SetTargetFPS(60);
 
@@ -71,8 +72,10 @@ int main(int argc, char* argv[]) {
         } else {
             SetTextureFilter(town_marker, TEXTURE_FILTER_POINT);
         }
+        const std::string required_glyphs =
+            std::string{pixel_town::visual_prototype_glyphs()} + pixel_town::game_flow_glyphs();
         int codepoint_count = 0;
-        int* codepoints = LoadCodepoints(pixel_town::visual_prototype_glyphs(), &codepoint_count);
+        int* codepoints = LoadCodepoints(required_glyphs.c_str(), &codepoint_count);
         ui_font = LoadFontEx("assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf", 12,
                              codepoints, codepoint_count);
         bool required_glyphs_available = ui_font.texture.id != 0;
@@ -91,12 +94,14 @@ int main(int argc, char* argv[]) {
             resources.can_start = false;
             resources.issues.push_back(
                 {"fonts/fusion-pixel-12px-proportional-zh_hans.ttf",
-                 "font is missing required prototype glyphs", true});
+                 "font is missing required game flow glyphs", true});
         } else {
             SetTextureFilter(ui_font.texture, TEXTURE_FILTER_POINT);
         }
     }
-    const std::string startup_stage = resources.can_start ? "visual_prototype" : "resource_error";
+    const std::string startup_stage =
+        resources.can_start ? (capture_prototype ? "visual_prototype" : "p1_game_flow")
+                            : "resource_error";
     const bool log_written =
         pixel_town::write_latest_log("logs/latest.log", PIXEL_TOWN_VERSION, startup_stage, resources);
 
@@ -119,6 +124,7 @@ int main(int argc, char* argv[]) {
     }
 
     pixel_town::VisualPrototypeState prototype;
+    pixel_town::GameAppState game_flow;
     bool capture_ready = capture_prototype;
     if (capture_prototype) {
         prototype.modal_open = false;
@@ -163,12 +169,21 @@ int main(int argc, char* argv[]) {
                                     (screen_mouse.y - offset_y) / scale};
 
         if (resources.can_start && log_written) {
-            pixel_town::update_visual_prototype(prototype, logical_mouse);
+            if (capture_prototype) {
+                pixel_town::update_visual_prototype(prototype, logical_mouse);
+            } else {
+                pixel_town::update_game_flow(game_flow, logical_mouse);
+            }
         }
         BeginTextureMode(canvas);
         if (resources.can_start && log_written) {
-            pixel_town::draw_visual_prototype(ui_font, town_marker, kenney_tiles, prototype,
-                                              resources.audio_enabled, logical_mouse);
+            if (capture_prototype) {
+                pixel_town::draw_visual_prototype(ui_font, town_marker, kenney_tiles, prototype,
+                                                  resources.audio_enabled, logical_mouse);
+            } else {
+                pixel_town::draw_game_flow(ui_font, town_marker, kenney_tiles, game_flow,
+                                           resources.audio_enabled, logical_mouse);
+            }
         } else {
             draw_resource_error(resources, log_written);
         }

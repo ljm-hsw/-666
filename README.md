@@ -6,12 +6,13 @@
 
 ## 当前状态
 
-项目处于 **P0 工程基线验证阶段**：
+项目处于 **P1 核心闭环实现阶段**：
 
 - 产品范围、领域语言和核心设计已确认。
 - P0-P4 已拆分为 18 个本地实施 issue。
 - C++17/CMake 应用、raylib 6.0、doctest 2.5.2 和跨平台 CI 已初始化。
 - Issue 01 的 macOS 本地配置、构建、CTest，以及 GitHub Actions 上的 Windows 2022/MSVC 与 macOS/Apple Clang 矩阵验证已通过。
+- Issue 04 已跑通从标题创建新游戏、第一日地图、模拟白天工作、回家休息、每日总结到第二日开始的核心闭环。
 
 当前不应把文档中的临时数值视为最终平衡承诺。
 
@@ -91,7 +92,9 @@ ctest --test-dir build -C Debug --output-on-failure
 
 应用默认创建 1280×720 窗口，并用点采样放大 640×360 逻辑画布。删除 `build/` 后重复以上命令即可验证干净构建；构建目录和本机工具目录 `.tools/` 均不会提交。
 
-当前 P0 视觉原型可使用左右方向键或窗口底部切换条在 A/B/C 三种布局间切换；点击地点可查看典型弹窗。原型已接入 Kenney Tiny Town 和 Tiny Farm 作为 CC0 视觉参考素材，来源见 [`CREDITS.md`](CREDITS.md)。原型仍需人工批准，不代表最终 UI。
+普通启动进入 P1 核心闭环界面：标题页点击“新游戏”进入第一日地图，选择白天地点后可完成模拟工作或主动放弃，夜晚回家休息后进入每日总结并推进到第二日。
+
+P0 视觉原型仍可通过 `./build/pixel_town --capture-prototype` 生成评审截图。原型已接入 Kenney Tiny Town 和 Tiny Farm 作为 CC0 视觉参考素材，来源见 [`CREDITS.md`](CREDITS.md)。原型仍需人工批准，不代表最终 UI。
 
 原型评审截图可通过 `./build/pixel_town --capture-prototype` 生成到被 Git 忽略的 `prototype-captures/`。
 

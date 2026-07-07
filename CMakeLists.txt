@@ -6,8 +6,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_library(pixel_town_core INTERFACE)
-target_include_directories(pixel_town_core INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+add_library(pixel_town_core
+  src/core/game_session.cpp
+)
+target_include_directories(pixel_town_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 add_library(pixel_town_io
   src/io/resource_diagnostics.cpp
@@ -21,6 +23,7 @@ set(USE_EXTERNAL_GLFW OFF CACHE STRING "" FORCE)
 add_subdirectory(third_party/raylib EXCLUDE_FROM_ALL)
 
 add_executable(pixel_town
+  src/app/game_flow.cpp
   src/app/main.cpp
   src/app/visual_prototype.cpp
 )
@@ -31,6 +34,7 @@ enable_testing()
 
 add_executable(pixel_town_tests
   tests/display_config_test.cpp
+  tests/game_session_test.cpp
   tests/resource_diagnostics_test.cpp
 )
 target_link_libraries(pixel_town_tests PRIVATE pixel_town_core pixel_town_io)
@@ -40,10 +44,12 @@ add_test(NAME pixel_town_tests COMMAND pixel_town_tests)
 
 if(MSVC)
   target_compile_options(pixel_town PRIVATE /W4 /permissive-)
+  target_compile_options(pixel_town_core PRIVATE /W4 /permissive-)
   target_compile_options(pixel_town_io PRIVATE /W4 /permissive-)
   target_compile_options(pixel_town_tests PRIVATE /W4 /permissive-)
 else()
   target_compile_options(pixel_town PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(pixel_town_core PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(pixel_town_io PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(pixel_town_tests PRIVATE -Wall -Wextra -Wpedantic)
 endif()
