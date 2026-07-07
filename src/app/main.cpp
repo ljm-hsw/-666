@@ -1,16 +1,31 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <string>
 #include <string_view>
 
 #include <raylib.h>
 
+#ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+#elif defined(__linux__)
+#include <unistd.h>
+#endif
+
 #include "app/game_flow.hpp"
 #include "app/visual_prototype.hpp"
 #include "core/display_config.hpp"
+#include "core/interaction_runtime.hpp"
+#include "io/app_settings.hpp"
+#include "io/demo_preset.hpp"
 #include "io/resource_diagnostics.hpp"
+#include "io/save_game.hpp"
 #include "io/startup_log.hpp"
 
 namespace {
@@ -58,6 +73,70 @@ bool complete_day_with_rest(pixel_town::GameSession& session, pixel_town::Locati
     return session.finish_day_summary();
 }
 
+std::filesystem::path system_executable_path() {
+#ifdef _WIN32
+    std::wstring buffer(260, L'\0');
+    DWORD length = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
+    while (length == buffer.size()) {
+        buffer.resize(buffer.size() * 2);
+        length = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
+    }
+    if (length == 0) {
+        return {};
+    }
+    buffer.resize(length);
+    return std::filesystem::path{buffer};
+#elif defined(__APPLE__)
+    std::uint32_t size = 0;
+    _NSGetExecutablePath(nullptr, &size);
+    if (size == 0) {
+        return {};
+    }
+    std::string buffer(size, '\0');
+    if (_NSGetExecutablePath(buffer.data(), &size) != 0) {
+        return {};
+    }
+    buffer.resize(std::strlen(buffer.c_str()));
+    return std::filesystem::path{buffer};
+#elif defined(__linux__)
+    std::array<char, 4096> buffer{};
+    const ssize_t length = readlink("/proc/self/exe", buffer.data(), buffer.size() - 1);
+    if (length <= 0) {
+        return {};
+    }
+    return std::filesystem::path{std::string{buffer.data(), static_cast<std::size_t>(length)}};
+#else
+    return {};
+#endif
+}
+
+std::filesystem::path directory_from_executable_path(const std::filesystem::path& executable_path) {
+    std::error_code ignored;
+    if (executable_path.empty()) {
+        return std::filesystem::current_path(ignored);
+    }
+
+    std::filesystem::path absolute_path = std::filesystem::weakly_canonical(executable_path, ignored);
+    if (ignored || absolute_path.empty()) {
+        absolute_path = std::filesystem::absolute(executable_path, ignored);
+    }
+    if (ignored || absolute_path.empty()) {
+        return std::filesystem::current_path(ignored);
+    }
+    return absolute_path.parent_path();
+}
+
+std::filesystem::path application_directory_from_argv(const char* executable_path) {
+    const std::filesystem::path system_path = system_executable_path();
+    if (!system_path.empty()) {
+        return directory_from_executable_path(system_path);
+    }
+    if (executable_path == nullptr || std::string_view{executable_path}.empty()) {
+        return directory_from_executable_path({});
+    }
+    return directory_from_executable_path(std::filesystem::path{executable_path});
+}
+
 void advance_to_placeholder_ending(pixel_town::GameAppState& state) {
     state.has_session = true;
     state.session = pixel_town::GameSession::new_game();
@@ -82,6 +161,34 @@ bool export_canvas_capture(RenderTexture2D canvas, const char* capture_path, int
     return exported;
 }
 
+bool is_save_boundary(const pixel_town::GameSession& session) {
+    const pixel_town::GamePhase phase = session.phase();
+    return phase == pixel_town::GamePhase::day_choice ||
+           phase == pixel_town::GamePhase::night_choice ||
+           phase == pixel_town::GamePhase::day_summary ||
+           phase == pixel_town::GamePhase::ending;
+}
+
+bool same_snapshot(const pixel_town::GameSessionSnapshot& left,
+                   const pixel_town::GameSessionSnapshot& right) {
+    return left.day == right.day && left.seed == right.seed &&
+           left.next_result_id == right.next_result_id &&
+           left.active_result_id == right.active_result_id && left.phase == right.phase &&
+           left.player.money == right.player.money &&
+           left.player.stamina == right.player.stamina &&
+           left.player.reputation == right.player.reputation &&
+           left.player.knowledge == right.player.knowledge &&
+           left.player.mood == right.player.mood &&
+           left.has_pending_location == right.has_pending_location &&
+           left.pending_location == right.pending_location &&
+           left.location_started == right.location_started &&
+           left.day_action_done == right.day_action_done &&
+           left.night_action_done == right.night_action_done &&
+           left.last_summary == right.last_summary && left.main_ending == right.main_ending &&
+           left.final_summary == right.final_summary &&
+           left.applied_result_ids == right.applied_result_ids;
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -91,10 +198,11 @@ int main(int argc, char* argv[]) {
     static_assert(display.logical_width * legacy_ui_height ==
                       display.logical_height * legacy_ui_width,
                   "legacy UI scale requires the same 16:9 aspect ratio");
+    const auto demo_args = pixel_town::parse_demo_preset_args(argc, argv);
     const bool capture_prototype =
-        argc == 2 && std::string_view{argv[1]} == "--capture-prototype";
+        !demo_args.requested && argc == 2 && std::string_view{argv[1]} == "--capture-prototype";
     const bool capture_game_flow =
-        argc == 2 && std::string_view{argv[1]} == "--capture-game-flow";
+        !demo_args.requested && argc == 2 && std::string_view{argv[1]} == "--capture-game-flow";
     auto resources = pixel_town::validate_resources("assets", pixel_town::baseline_resource_manifest());
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -150,11 +258,25 @@ int main(int argc, char* argv[]) {
             SetTextureFilter(ui_font.texture, TEXTURE_FILTER_POINT);
         }
     }
+    pixel_town::DemoPresetLoadResult demo_load;
+    std::string launch_note;
+    if (demo_args.requested && !demo_args.error.empty()) {
+        launch_note = "demo_preset_error=" + demo_args.error;
+    } else if (demo_args.requested) {
+        demo_load = pixel_town::load_demo_preset("assets/data", demo_args.id);
+        launch_note = "demo_preset=" + demo_args.id + "," + demo_load.message;
+    }
+
+    const bool demo_loaded =
+        demo_args.requested && demo_load.status == pixel_town::DemoPresetStatus::ok;
     const std::string startup_stage =
-        resources.can_start ? (capture_prototype ? "visual_prototype" : "p1_game_flow")
-                            : "resource_error";
+        resources.can_start
+            ? (demo_args.requested ? (demo_loaded ? "demo_preset" : "demo_preset_error")
+                                   : (capture_prototype ? "visual_prototype" : "p1_game_flow"))
+            : "resource_error";
     const bool log_written =
-        pixel_town::write_latest_log("logs/latest.log", PIXEL_TOWN_VERSION, startup_stage, resources);
+        pixel_town::write_latest_log("logs/latest.log", PIXEL_TOWN_VERSION, startup_stage, resources,
+                                     launch_note);
 
     Texture2D kenney_tiles{};
     Texture2D generated_full_map_scene{};
@@ -203,6 +325,47 @@ int main(int argc, char* argv[]) {
 
     pixel_town::VisualPrototypeState prototype;
     pixel_town::GameAppState game_flow;
+    const bool persistence_enabled = !capture_prototype && !capture_game_flow && !demo_args.requested;
+    const std::filesystem::path application_directory = application_directory_from_argv(argv[0]);
+    const std::filesystem::path save_path = pixel_town::default_save_path(application_directory);
+    const std::filesystem::path settings_path =
+        pixel_town::default_settings_path(application_directory);
+    pixel_town::InteractionRuntime interaction_runtime;
+    if (const auto loaded_settings = pixel_town::load_app_settings(settings_path);
+        loaded_settings.has_value()) {
+        interaction_runtime.set_muted(loaded_settings->muted);
+    }
+    bool has_persisted_snapshot = false;
+    pixel_town::GameSessionSnapshot persisted_snapshot{};
+    if (demo_args.requested) {
+        game_flow.save_present = false;
+        if (!demo_args.error.empty()) {
+            game_flow.notice = "演示参数错误：" + demo_args.error;
+        } else if (demo_loaded) {
+            game_flow.has_session = true;
+            game_flow.session = demo_load.session;
+            game_flow.notice = "已加载演示预设：" + demo_args.id + "。正式存档不会被读取或覆盖。";
+        } else {
+            game_flow.notice = "演示预设加载失败：" + demo_load.message;
+        }
+    } else if (persistence_enabled) {
+        const auto loaded = pixel_town::load_session(save_path);
+        if (loaded.status == pixel_town::SaveStatus::ok) {
+            game_flow.has_session = true;
+            game_flow.save_present = true;
+            game_flow.session = loaded.session;
+            game_flow.notice = "已恢复最近的阶段边界。";
+            persisted_snapshot = game_flow.session.snapshot();
+            has_persisted_snapshot = true;
+        } else if (loaded.status == pixel_town::SaveStatus::not_found) {
+            game_flow.save_present = false;
+        } else {
+            game_flow.save_present = true;
+            game_flow.notice = loaded.status == pixel_town::SaveStatus::incompatible_version
+                                   ? "存档版本不兼容，原文件已保留。"
+                                   : "存档损坏或缺字段，原文件已保留。";
+        }
+    }
     bool capture_ready = capture_prototype || capture_game_flow;
     if (capture_ready) {
         prototype.modal_open = false;
@@ -240,26 +403,54 @@ int main(int argc, char* argv[]) {
             continue;
         }
 
-        const float scale = std::max(
-            1.0F,
-            std::floor(std::min(
-                static_cast<float>(GetScreenWidth()) / static_cast<float>(display.logical_width),
-                static_cast<float>(GetScreenHeight()) / static_cast<float>(display.logical_height))));
-        const float width = static_cast<float>(display.logical_width) * scale;
-        const float height = static_cast<float>(display.logical_height) * scale;
-        const float offset_x = (static_cast<float>(GetScreenWidth()) - width) / 2.0F;
-        const float offset_y = (static_cast<float>(GetScreenHeight()) - height) / 2.0F;
+        const pixel_town::IntegerViewport viewport =
+            pixel_town::integer_scaled_viewport(display, GetScreenWidth(), GetScreenHeight());
+        const float width = static_cast<float>(viewport.width);
+        const float height = static_cast<float>(viewport.height);
+        const float offset_x = static_cast<float>(viewport.x);
+        const float offset_y = static_cast<float>(viewport.y);
         const Vector2 screen_mouse = GetMousePosition();
-        const Vector2 logical_mouse{(screen_mouse.x - offset_x) / scale,
-                                    (screen_mouse.y - offset_y) / scale};
+        const auto logical_point = pixel_town::screen_to_logical_point(
+            viewport, static_cast<int>(screen_mouse.x), static_cast<int>(screen_mouse.y));
+        const Vector2 logical_mouse =
+            logical_point.has_value()
+                ? Vector2{static_cast<float>(logical_point->x), static_cast<float>(logical_point->y)}
+                : Vector2{-1.0F, -1.0F};
         const Vector2 legacy_ui_mouse{logical_mouse.x / legacy_ui_scale,
                                       logical_mouse.y / legacy_ui_scale};
+        const auto interaction_frame = interaction_runtime.update(pixel_town::InteractionFrameInput{
+            GetFrameTime(), IsKeyPressed(KEY_P), IsKeyPressed(KEY_M), IsWindowFocused(),
+            IsWindowState(FLAG_WINDOW_MINIMIZED)});
+        if (interaction_frame.mute_toggled &&
+            !pixel_town::save_app_settings(
+                settings_path, pixel_town::AppSettings{interaction_runtime.muted()}) &&
+            game_flow.has_session) {
+            game_flow.notice = "设置写入失败：静音只在本次运行中生效。";
+        }
+        const bool audio_enabled = resources.audio_enabled && !interaction_runtime.muted();
 
-        if (resources.can_start && log_written && !capture_game_flow) {
+        if (resources.can_start && log_written && !capture_game_flow &&
+            interaction_frame.game_updates_enabled) {
             if (capture_prototype) {
                 pixel_town::update_visual_prototype(prototype, legacy_ui_mouse);
             } else {
                 pixel_town::update_game_flow(game_flow, legacy_ui_mouse);
+                if (persistence_enabled && game_flow.has_session &&
+                    is_save_boundary(game_flow.session)) {
+                    const auto current_snapshot = game_flow.session.snapshot();
+                    if (!has_persisted_snapshot ||
+                        !same_snapshot(persisted_snapshot, current_snapshot)) {
+                        const auto save_result =
+                            pixel_town::save_session_atomic(save_path, game_flow.session);
+                        if (save_result.status == pixel_town::SaveStatus::ok) {
+                            persisted_snapshot = current_snapshot;
+                            has_persisted_snapshot = true;
+                            game_flow.save_present = true;
+                        } else {
+                            game_flow.notice = "存档写入失败：请检查发布目录权限。";
+                        }
+                    }
+                }
             }
         }
         BeginTextureMode(canvas);
@@ -269,12 +460,12 @@ int main(int argc, char* argv[]) {
             BeginMode2D(legacy_ui_camera);
             if (capture_prototype) {
                 pixel_town::draw_visual_prototype(ui_font, town_marker, kenney_tiles, prototype,
-                                                  resources.audio_enabled, legacy_ui_mouse);
+                                                  audio_enabled, legacy_ui_mouse);
             } else {
                 pixel_town::draw_game_flow(ui_font, town_marker, kenney_tiles,
                                            generated_full_map_scene, generated_map_background,
-                                           generated_buildings, game_flow, resources.audio_enabled,
-                                           legacy_ui_mouse);
+                                           generated_buildings, game_flow, audio_enabled,
+                                           interaction_runtime.paused(), legacy_ui_mouse);
             }
             EndMode2D();
         } else {

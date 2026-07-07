@@ -22,7 +22,7 @@ constexpr std::array<Location, 5> map_locations{
     Location::restaurant, Location::convenience_store, Location::library, Location::tavern,
     Location::home};
 
-constexpr std::array<const char*, 43> ui_texts{
+constexpr std::array<const char*, 48> ui_texts{
     "像素小镇",
     "十日经营计划",
     "新游戏",
@@ -66,6 +66,11 @@ constexpr std::array<const char*, 43> ui_texts{
     "便利店零食更受欢迎",
     "图书馆读者变多",
     "小镇节奏平稳",
+    "已恢复最近的阶段边界",
+    "检测到已有存档，再次点击新游戏将覆盖；Esc 取消",
+    "已取消新游戏，原存档保持不变",
+    "存档版本不兼容，原文件已保留",
+    "存档损坏或缺字段，原文件已保留",
 };
 
 void text(const Font& font, const char* value, float x, float y, float size, Color color = ink) {
@@ -175,7 +180,7 @@ void draw_status(const Font& font, const GameSession& session, bool audio_enable
     }
 }
 
-void draw_title(const Font& font, Vector2 mouse) {
+void draw_title(const Font& font, const std::string& notice, Vector2 mouse) {
     ClearBackground(Color{37, 50, 57, 255});
     text(font, "像素小镇", 210, 78, 36, RAYWHITE);
     text(font, "十日经营计划", 220, 126, 22, Color{255, 224, 154, 255});
@@ -184,6 +189,7 @@ void draw_title(const Font& font, Vector2 mouse) {
     centered_text(font, "新游戏", start_button, 18,
                   CheckCollisionPointRec(mouse, start_button) ? ink : RAYWHITE);
     text(font, "Enter / 点击开始", 238, 260, 18, Color{205, 211, 215, 255});
+    text(font, notice, 154, 306, 16, Color{255, 224, 154, 255});
 }
 
 void draw_tiled_grass(const Texture2D& tiles, Rectangle bounds) {
@@ -233,14 +239,14 @@ void draw_location_building(const Font& font, const Texture2D& tiles,
                        Vector2{0.0F, 0.0F}, 0.0F, Fade(WHITE, allowed ? 1.0F : 0.45F));
         const Rectangle label = generated_label_destination(location);
         DrawRectangleRec(Rectangle{label.x + 2, label.y + 2, label.width, label.height}, shadow);
-        DrawRectangleRec(label, allowed ? Color{250, 238, 203, 235} : Color{145, 143, 132, 235});
+        DrawRectangleRec(label, allowed ? Color{250, 238, 203, 235} : Color{218, 213, 194, 245});
         DrawRectangleLinesEx(label, hovered ? 3.0F : 2.0F, hovered ? cream : ink);
         centered_text(font, location_label(location), Rectangle{label.x, label.y + 1, label.width,
                                                                 16},
-                      16, allowed ? ink : Color{78, 78, 72, 255});
+                      16, allowed ? ink : Color{43, 50, 48, 255});
         centered_text(font, allowed ? "开放" : "未开放",
                       Rectangle{label.x, label.y + 16, label.width, 14}, 14,
-                      allowed ? Color{35, 83, 51, 255} : Color{78, 78, 72, 255});
+                      allowed ? Color{35, 83, 51, 255} : Color{55, 62, 60, 255});
         return;
     }
 
@@ -259,14 +265,14 @@ void draw_location_building(const Font& font, const Texture2D& tiles,
 void draw_location_label(const Font& font, Location location, bool allowed, bool hovered) {
     const Rectangle label = generated_label_destination(location);
     DrawRectangleRec(Rectangle{label.x + 2, label.y + 2, label.width, label.height}, shadow);
-    DrawRectangleRec(label, allowed ? Color{250, 238, 203, 230} : Color{145, 143, 132, 220});
+    DrawRectangleRec(label, allowed ? Color{250, 238, 203, 230} : Color{218, 213, 194, 245});
     DrawRectangleLinesEx(label, hovered ? 3.0F : 2.0F, hovered ? cream : ink);
     centered_text(font, location_label(location),
                   Rectangle{label.x, label.y + 1, label.width, 16}, 16,
-                  allowed ? ink : Color{78, 78, 72, 255});
+                  allowed ? ink : Color{43, 50, 48, 255});
     centered_text(font, allowed ? "开放" : "未开放",
                   Rectangle{label.x, label.y + 16, label.width, 14}, 14,
-                  allowed ? Color{35, 83, 51, 255} : Color{78, 78, 72, 255});
+                  allowed ? Color{35, 83, 51, 255} : Color{55, 62, 60, 255});
 }
 
 void draw_home_plot_decoration() {
@@ -397,6 +403,15 @@ void draw_ending(const Font& font, const GameAppState& state) {
          Color{78, 78, 72, 255});
 }
 
+void draw_pause_overlay(const Font& font, bool audio_enabled) {
+    DrawRectangle(0, 0, 640, 360, Color{20, 24, 28, 150});
+    panel(Rectangle{194, 110, 252, 126}, Color{250, 238, 203, 245});
+    text(font, "已暂停", 284, 132, 28, red);
+    text(font, "按 P 继续", 258, 176, 18, ink);
+    text(font, audio_enabled ? "按 M 切换静音" : "按 M 恢复声音", 232, 202, 18,
+         Color{78, 78, 72, 255});
+}
+
 }  // namespace
 
 const char* game_flow_glyphs() {
@@ -415,7 +430,8 @@ const char* game_flow_glyphs() {
             "午餐客流获得金钱与声望便利店模拟经营完成一次进货与销售结算图书馆帮助读者找书并提升"
             "知识行动完成回家休息恢复体力并结束今天主动放弃阶段已消耗本次无收益确认后进入下一游戏日"
             "占位主结局最终状态成长路线摘要均衡体验小镇生活十日经营计划已经结束不能继续选择地点"
-            "点击地点查看原因成长路线均衡体验";
+            "点击地点查看原因成长路线均衡体验已暂停按P继续按M切换静音恢复声音"
+            "演示参数错误预设加载失败已加载正式存档不会被读取或覆盖";
         return result;
     }();
     return glyphs.c_str();
@@ -424,9 +440,21 @@ const char* game_flow_glyphs() {
 void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
     const Rectangle start_button{244, 190, 152, 42};
     if (!state.has_session) {
+        if (state.confirm_new_game_overwrite && IsKeyPressed(KEY_ESCAPE)) {
+            state.confirm_new_game_overwrite = false;
+            state.notice = "已取消新游戏，原存档保持不变。";
+            return;
+        }
         if (activated(start_button, logical_mouse, KEY_ENTER)) {
+            if (state.save_present && !state.confirm_new_game_overwrite) {
+                state.confirm_new_game_overwrite = true;
+                state.notice = "检测到已有存档，再次点击新游戏将覆盖；Esc 取消。";
+                return;
+            }
             state.has_session = true;
             state.session = GameSession::new_game();
+            state.save_present = true;
+            state.confirm_new_game_overwrite = false;
             state.notice = "第 1 天开始：请选择一个白天工作地点。";
         }
         return;
@@ -510,9 +538,12 @@ void draw_game_flow(const Font& font, const Texture2D& town_marker,
                     const Texture2D& kenney_tiles, const Texture2D& generated_full_map_scene,
                     const Texture2D& generated_map_background,
                     const Texture2D& generated_buildings, const GameAppState& state,
-                    bool audio_enabled, Vector2 logical_mouse) {
+                    bool audio_enabled, bool paused, Vector2 logical_mouse) {
     if (!state.has_session) {
-        draw_title(font, logical_mouse);
+        draw_title(font, state.notice, logical_mouse);
+        if (paused) {
+            draw_pause_overlay(font, audio_enabled);
+        }
         return;
     }
 
@@ -532,6 +563,9 @@ void draw_game_flow(const Font& font, const Texture2D& town_marker,
 
     if (!audio_enabled && state.has_session) {
         text(font, "静音", 586, 330, 18, red);
+    }
+    if (paused) {
+        draw_pause_overlay(font, audio_enabled);
     }
 }
 

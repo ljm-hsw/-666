@@ -5,7 +5,8 @@
 namespace pixel_town {
 
 bool write_latest_log(const std::filesystem::path& path, std::string_view app_version,
-                      std::string_view startup_stage, const ResourceReport& report) {
+                      std::string_view startup_stage, const ResourceReport& report,
+                      std::string_view launch_note) {
     std::error_code error;
     if (!path.parent_path().empty()) {
         std::filesystem::create_directories(path.parent_path(), error);
@@ -21,6 +22,9 @@ bool write_latest_log(const std::filesystem::path& path, std::string_view app_ve
 
     output << "app_version=" << app_version << '\n';
     output << "startup_stage=" << startup_stage << '\n';
+    if (!launch_note.empty()) {
+        output << "launch_note=" << launch_note << '\n';
+    }
     output << "resource_status=" << (report.can_start ? "ready" : "blocked") << '\n';
     output << "audio_status=" << (report.audio_enabled ? "enabled" : "muted") << '\n';
     for (const ResourceIssue& issue : report.issues) {

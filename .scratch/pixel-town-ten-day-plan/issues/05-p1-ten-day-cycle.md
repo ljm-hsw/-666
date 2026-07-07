@@ -1,6 +1,6 @@
 # P1：扩展为十日周期与占位主结局
 
-Status: ready-for-agent
+Status: done
 Milestone: P1
 Type: AFK
 User stories: 2, 9, 10, 36, 42, 43, 49, 50
