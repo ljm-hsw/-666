@@ -11,6 +11,8 @@ namespace pixel_town {
 struct GameAppState {
     bool has_session{false};
     GameSession session{GameSession::new_game()};
+    bool save_present{false};
+    bool confirm_new_game_overwrite{false};
     std::string notice{"点击“新游戏”开始第一天。"};
 };
 

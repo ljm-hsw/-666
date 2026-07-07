@@ -1,0 +1,368 @@
+#include "io/save_game.hpp"
+
+#include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
+
+namespace pixel_town {
+namespace {
+
+constexpr int save_format_version = 1;
+
+std::string phase_name(GamePhase phase) {
+    switch (phase) {
+        case GamePhase::day_choice:
+            return "day_choice";
+        case GamePhase::day_location:
+            return "day_location";
+        case GamePhase::night_choice:
+            return "night_choice";
+        case GamePhase::night_location:
+            return "night_location";
+        case GamePhase::day_summary:
+            return "day_summary";
+        case GamePhase::ending:
+            return "ending";
+    }
+    return "unknown";
+}
+
+bool parse_phase(const std::string& value, GamePhase& phase) {
+    if (value == "day_choice") {
+        phase = GamePhase::day_choice;
+    } else if (value == "day_location") {
+        phase = GamePhase::day_location;
+    } else if (value == "night_choice") {
+        phase = GamePhase::night_choice;
+    } else if (value == "night_location") {
+        phase = GamePhase::night_location;
+    } else if (value == "day_summary") {
+        phase = GamePhase::day_summary;
+    } else if (value == "ending") {
+        phase = GamePhase::ending;
+    } else {
+        return false;
+    }
+    return true;
+}
+
+std::string location_name(Location location) {
+    switch (location) {
+        case Location::home:
+            return "home";
+        case Location::restaurant:
+            return "restaurant";
+        case Location::convenience_store:
+            return "convenience_store";
+        case Location::library:
+            return "library";
+        case Location::tavern:
+            return "tavern";
+    }
+    return "unknown";
+}
+
+bool parse_location(const std::string& value, Location& location) {
+    if (value == "home") {
+        location = Location::home;
+    } else if (value == "restaurant") {
+        location = Location::restaurant;
+    } else if (value == "convenience_store") {
+        location = Location::convenience_store;
+    } else if (value == "library") {
+        location = Location::library;
+    } else if (value == "tavern") {
+        location = Location::tavern;
+    } else {
+        return false;
+    }
+    return true;
+}
+
+std::string escape_value(const std::string& value) {
+    std::string escaped;
+    for (const char ch : value) {
+        if (ch == '%') {
+            escaped += "%25";
+        } else if (ch == '\n') {
+            escaped += "%0A";
+        } else if (ch == '=') {
+            escaped += "%3D";
+        } else {
+            escaped += ch;
+        }
+    }
+    return escaped;
+}
+
+bool hex_digit(char ch, int& value) {
+    if (ch >= '0' && ch <= '9') {
+        value = ch - '0';
+        return true;
+    }
+    if (ch >= 'A' && ch <= 'F') {
+        value = ch - 'A' + 10;
+        return true;
+    }
+    return false;
+}
+
+bool unescape_value(const std::string& value, std::string& unescaped) {
+    unescaped.clear();
+    for (std::size_t index = 0; index < value.size(); ++index) {
+        if (value[index] != '%') {
+            unescaped += value[index];
+            continue;
+        }
+        if (index + 2 >= value.size()) {
+            return false;
+        }
+        int high = 0;
+        int low = 0;
+        if (!hex_digit(value[index + 1], high) || !hex_digit(value[index + 2], low)) {
+            return false;
+        }
+        unescaped += static_cast<char>(high * 16 + low);
+        index += 2;
+    }
+    return true;
+}
+
+std::string join_ints(const std::vector<int>& values) {
+    std::string joined;
+    for (std::size_t index = 0; index < values.size(); ++index) {
+        if (index != 0) {
+            joined += ",";
+        }
+        joined += std::to_string(values[index]);
+    }
+    return joined;
+}
+
+bool parse_int(const std::unordered_map<std::string, std::string>& values, const char* key,
+               int& parsed) {
+    const auto found = values.find(key);
+    if (found == values.end()) {
+        return false;
+    }
+    try {
+        std::size_t consumed = 0;
+        parsed = std::stoi(found->second, &consumed);
+        return consumed == found->second.size();
+    } catch (...) {
+        return false;
+    }
+}
+
+bool parse_uint(const std::unordered_map<std::string, std::string>& values, const char* key,
+                unsigned int& parsed) {
+    int signed_value = 0;
+    if (!parse_int(values, key, signed_value) || signed_value < 0) {
+        return false;
+    }
+    parsed = static_cast<unsigned int>(signed_value);
+    return true;
+}
+
+bool parse_bool(const std::unordered_map<std::string, std::string>& values, const char* key,
+                bool& parsed) {
+    int integer = 0;
+    if (!parse_int(values, key, integer) || (integer != 0 && integer != 1)) {
+        return false;
+    }
+    parsed = integer == 1;
+    return true;
+}
+
+bool parse_string(const std::unordered_map<std::string, std::string>& values, const char* key,
+                  std::string& parsed) {
+    const auto found = values.find(key);
+    if (found == values.end()) {
+        return false;
+    }
+    return unescape_value(found->second, parsed);
+}
+
+bool parse_applied_results(const std::string& raw, std::vector<int>& result_ids) {
+    result_ids.clear();
+    if (raw.empty()) {
+        return true;
+    }
+    std::stringstream stream(raw);
+    std::string token;
+    while (std::getline(stream, token, ',')) {
+        try {
+            std::size_t consumed = 0;
+            const int value = std::stoi(token, &consumed);
+            if (consumed != token.size()) {
+                return false;
+            }
+            result_ids.push_back(value);
+        } catch (...) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::string serialize_session(const GameSession& session) {
+    const GameSessionSnapshot snapshot = session.snapshot();
+    std::ostringstream output;
+    output << "format_version=" << save_format_version << "\n";
+    output << "seed=" << snapshot.seed << "\n";
+    output << "day=" << snapshot.day << "\n";
+    output << "phase=" << phase_name(snapshot.phase) << "\n";
+    output << "next_result_id=" << snapshot.next_result_id << "\n";
+    output << "active_result_id=" << snapshot.active_result_id << "\n";
+    output << "player_money=" << snapshot.player.money << "\n";
+    output << "player_stamina=" << snapshot.player.stamina << "\n";
+    output << "player_reputation=" << snapshot.player.reputation << "\n";
+    output << "player_knowledge=" << snapshot.player.knowledge << "\n";
+    output << "player_mood=" << snapshot.player.mood << "\n";
+    output << "has_pending_location=" << (snapshot.has_pending_location ? 1 : 0) << "\n";
+    output << "pending_location=" << location_name(snapshot.pending_location) << "\n";
+    output << "location_started=" << (snapshot.location_started ? 1 : 0) << "\n";
+    output << "day_action_done=" << (snapshot.day_action_done ? 1 : 0) << "\n";
+    output << "night_action_done=" << (snapshot.night_action_done ? 1 : 0) << "\n";
+    output << "last_summary=" << escape_value(snapshot.last_summary) << "\n";
+    output << "main_ending=" << escape_value(snapshot.main_ending) << "\n";
+    output << "final_summary=" << escape_value(snapshot.final_summary) << "\n";
+    output << "applied_result_ids=" << join_ints(snapshot.applied_result_ids) << "\n";
+    output << "store_inventory=none\n";
+    output << "tavern_wins=0\n";
+    output << "tavern_losses=0\n";
+    return output.str();
+}
+
+bool replace_file_atomically(const std::filesystem::path& temporary,
+                             const std::filesystem::path& destination) {
+#ifdef _WIN32
+    return MoveFileExW(temporary.wstring().c_str(), destination.wstring().c_str(),
+                       MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
+    return std::rename(temporary.c_str(), destination.c_str()) == 0;
+#endif
+}
+
+}  // namespace
+
+std::filesystem::path default_save_path(const std::filesystem::path& application_directory) {
+    return application_directory / "saves" / "slot1.sav";
+}
+
+bool has_save(const std::filesystem::path& path) {
+    return std::filesystem::is_regular_file(path);
+}
+
+SaveResult save_session_atomic(const std::filesystem::path& path, const GameSession& session,
+                               SaveOverwrite overwrite) {
+    std::error_code error;
+    if (overwrite == SaveOverwrite::fail_if_exists && std::filesystem::exists(path, error)) {
+        return {SaveStatus::already_exists, "save already exists; overwrite was not confirmed"};
+    }
+
+    std::filesystem::create_directories(path.parent_path(), error);
+    if (error) {
+        return {SaveStatus::write_failed, "could not create save directory"};
+    }
+
+    const std::filesystem::path temporary = path.string() + ".tmp";
+    {
+        std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
+        if (!output) {
+            return {SaveStatus::write_failed, "could not open temporary save file"};
+        }
+        output << serialize_session(session);
+        output.flush();
+        if (!output) {
+            return {SaveStatus::write_failed, "could not write temporary save file"};
+        }
+    }
+
+    if (!replace_file_atomically(temporary, path)) {
+        std::filesystem::remove(temporary, error);
+        return {SaveStatus::write_failed, "could not atomically replace save file"};
+    }
+
+    return {SaveStatus::ok, ""};
+}
+
+LoadGameResult load_session(const std::filesystem::path& path) {
+    if (!std::filesystem::is_regular_file(path)) {
+        return {SaveStatus::not_found, GameSession::new_game(), "save file was not found"};
+    }
+
+    std::ifstream input(path);
+    if (!input) {
+        return {SaveStatus::corrupt, GameSession::new_game(), "save file could not be opened"};
+    }
+
+    std::unordered_map<std::string, std::string> values;
+    std::string line;
+    while (std::getline(input, line)) {
+        const std::size_t separator = line.find('=');
+        if (separator == std::string::npos || separator == 0) {
+            return {SaveStatus::corrupt, GameSession::new_game(), "save file has an invalid line"};
+        }
+        values.emplace(line.substr(0, separator), line.substr(separator + 1));
+    }
+
+    int version = 0;
+    if (!parse_int(values, "format_version", version)) {
+        return {SaveStatus::corrupt, GameSession::new_game(), "save file is missing version"};
+    }
+    if (version != save_format_version) {
+        return {SaveStatus::incompatible_version, GameSession::new_game(),
+                "save file version is not compatible"};
+    }
+
+    GameSessionSnapshot snapshot;
+    if (!parse_int(values, "day", snapshot.day) || !parse_uint(values, "seed", snapshot.seed) ||
+        !parse_int(values, "next_result_id", snapshot.next_result_id) ||
+        !parse_int(values, "active_result_id", snapshot.active_result_id) ||
+        !parse_int(values, "player_money", snapshot.player.money) ||
+        !parse_int(values, "player_stamina", snapshot.player.stamina) ||
+        !parse_int(values, "player_reputation", snapshot.player.reputation) ||
+        !parse_int(values, "player_knowledge", snapshot.player.knowledge) ||
+        !parse_int(values, "player_mood", snapshot.player.mood) ||
+        !parse_bool(values, "has_pending_location", snapshot.has_pending_location) ||
+        !parse_bool(values, "location_started", snapshot.location_started) ||
+        !parse_bool(values, "day_action_done", snapshot.day_action_done) ||
+        !parse_bool(values, "night_action_done", snapshot.night_action_done) ||
+        !parse_string(values, "last_summary", snapshot.last_summary) ||
+        !parse_string(values, "main_ending", snapshot.main_ending) ||
+        !parse_string(values, "final_summary", snapshot.final_summary)) {
+        return {SaveStatus::corrupt, GameSession::new_game(), "save file is missing fields"};
+    }
+
+    const auto phase = values.find("phase");
+    const auto pending_location = values.find("pending_location");
+    const auto applied_result_ids = values.find("applied_result_ids");
+    if (phase == values.end() || pending_location == values.end() ||
+        applied_result_ids == values.end() || values.find("store_inventory") == values.end() ||
+        values.find("tavern_wins") == values.end() || values.find("tavern_losses") == values.end()) {
+        return {SaveStatus::corrupt, GameSession::new_game(), "save file is missing fields"};
+    }
+    if (!parse_phase(phase->second, snapshot.phase) ||
+        !parse_location(pending_location->second, snapshot.pending_location) ||
+        !parse_applied_results(applied_result_ids->second, snapshot.applied_result_ids)) {
+        return {SaveStatus::corrupt, GameSession::new_game(), "save file has invalid values"};
+    }
+    if (snapshot.day < 1 || snapshot.day > 10 || snapshot.next_result_id < 1 ||
+        snapshot.active_result_id < 0) {
+        return {SaveStatus::corrupt, GameSession::new_game(), "save file has invalid values"};
+    }
+
+    return {SaveStatus::ok, GameSession::from_snapshot(snapshot), ""};
+}
+
+}  // namespace pixel_town

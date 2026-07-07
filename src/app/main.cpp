@@ -11,6 +11,7 @@
 #include "app/visual_prototype.hpp"
 #include "core/display_config.hpp"
 #include "io/resource_diagnostics.hpp"
+#include "io/save_game.hpp"
 #include "io/startup_log.hpp"
 
 namespace {
@@ -80,6 +81,34 @@ bool export_canvas_capture(RenderTexture2D canvas, const char* capture_path, int
     const bool exported = ExportImage(image, capture_path);
     UnloadImage(image);
     return exported;
+}
+
+bool is_save_boundary(const pixel_town::GameSession& session) {
+    const pixel_town::GamePhase phase = session.phase();
+    return phase == pixel_town::GamePhase::day_choice ||
+           phase == pixel_town::GamePhase::night_choice ||
+           phase == pixel_town::GamePhase::day_summary ||
+           phase == pixel_town::GamePhase::ending;
+}
+
+bool same_snapshot(const pixel_town::GameSessionSnapshot& left,
+                   const pixel_town::GameSessionSnapshot& right) {
+    return left.day == right.day && left.seed == right.seed &&
+           left.next_result_id == right.next_result_id &&
+           left.active_result_id == right.active_result_id && left.phase == right.phase &&
+           left.player.money == right.player.money &&
+           left.player.stamina == right.player.stamina &&
+           left.player.reputation == right.player.reputation &&
+           left.player.knowledge == right.player.knowledge &&
+           left.player.mood == right.player.mood &&
+           left.has_pending_location == right.has_pending_location &&
+           left.pending_location == right.pending_location &&
+           left.location_started == right.location_started &&
+           left.day_action_done == right.day_action_done &&
+           left.night_action_done == right.night_action_done &&
+           left.last_summary == right.last_summary && left.main_ending == right.main_ending &&
+           left.final_summary == right.final_summary &&
+           left.applied_result_ids == right.applied_result_ids;
 }
 
 }  // namespace
@@ -203,6 +232,28 @@ int main(int argc, char* argv[]) {
 
     pixel_town::VisualPrototypeState prototype;
     pixel_town::GameAppState game_flow;
+    const bool persistence_enabled = !capture_prototype && !capture_game_flow;
+    const std::filesystem::path save_path = pixel_town::default_save_path();
+    bool has_persisted_snapshot = false;
+    pixel_town::GameSessionSnapshot persisted_snapshot{};
+    if (persistence_enabled) {
+        const auto loaded = pixel_town::load_session(save_path);
+        if (loaded.status == pixel_town::SaveStatus::ok) {
+            game_flow.has_session = true;
+            game_flow.save_present = true;
+            game_flow.session = loaded.session;
+            game_flow.notice = "已恢复最近的阶段边界。";
+            persisted_snapshot = game_flow.session.snapshot();
+            has_persisted_snapshot = true;
+        } else if (loaded.status == pixel_town::SaveStatus::not_found) {
+            game_flow.save_present = false;
+        } else {
+            game_flow.save_present = true;
+            game_flow.notice = loaded.status == pixel_town::SaveStatus::incompatible_version
+                                   ? "存档版本不兼容，原文件已保留。"
+                                   : "存档损坏或缺字段，原文件已保留。";
+        }
+    }
     bool capture_ready = capture_prototype || capture_game_flow;
     if (capture_ready) {
         prototype.modal_open = false;
@@ -260,6 +311,22 @@ int main(int argc, char* argv[]) {
                 pixel_town::update_visual_prototype(prototype, legacy_ui_mouse);
             } else {
                 pixel_town::update_game_flow(game_flow, legacy_ui_mouse);
+                if (persistence_enabled && game_flow.has_session &&
+                    is_save_boundary(game_flow.session)) {
+                    const auto current_snapshot = game_flow.session.snapshot();
+                    if (!has_persisted_snapshot ||
+                        !same_snapshot(persisted_snapshot, current_snapshot)) {
+                        const auto save_result =
+                            pixel_town::save_session_atomic(save_path, game_flow.session);
+                        if (save_result.status == pixel_town::SaveStatus::ok) {
+                            persisted_snapshot = current_snapshot;
+                            has_persisted_snapshot = true;
+                            game_flow.save_present = true;
+                        } else {
+                            game_flow.notice = "存档写入失败：请检查发布目录权限。";
+                        }
+                    }
+                }
             }
         }
         BeginTextureMode(canvas);

@@ -22,7 +22,7 @@ constexpr std::array<Location, 5> map_locations{
     Location::restaurant, Location::convenience_store, Location::library, Location::tavern,
     Location::home};
 
-constexpr std::array<const char*, 43> ui_texts{
+constexpr std::array<const char*, 48> ui_texts{
     "像素小镇",
     "十日经营计划",
     "新游戏",
@@ -66,6 +66,11 @@ constexpr std::array<const char*, 43> ui_texts{
     "便利店零食更受欢迎",
     "图书馆读者变多",
     "小镇节奏平稳",
+    "已恢复最近的阶段边界",
+    "检测到已有存档，再次点击新游戏将覆盖；Esc 取消",
+    "已取消新游戏，原存档保持不变",
+    "存档版本不兼容，原文件已保留",
+    "存档损坏或缺字段，原文件已保留",
 };
 
 void text(const Font& font, const char* value, float x, float y, float size, Color color = ink) {
@@ -175,7 +180,7 @@ void draw_status(const Font& font, const GameSession& session, bool audio_enable
     }
 }
 
-void draw_title(const Font& font, Vector2 mouse) {
+void draw_title(const Font& font, const std::string& notice, Vector2 mouse) {
     ClearBackground(Color{37, 50, 57, 255});
     text(font, "像素小镇", 210, 78, 36, RAYWHITE);
     text(font, "十日经营计划", 220, 126, 22, Color{255, 224, 154, 255});
@@ -184,6 +189,7 @@ void draw_title(const Font& font, Vector2 mouse) {
     centered_text(font, "新游戏", start_button, 18,
                   CheckCollisionPointRec(mouse, start_button) ? ink : RAYWHITE);
     text(font, "Enter / 点击开始", 238, 260, 18, Color{205, 211, 215, 255});
+    text(font, notice, 154, 306, 16, Color{255, 224, 154, 255});
 }
 
 void draw_tiled_grass(const Texture2D& tiles, Rectangle bounds) {
@@ -424,9 +430,21 @@ const char* game_flow_glyphs() {
 void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
     const Rectangle start_button{244, 190, 152, 42};
     if (!state.has_session) {
+        if (state.confirm_new_game_overwrite && IsKeyPressed(KEY_ESCAPE)) {
+            state.confirm_new_game_overwrite = false;
+            state.notice = "已取消新游戏，原存档保持不变。";
+            return;
+        }
         if (activated(start_button, logical_mouse, KEY_ENTER)) {
+            if (state.save_present && !state.confirm_new_game_overwrite) {
+                state.confirm_new_game_overwrite = true;
+                state.notice = "检测到已有存档，再次点击新游戏将覆盖；Esc 取消。";
+                return;
+            }
             state.has_session = true;
             state.session = GameSession::new_game();
+            state.save_present = true;
+            state.confirm_new_game_overwrite = false;
             state.notice = "第 1 天开始：请选择一个白天工作地点。";
         }
         return;
@@ -512,7 +530,7 @@ void draw_game_flow(const Font& font, const Texture2D& town_marker,
                     const Texture2D& generated_buildings, const GameAppState& state,
                     bool audio_enabled, Vector2 logical_mouse) {
     if (!state.has_session) {
-        draw_title(font, logical_mouse);
+        draw_title(font, state.notice, logical_mouse);
         return;
     }
 

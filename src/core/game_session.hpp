@@ -74,6 +74,24 @@ struct ApplyResult {
     std::string message;
 };
 
+struct GameSessionSnapshot {
+    int day{1};
+    unsigned int seed{20260707};
+    int next_result_id{1};
+    int active_result_id{0};
+    GamePhase phase{GamePhase::day_choice};
+    PlayerState player{};
+    bool has_pending_location{false};
+    Location pending_location{Location::home};
+    bool location_started{false};
+    bool day_action_done{false};
+    bool night_action_done{false};
+    std::string last_summary;
+    std::string main_ending;
+    std::string final_summary;
+    std::vector<int> applied_result_ids;
+};
+
 [[nodiscard]] const char* phase_label(GamePhase phase);
 [[nodiscard]] const char* location_label(Location location);
 
@@ -102,6 +120,8 @@ public:
     [[nodiscard]] ActionResult home_rest_result();
     [[nodiscard]] ApplyResult apply_action_result(const ActionResult& result);
     [[nodiscard]] bool finish_day_summary();
+    [[nodiscard]] GameSessionSnapshot snapshot() const;
+    [[nodiscard]] static GameSession from_snapshot(const GameSessionSnapshot& snapshot);
 
 private:
     static constexpr Location none_{static_cast<Location>(-1)};

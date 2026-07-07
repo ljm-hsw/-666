@@ -13,9 +13,11 @@ target_include_directories(pixel_town_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/s
 
 add_library(pixel_town_io
   src/io/resource_diagnostics.cpp
+  src/io/save_game.cpp
   src/io/startup_log.cpp
 )
 target_include_directories(pixel_town_io PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(pixel_town_io PUBLIC pixel_town_core)
 
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
@@ -27,7 +29,7 @@ add_executable(pixel_town
   src/app/main.cpp
   src/app/visual_prototype.cpp
 )
-target_link_libraries(pixel_town PRIVATE pixel_town_core pixel_town_io raylib)
+target_link_libraries(pixel_town PRIVATE pixel_town_io raylib)
 target_compile_definitions(pixel_town PRIVATE PIXEL_TOWN_VERSION="${PROJECT_VERSION}")
 
 enable_testing()
@@ -36,8 +38,9 @@ add_executable(pixel_town_tests
   tests/display_config_test.cpp
   tests/game_session_test.cpp
   tests/resource_diagnostics_test.cpp
+  tests/save_game_test.cpp
 )
-target_link_libraries(pixel_town_tests PRIVATE pixel_town_core pixel_town_io)
+target_link_libraries(pixel_town_tests PRIVATE pixel_town_io)
 target_include_directories(pixel_town_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/doctest")
 
 add_test(NAME pixel_town_tests COMMAND pixel_town_tests)

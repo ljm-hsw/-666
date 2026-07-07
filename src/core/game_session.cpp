@@ -264,6 +264,44 @@ bool GameSession::finish_day_summary() {
     return true;
 }
 
+GameSessionSnapshot GameSession::snapshot() const {
+    return GameSessionSnapshot{day_,
+                               seed_,
+                               next_result_id_,
+                               active_result_id_,
+                               phase_,
+                               player_,
+                               has_pending_location(),
+                               has_pending_location() ? pending_location_ : Location::home,
+                               location_started_,
+                               day_action_done_,
+                               night_action_done_,
+                               last_summary_,
+                               main_ending_,
+                               final_summary_,
+                               applied_result_ids_};
+}
+
+GameSession GameSession::from_snapshot(const GameSessionSnapshot& snapshot) {
+    GameSession session;
+    session.day_ = snapshot.day;
+    session.seed_ = snapshot.seed;
+    session.next_result_id_ = snapshot.next_result_id;
+    session.active_result_id_ = snapshot.active_result_id;
+    session.phase_ = snapshot.phase;
+    session.player_ = snapshot.player;
+    session.pending_location_ =
+        snapshot.has_pending_location ? snapshot.pending_location : GameSession::none_;
+    session.location_started_ = snapshot.location_started;
+    session.day_action_done_ = snapshot.day_action_done;
+    session.night_action_done_ = snapshot.night_action_done;
+    session.last_summary_ = snapshot.last_summary;
+    session.main_ending_ = snapshot.main_ending;
+    session.final_summary_ = snapshot.final_summary;
+    session.applied_result_ids_ = snapshot.applied_result_ids;
+    return session;
+}
+
 bool GameSession::result_was_applied(int result_id) const {
     return std::find(applied_result_ids_.begin(), applied_result_ids_.end(), result_id) !=
            applied_result_ids_.end();

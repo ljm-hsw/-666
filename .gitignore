@@ -50,6 +50,7 @@ build.ninja
 
 # Local runtime state
 /logs/
+/saves/
 /user_data/
 
 # Local configuration and secrets
