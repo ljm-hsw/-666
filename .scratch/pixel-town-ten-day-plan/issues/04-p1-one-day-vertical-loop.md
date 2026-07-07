@@ -1,6 +1,6 @@
 # P1：跑通一个完整游戏日
 
-Status: ready-for-agent
+Status: done
 Milestone: P1
 Type: AFK
 User stories: 1-10, 28, 35, 53, 54

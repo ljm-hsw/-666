@@ -239,14 +239,14 @@ void draw_location_building(const Font& font, const Texture2D& tiles,
                        Vector2{0.0F, 0.0F}, 0.0F, Fade(WHITE, allowed ? 1.0F : 0.45F));
         const Rectangle label = generated_label_destination(location);
         DrawRectangleRec(Rectangle{label.x + 2, label.y + 2, label.width, label.height}, shadow);
-        DrawRectangleRec(label, allowed ? Color{250, 238, 203, 235} : Color{145, 143, 132, 235});
+        DrawRectangleRec(label, allowed ? Color{250, 238, 203, 235} : Color{218, 213, 194, 245});
         DrawRectangleLinesEx(label, hovered ? 3.0F : 2.0F, hovered ? cream : ink);
         centered_text(font, location_label(location), Rectangle{label.x, label.y + 1, label.width,
                                                                 16},
-                      16, allowed ? ink : Color{78, 78, 72, 255});
+                      16, allowed ? ink : Color{43, 50, 48, 255});
         centered_text(font, allowed ? "开放" : "未开放",
                       Rectangle{label.x, label.y + 16, label.width, 14}, 14,
-                      allowed ? Color{35, 83, 51, 255} : Color{78, 78, 72, 255});
+                      allowed ? Color{35, 83, 51, 255} : Color{55, 62, 60, 255});
         return;
     }
 
@@ -265,14 +265,14 @@ void draw_location_building(const Font& font, const Texture2D& tiles,
 void draw_location_label(const Font& font, Location location, bool allowed, bool hovered) {
     const Rectangle label = generated_label_destination(location);
     DrawRectangleRec(Rectangle{label.x + 2, label.y + 2, label.width, label.height}, shadow);
-    DrawRectangleRec(label, allowed ? Color{250, 238, 203, 230} : Color{145, 143, 132, 220});
+    DrawRectangleRec(label, allowed ? Color{250, 238, 203, 230} : Color{218, 213, 194, 245});
     DrawRectangleLinesEx(label, hovered ? 3.0F : 2.0F, hovered ? cream : ink);
     centered_text(font, location_label(location),
                   Rectangle{label.x, label.y + 1, label.width, 16}, 16,
-                  allowed ? ink : Color{78, 78, 72, 255});
+                  allowed ? ink : Color{43, 50, 48, 255});
     centered_text(font, allowed ? "开放" : "未开放",
                   Rectangle{label.x, label.y + 16, label.width, 14}, 14,
-                  allowed ? Color{35, 83, 51, 255} : Color{78, 78, 72, 255});
+                  allowed ? Color{35, 83, 51, 255} : Color{55, 62, 60, 255});
 }
 
 void draw_home_plot_decoration() {

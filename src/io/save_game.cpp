@@ -253,6 +253,60 @@ bool replace_file_atomically(const std::filesystem::path& temporary,
 #endif
 }
 
+bool is_day_work_location(Location location) {
+    return location == Location::restaurant || location == Location::convenience_store ||
+           location == Location::library;
+}
+
+bool is_valid_snapshot_combination(const GameSessionSnapshot& snapshot) {
+    for (std::size_t index = 0; index < snapshot.applied_result_ids.size(); ++index) {
+        const int result_id = snapshot.applied_result_ids[index];
+        if (result_id <= 0 || result_id >= snapshot.next_result_id ||
+            result_id == snapshot.active_result_id) {
+            return false;
+        }
+        for (std::size_t previous = 0; previous < index; ++previous) {
+            if (snapshot.applied_result_ids[previous] == result_id) {
+                return false;
+            }
+        }
+    }
+
+    if (snapshot.location_started && !snapshot.has_pending_location) {
+        return false;
+    }
+    if (snapshot.location_started != (snapshot.active_result_id > 0)) {
+        return false;
+    }
+    if (!snapshot.location_started && snapshot.active_result_id != 0) {
+        return false;
+    }
+
+    switch (snapshot.phase) {
+        case GamePhase::day_choice:
+            return !snapshot.has_pending_location && !snapshot.day_action_done &&
+                   !snapshot.night_action_done;
+        case GamePhase::day_location:
+            return snapshot.has_pending_location &&
+                   is_day_work_location(snapshot.pending_location) && !snapshot.day_action_done &&
+                   !snapshot.night_action_done;
+        case GamePhase::night_choice:
+            return !snapshot.has_pending_location && snapshot.day_action_done &&
+                   !snapshot.night_action_done;
+        case GamePhase::night_location:
+            return snapshot.has_pending_location &&
+                   (snapshot.pending_location == Location::home ||
+                    snapshot.pending_location == Location::tavern) &&
+                   snapshot.day_action_done && !snapshot.night_action_done;
+        case GamePhase::day_summary:
+            return !snapshot.has_pending_location && snapshot.day_action_done &&
+                   snapshot.night_action_done;
+        case GamePhase::ending:
+            return snapshot.day == 10 && !snapshot.has_pending_location;
+    }
+    return false;
+}
+
 }  // namespace
 
 std::filesystem::path default_save_path(const std::filesystem::path& application_directory) {
@@ -360,6 +414,10 @@ LoadGameResult load_session(const std::filesystem::path& path) {
     if (snapshot.day < 1 || snapshot.day > 10 || snapshot.next_result_id < 1 ||
         snapshot.active_result_id < 0) {
         return {SaveStatus::corrupt, GameSession::new_game(), "save file has invalid values"};
+    }
+    if (!is_valid_snapshot_combination(snapshot)) {
+        return {SaveStatus::corrupt, GameSession::new_game(),
+                "save file has an unreachable phase state"};
     }
 
     return {SaveStatus::ok, GameSession::from_snapshot(snapshot), ""};

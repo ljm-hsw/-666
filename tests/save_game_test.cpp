@@ -132,6 +132,41 @@ TEST_CASE("corrupt and incompatible saves are reported without deleting the file
     CHECK(std::filesystem::is_regular_file(incompatible_path));
 }
 
+TEST_CASE("field-complete saves with unreachable phase state are rejected") {
+    TempSaveDir temp;
+    const auto save_path = temp.path() / "unreachable.sav";
+
+    write_text(save_path,
+               "format_version=1\n"
+               "seed=42\n"
+               "day=1\n"
+               "phase=day_choice\n"
+               "next_result_id=2\n"
+               "active_result_id=1\n"
+               "player_money=50\n"
+               "player_stamina=80\n"
+               "player_reputation=0\n"
+               "player_knowledge=0\n"
+               "player_mood=70\n"
+               "has_pending_location=1\n"
+               "pending_location=restaurant\n"
+               "location_started=1\n"
+               "day_action_done=0\n"
+               "night_action_done=0\n"
+               "last_summary=\n"
+               "main_ending=\n"
+               "final_summary=\n"
+               "applied_result_ids=\n"
+               "store_inventory=none\n"
+               "tavern_wins=0\n"
+               "tavern_losses=0\n");
+
+    const auto loaded = pixel_town::load_session(save_path);
+
+    CHECK(loaded.status == pixel_town::SaveStatus::corrupt);
+    CHECK(std::filesystem::is_regular_file(save_path));
+}
+
 TEST_CASE("default save path stays beside the application directory") {
     const auto base = std::filesystem::path{"portable"};
     CHECK(pixel_town::default_save_path(base) == base / "saves" / "slot1.sav");

@@ -1,11 +1,22 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <string>
 #include <string_view>
 
 #include <raylib.h>
+
+#ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+#elif defined(__linux__)
+#include <unistd.h>
+#endif
 
 #include "app/game_flow.hpp"
 #include "app/visual_prototype.hpp"
@@ -57,6 +68,70 @@ bool complete_day_with_rest(pixel_town::GameSession& session, pixel_town::Locati
         return false;
     }
     return session.finish_day_summary();
+}
+
+std::filesystem::path system_executable_path() {
+#ifdef _WIN32
+    std::wstring buffer(260, L'\0');
+    DWORD length = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
+    while (length == buffer.size()) {
+        buffer.resize(buffer.size() * 2);
+        length = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
+    }
+    if (length == 0) {
+        return {};
+    }
+    buffer.resize(length);
+    return std::filesystem::path{buffer};
+#elif defined(__APPLE__)
+    std::uint32_t size = 0;
+    _NSGetExecutablePath(nullptr, &size);
+    if (size == 0) {
+        return {};
+    }
+    std::string buffer(size, '\0');
+    if (_NSGetExecutablePath(buffer.data(), &size) != 0) {
+        return {};
+    }
+    buffer.resize(std::strlen(buffer.c_str()));
+    return std::filesystem::path{buffer};
+#elif defined(__linux__)
+    std::array<char, 4096> buffer{};
+    const ssize_t length = readlink("/proc/self/exe", buffer.data(), buffer.size() - 1);
+    if (length <= 0) {
+        return {};
+    }
+    return std::filesystem::path{std::string{buffer.data(), static_cast<std::size_t>(length)}};
+#else
+    return {};
+#endif
+}
+
+std::filesystem::path directory_from_executable_path(const std::filesystem::path& executable_path) {
+    std::error_code ignored;
+    if (executable_path.empty()) {
+        return std::filesystem::current_path(ignored);
+    }
+
+    std::filesystem::path absolute_path = std::filesystem::weakly_canonical(executable_path, ignored);
+    if (ignored || absolute_path.empty()) {
+        absolute_path = std::filesystem::absolute(executable_path, ignored);
+    }
+    if (ignored || absolute_path.empty()) {
+        return std::filesystem::current_path(ignored);
+    }
+    return absolute_path.parent_path();
+}
+
+std::filesystem::path application_directory_from_argv(const char* executable_path) {
+    const std::filesystem::path system_path = system_executable_path();
+    if (!system_path.empty()) {
+        return directory_from_executable_path(system_path);
+    }
+    if (executable_path == nullptr || std::string_view{executable_path}.empty()) {
+        return directory_from_executable_path({});
+    }
+    return directory_from_executable_path(std::filesystem::path{executable_path});
 }
 
 void advance_to_placeholder_ending(pixel_town::GameAppState& state) {
@@ -233,7 +308,8 @@ int main(int argc, char* argv[]) {
     pixel_town::VisualPrototypeState prototype;
     pixel_town::GameAppState game_flow;
     const bool persistence_enabled = !capture_prototype && !capture_game_flow;
-    const std::filesystem::path save_path = pixel_town::default_save_path();
+    const std::filesystem::path save_path =
+        pixel_town::default_save_path(application_directory_from_argv(argv[0]));
     bool has_persisted_snapshot = false;
     pixel_town::GameSessionSnapshot persisted_snapshot{};
     if (persistence_enabled) {

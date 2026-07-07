@@ -33,7 +33,7 @@ struct LoadGameResult {
 };
 
 [[nodiscard]] std::filesystem::path default_save_path(
-    const std::filesystem::path& application_directory = std::filesystem::current_path());
+    const std::filesystem::path& application_directory);
 [[nodiscard]] bool has_save(const std::filesystem::path& path);
 [[nodiscard]] SaveResult save_session_atomic(
     const std::filesystem::path& path, const GameSession& session,

@@ -57,7 +57,7 @@
 - 候选原图 SHA-256：`935bffd470845cd17a397191385a6633033009d453c6f730f906e1355706781d`
 - 处理后运行时背景：[`assets/textures/imagegen_backgrounds/town_map_background.png`](assets/textures/imagegen_backgrounds/town_map_background.png)
 - 处理后运行时背景 SHA-256：`386c7087135e21ba2cf7ad03f322567d8359965383c32e907977a7a96ebdf770`
-- 原始生成文件：`/Users/quhongye/.codex/generated_images/019f3531-521a-7541-a0e7-03eaae59f588/ig_0bf9c0faeb9bc89b016a4c70734cc0819aacb55bc4a939dd7e.png`
+- 生成源已归档为仓库内候选原图；交付记录以仓库路径和 SHA-256 为准。
 
 该资源是 P1 地图页的分层背景候选。当前运行时代码优先加载完整 imagegen 场景图；完整场景图缺失时才回退到该背景与独立建筑 sprite 的组合方案。它仍属于候选美术资产，是否进入最终交付需后续美术验收确认。
 
@@ -70,7 +70,7 @@
 - 候选原图 SHA-256：`112b546f9d85d581ecf6482959c964f6bf79bc7b95943d807d5aaecd442ccf15`
 - 处理后运行时背景：[`assets/textures/imagegen_backgrounds/town_map_full_scene.png`](assets/textures/imagegen_backgrounds/town_map_full_scene.png)
 - 处理后运行时背景 SHA-256：`fc78b733e0847c71cb11dad53c247d39dd789ad4aaa4efd05c42b6ded3b5ceef`
-- 原始生成文件：`/Users/quhongye/.codex/generated_images/019f3531-521a-7541-a0e7-03eaae59f588/ig_037ec6ddc81fb7eb016a4c96e62440819a898a6847e37def57.png`
+- 生成源已归档为仓库内候选原图；交付记录以仓库路径和 SHA-256 为准。
 
 该资源是当前 P1 地图页的优先视觉方案。五个地点建筑已经和地图背景一起生成，运行时代码只叠加交互标签与点击热区，以避免独立房屋 sprite 和地块错位。该图仍属于候选美术资产，是否进入最终交付需后续美术验收确认。
 
@@ -83,6 +83,6 @@
 - 候选原图 SHA-256：`98d97717d4c2f1e0a1a2a72c3094e8ebfa07b188afb785d0174cd83ef5910a1b`
 - 处理后运行时 sprite sheet：[`assets/textures/imagegen_buildings/p1_building_sprites.png`](assets/textures/imagegen_buildings/p1_building_sprites.png)
 - 处理后 sprite sheet SHA-256：`836388b286b25b946d93b587765ede67adf80f3b9de7eb8a98219ce014ae3e37`
-- 原始生成文件：`/Users/quhongye/.codex/generated_images/019f3531-521a-7541-a0e7-03eaae59f588/ig_062e8dc727820bc0016a4c6b564ba0819887591b961e35f264.png`
+- 生成源已归档为仓库内候选原图；交付记录以仓库路径和 SHA-256 为准。
 
 该资源是项目内 P1 地图 UI 的候选生成资产，不是第三方素材，也不是最终美术批准结果。当前代码把处理后的 sprite sheet 作为地图页主体建筑资源优先显示；缺失时仍回退到 Kenney/代码绘制方案。是否进入最终交付仍需 Issue 03 或后续美术验收确认。
