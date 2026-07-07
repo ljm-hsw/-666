@@ -20,7 +20,10 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(USE_EXTERNAL_GLFW OFF CACHE STRING "" FORCE)
 add_subdirectory(third_party/raylib EXCLUDE_FROM_ALL)
 
-add_executable(pixel_town src/app/main.cpp)
+add_executable(pixel_town
+  src/app/main.cpp
+  src/app/visual_prototype.cpp
+)
 target_link_libraries(pixel_town PRIVATE pixel_town_core pixel_town_io raylib)
 target_compile_definitions(pixel_town PRIVATE PIXEL_TOWN_VERSION="${PROJECT_VERSION}")
 

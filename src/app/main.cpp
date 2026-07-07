@@ -1,50 +1,18 @@
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <filesystem>
 #include <string>
+#include <string_view>
 
 #include <raylib.h>
 
+#include "app/visual_prototype.hpp"
 #include "core/display_config.hpp"
 #include "io/resource_diagnostics.hpp"
 #include "io/startup_log.hpp"
 
 namespace {
-
-void draw_baseline_scene(const Texture2D& town_marker, bool audio_enabled) {
-    constexpr Color sky{127, 195, 219, 255};
-    constexpr Color grass{102, 168, 89, 255};
-    constexpr Color road{104, 105, 112, 255};
-    constexpr Color wall{238, 199, 126, 255};
-    constexpr Color roof{169, 70, 64, 255};
-    constexpr Color window{91, 155, 213, 255};
-
-    ClearBackground(sky);
-    DrawCircle(545, 65, 28.0F, Color{255, 226, 118, 255});
-    DrawRectangle(0, 205, 640, 155, grass);
-    DrawRectangle(0, 275, 640, 85, road);
-    DrawRectangle(0, 294, 640, 4, Color{229, 210, 142, 255});
-    DrawRectangle(0, 332, 640, 4, Color{229, 210, 142, 255});
-
-    DrawTriangle(Vector2{70.0F, 145.0F}, Vector2{205.0F, 145.0F}, Vector2{137.0F, 82.0F}, roof);
-    DrawRectangle(82, 145, 112, 104, wall);
-    DrawRectangle(126, 198, 25, 51, Color{112, 73, 61, 255});
-    DrawRectangle(96, 165, 22, 22, window);
-    DrawRectangle(159, 165, 22, 22, window);
-
-    DrawRectangle(362, 151, 158, 98, Color{216, 176, 103, 255});
-    DrawRectangle(350, 137, 182, 19, Color{89, 119, 80, 255});
-    DrawRectangle(378, 181, 34, 68, Color{112, 73, 61, 255});
-    DrawRectangle(438, 174, 59, 37, window);
-    DrawText("STORE", 428, 113, 20, Color{55, 63, 67, 255});
-
-    DrawRectangle(263, 172, 12, 78, Color{101, 71, 51, 255});
-    DrawCircle(269, 150, 35.0F, Color{54, 127, 68, 255});
-    DrawTextureEx(town_marker, Vector2{249.0F, 126.0F}, 0.0F, 4.0F, WHITE);
-    DrawText("PIXEL TOWN", 16, 18, 26, Color{48, 58, 64, 255});
-    DrawText("DAY 1 / 10", 18, 50, 16, Color{48, 58, 64, 255});
-    if (!audio_enabled) {
-        DrawText("AUDIO: MUTED", 508, 338, 10, Color{220, 220, 220, 255});
-    }
-}
 
 void draw_resource_error(const pixel_town::ResourceReport& report, bool log_written) {
     ClearBackground(Color{47, 30, 35, 255});
@@ -72,16 +40,21 @@ void draw_resource_error(const pixel_town::ResourceReport& report, bool log_writ
 
 }  // namespace
 
-int main() {
+int main(int argc, char* argv[]) {
     constexpr auto display = pixel_town::default_display_config();
+    const bool capture_prototype =
+        argc == 2 && std::string_view{argv[1]} == "--capture-prototype";
     auto resources = pixel_town::validate_resources("assets", pixel_town::baseline_resource_manifest());
 
-    InitWindow(display.window_width, display.window_height, "Pixel Town: Ten-Day Plan");
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    InitWindow(display.window_width, display.window_height, "Pixel Town: Ten-Day Plan - P0 Prototype");
+    SetWindowMinSize(display.logical_width, display.logical_height);
     SetTargetFPS(60);
 
     RenderTexture2D canvas = LoadRenderTexture(display.logical_width, display.logical_height);
     SetTextureFilter(canvas.texture, TEXTURE_FILTER_POINT);
     Texture2D town_marker{};
+    Font ui_font{};
     if (resources.can_start) {
         town_marker = LoadTexture("assets/textures/town_marker.png");
         if (town_marker.id == 0) {
@@ -91,25 +64,83 @@ int main() {
         } else {
             SetTextureFilter(town_marker, TEXTURE_FILTER_POINT);
         }
+        int codepoint_count = 0;
+        int* codepoints = LoadCodepoints(pixel_town::visual_prototype_glyphs(), &codepoint_count);
+        ui_font = LoadFontEx("assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf", 12,
+                             codepoints, codepoint_count);
+        bool required_glyphs_available = ui_font.texture.id != 0;
+        if (required_glyphs_available) {
+            for (int index = 0; index < codepoint_count; ++index) {
+                const int glyph_index = GetGlyphIndex(ui_font, codepoints[index]);
+                if (ui_font.glyphs[glyph_index].value != codepoints[index]) {
+                    TraceLog(LOG_WARNING, "FONT: Missing required prototype glyph U+%04X",
+                             codepoints[index]);
+                    required_glyphs_available = false;
+                }
+            }
+        }
+        UnloadCodepoints(codepoints);
+        if (!required_glyphs_available) {
+            resources.can_start = false;
+            resources.issues.push_back(
+                {"fonts/fusion-pixel-12px-proportional-zh_hans.ttf",
+                 "font is missing required prototype glyphs", true});
+        } else {
+            SetTextureFilter(ui_font.texture, TEXTURE_FILTER_POINT);
+        }
     }
-    const std::string startup_stage = resources.can_start ? "baseline_scene" : "resource_error";
+    const std::string startup_stage = resources.can_start ? "visual_prototype" : "resource_error";
     const bool log_written =
         pixel_town::write_latest_log("logs/latest.log", PIXEL_TOWN_VERSION, startup_stage, resources);
 
+    Texture2D tiny_farm_tiles{};
+    const std::filesystem::path tiny_farm_tiles_path{
+        "assets/textures/kenney_tiny_farm/Tilemap/tilemap_packed.png"};
+    if (resources.can_start && std::filesystem::is_regular_file(tiny_farm_tiles_path)) {
+        tiny_farm_tiles = LoadTexture(tiny_farm_tiles_path.string().c_str());
+        if (tiny_farm_tiles.id != 0) {
+            SetTextureFilter(tiny_farm_tiles, TEXTURE_FILTER_POINT);
+        }
+    }
+
+    pixel_town::VisualPrototypeState prototype;
+    if (capture_prototype) {
+        prototype.modal_open = false;
+        std::filesystem::create_directories("prototype-captures");
+    }
+    const std::array<const char*, 4> capture_paths{
+        "prototype-captures/variant-a.png",
+        "prototype-captures/variant-b.png",
+        "prototype-captures/variant-c.png",
+        "prototype-captures/modal.png",
+    };
+    std::size_t capture_index = 0;
+    int capture_delay = 0;
     while (!WindowShouldClose()) {
+        const float scale = std::max(
+            1.0F,
+            std::floor(std::min(
+                static_cast<float>(GetScreenWidth()) / static_cast<float>(display.logical_width),
+                static_cast<float>(GetScreenHeight()) / static_cast<float>(display.logical_height))));
+        const float width = static_cast<float>(display.logical_width) * scale;
+        const float height = static_cast<float>(display.logical_height) * scale;
+        const float offset_x = (static_cast<float>(GetScreenWidth()) - width) / 2.0F;
+        const float offset_y = (static_cast<float>(GetScreenHeight()) - height) / 2.0F;
+        const Vector2 screen_mouse = GetMousePosition();
+        const Vector2 logical_mouse{(screen_mouse.x - offset_x) / scale,
+                                    (screen_mouse.y - offset_y) / scale};
+
+        if (resources.can_start && log_written) {
+            pixel_town::update_visual_prototype(prototype, logical_mouse);
+        }
         BeginTextureMode(canvas);
         if (resources.can_start && log_written) {
-            draw_baseline_scene(town_marker, resources.audio_enabled);
+            pixel_town::draw_visual_prototype(ui_font, town_marker, tiny_farm_tiles, prototype,
+                                              resources.audio_enabled, logical_mouse);
         } else {
             draw_resource_error(resources, log_written);
         }
         EndTextureMode();
-
-        const float scale = std::min(
-            static_cast<float>(GetScreenWidth()) / static_cast<float>(display.logical_width),
-            static_cast<float>(GetScreenHeight()) / static_cast<float>(display.logical_height));
-        const float width = static_cast<float>(display.logical_width) * scale;
-        const float height = static_cast<float>(display.logical_height) * scale;
 
         BeginDrawing();
         ClearBackground(BLACK);
@@ -117,14 +148,35 @@ int main() {
             canvas.texture,
             Rectangle{0.0F, 0.0F, static_cast<float>(display.logical_width),
                       -static_cast<float>(display.logical_height)},
-            Rectangle{(static_cast<float>(GetScreenWidth()) - width) / 2.0F,
-                      (static_cast<float>(GetScreenHeight()) - height) / 2.0F, width, height},
+            Rectangle{offset_x, offset_y, width, height},
             Vector2{0.0F, 0.0F}, 0.0F, WHITE);
         EndDrawing();
+
+        if (capture_prototype && ++capture_delay >= 3) {
+            TakeScreenshot(capture_paths[capture_index]);
+            ++capture_index;
+            capture_delay = 0;
+            if (capture_index == 1) {
+                prototype.variant = 1;
+            } else if (capture_index == 2) {
+                prototype.variant = 2;
+            } else if (capture_index == 3) {
+                prototype.variant = 0;
+                prototype.modal_open = true;
+            } else if (capture_index == capture_paths.size()) {
+                break;
+            }
+        }
     }
 
     if (town_marker.id != 0) {
         UnloadTexture(town_marker);
+    }
+    if (ui_font.texture.id != 0) {
+        UnloadFont(ui_font);
+    }
+    if (tiny_farm_tiles.id != 0) {
+        UnloadTexture(tiny_farm_tiles);
     }
     UnloadRenderTexture(canvas);
     CloseWindow();

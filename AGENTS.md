@@ -13,10 +13,12 @@ This is the repository-level instruction set for this workspace. Read it before 
 
 - `AGENTS.md`: stable repository-wide workflow and safety rules.
 - `DEVELOPMENT.md`: five-person collaboration, branch, review, test, and delivery rules.
+- `CREDITS.md`: third-party runtime asset provenance, versions, licenses, and hashes.
 - `CONTEXT.md`: shared product-domain vocabulary and invariants.
 - `docs/README.md`: documentation map and source-of-truth order.
 - `docs/PROJECT_PLAN.md`: P0-P4 milestone gates and issue dependency map.
 - `docs/DESIGN.md`: core architecture, state flow, contracts, and subsystem design.
+- `docs/VISUAL_PROTOTYPE.md`: unapproved P0 visual variants and candidate asset rules.
 - `docs/adr/`: accepted architectural decisions and their rationale.
 - `docs/agents/`: repository-local issue tracker, triage, and domain-doc conventions.
 - `.scratch/`: local PRDs and implementation issues, grouped by feature.

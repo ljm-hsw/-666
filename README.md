@@ -40,6 +40,7 @@
 | [`docs/README.md`](docs/README.md) | 文档地图与事实来源顺序 |
 | [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) | P0-P4 阶段门槛、依赖图和 issue 索引 |
 | [`docs/DESIGN.md`](docs/DESIGN.md) | 核心架构、状态机、模块契约和数据流 |
+| [`docs/VISUAL_PROTOTYPE.md`](docs/VISUAL_PROTOTYPE.md) | P0 三套视觉原型、候选调色板和资源规范 |
 | [PRD](.scratch/pixel-town-ten-day-plan/PRD.md) | 产品范围、70 条用户故事和验收方向 |
 | [实施 Issues](.scratch/pixel-town-ten-day-plan/issues/) | 18 个依赖有序的本地 Markdown issue |
 
@@ -89,6 +90,10 @@ ctest --test-dir build -C Debug --output-on-failure
 ```
 
 应用默认创建 1280×720 窗口，并用点采样放大 640×360 逻辑画布。删除 `build/` 后重复以上命令即可验证干净构建；构建目录和本机工具目录 `.tools/` 均不会提交。
+
+当前 P0 视觉原型可使用左右方向键或窗口底部切换条在 A/B/C 三种布局间切换；点击地点可查看典型弹窗。原型已接入 Kenney Tiny Farm 作为 CC0 视觉参考素材，来源见 [`CREDITS.md`](CREDITS.md)。原型仍需人工批准，不代表最终 UI。
+
+原型评审截图可通过 `./build/pixel_town --capture-prototype` 生成到被 Git 忽略的 `prototype-captures/`。
 
 ## 启动资源与日志
 
