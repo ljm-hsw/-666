@@ -33,7 +33,7 @@
 - 保留范围：`Tilemap/`、`Tiles/`、`License.txt`、`Tilesheet.txt`。
 - 剔除范围：上游 `.url` 快捷方式、预览图、下载 ZIP。
 
-Tiny Town 的优势是与当前 16×16 tile 基线一致、许可证简单、素材体量小，且比 Tiny Farm 更贴近小镇地图、建筑、道路和门窗语义；Tiny Farm 继续作为农场/草地风格参考。两套素材仍不能完整表达餐馆、便利店、图书馆、酒馆的最终专用建筑、页面背景与室内图标。当前 P1 game-flow 地图页已按 [`IMAGEGEN_VISUAL_PLAN.md`](IMAGEGEN_VISUAL_PLAN.md) 优先接入 imagegen 地图背景与主要地点建筑，Kenney 退为 tile 点缀、参考和缺失资源回退。Issue 03 评审时只确认它们是否作为视觉参考和临时素材，不把它们直接视为最终美术全集。
+Tiny Town 的优势是与当前 16×16 tile 基线一致、许可证简单、素材体量小，且比 Tiny Farm 更贴近小镇地图、建筑、道路和门窗语义；Tiny Farm 继续作为农场/草地风格参考。两套素材仍不能完整表达餐馆、便利店、图书馆、酒馆的最终专用建筑、页面背景与室内图标。当前 P1 game-flow 地图页已按 [`IMAGEGEN_VISUAL_PLAN.md`](IMAGEGEN_VISUAL_PLAN.md) 优先接入“背景和房屋在同一张图中生成”的 imagegen 完整场景图，Kenney 退为 tile 点缀、参考和缺失资源回退。Issue 03 评审时只确认它们是否作为视觉参考和临时素材，不把它们直接视为最终美术全集。
 
 ## 待审调色板
 

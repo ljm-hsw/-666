@@ -99,9 +99,41 @@ bool activated(Rectangle bounds, Vector2 mouse, KeyboardKey key) {
 }
 
 std::array<Rectangle, 5> location_bounds() {
-    return {Rectangle{80, 104, 112, 68}, Rectangle{394, 104, 112, 68},
-            Rectangle{78, 202, 112, 68}, Rectangle{424, 202, 112, 68},
-            Rectangle{264, 202, 112, 68}};
+    return {Rectangle{70, 74, 160, 86}, Rectangle{388, 74, 160, 86},
+            Rectangle{70, 186, 160, 88}, Rectangle{420, 186, 152, 88},
+            Rectangle{250, 186, 96, 88}};
+}
+
+Rectangle generated_sprite_destination(Location location) {
+    switch (location) {
+        case Location::restaurant:
+            return Rectangle{92, 78, 92, 70};
+        case Location::convenience_store:
+            return Rectangle{416, 78, 96, 72};
+        case Location::library:
+            return Rectangle{92, 194, 92, 70};
+        case Location::tavern:
+            return Rectangle{448, 196, 88, 66};
+        case Location::home:
+            return Rectangle{268, 198, 58, 54};
+    }
+    return Rectangle{0, 0, 0, 0};
+}
+
+Rectangle generated_label_destination(Location location) {
+    switch (location) {
+        case Location::restaurant:
+            return Rectangle{88, 132, 112, 31};
+        case Location::convenience_store:
+            return Rectangle{408, 132, 118, 31};
+        case Location::library:
+            return Rectangle{86, 248, 116, 31};
+        case Location::tavern:
+            return Rectangle{432, 248, 116, 31};
+        case Location::home:
+            return Rectangle{260, 248, 72, 31};
+    }
+    return Rectangle{0, 0, 0, 0};
 }
 
 Rectangle source_tile(int tile_index) {
@@ -196,11 +228,10 @@ void draw_location_building(const Font& font, const Texture2D& tiles,
                             Location location, Color color, bool allowed, bool hovered,
                             int icon_tile, std::size_t index) {
     if (generated_buildings.id != 0) {
-        const Rectangle sprite_destination{bounds.x - 8, bounds.y - 34, bounds.width + 16,
-                                           bounds.height + 28};
+        const Rectangle sprite_destination = generated_sprite_destination(location);
         DrawTexturePro(generated_buildings, generated_building_source(index), sprite_destination,
                        Vector2{0.0F, 0.0F}, 0.0F, Fade(WHITE, allowed ? 1.0F : 0.45F));
-        const Rectangle label{bounds.x + 9, bounds.y + 35, bounds.width - 18, 31};
+        const Rectangle label = generated_label_destination(location);
         DrawRectangleRec(Rectangle{label.x + 2, label.y + 2, label.width, label.height}, shadow);
         DrawRectangleRec(label, allowed ? Color{250, 238, 203, 235} : Color{145, 143, 132, 235});
         DrawRectangleLinesEx(label, hovered ? 3.0F : 2.0F, hovered ? cream : ink);
@@ -225,11 +256,47 @@ void draw_location_building(const Font& font, const Texture2D& tiles,
          allowed ? Color{35, 83, 51, 255} : Color{78, 78, 72, 255});
 }
 
+void draw_location_label(const Font& font, Location location, bool allowed, bool hovered) {
+    const Rectangle label = generated_label_destination(location);
+    DrawRectangleRec(Rectangle{label.x + 2, label.y + 2, label.width, label.height}, shadow);
+    DrawRectangleRec(label, allowed ? Color{250, 238, 203, 230} : Color{145, 143, 132, 220});
+    DrawRectangleLinesEx(label, hovered ? 3.0F : 2.0F, hovered ? cream : ink);
+    centered_text(font, location_label(location),
+                  Rectangle{label.x, label.y + 1, label.width, 16}, 16,
+                  allowed ? ink : Color{78, 78, 72, 255});
+    centered_text(font, allowed ? "开放" : "未开放",
+                  Rectangle{label.x, label.y + 16, label.width, 14}, 14,
+                  allowed ? Color{35, 83, 51, 255} : Color{78, 78, 72, 255});
+}
+
+void draw_home_plot_decoration() {
+    DrawRectangle(366, 242, 58, 8, Color{117, 83, 55, 255});
+    DrawRectangle(368, 240, 54, 4, Color{166, 117, 72, 255});
+    DrawRectangle(376, 218, 8, 24, Color{102, 78, 52, 255});
+    DrawCircleV(Vector2{380, 216}, 12.0F, Color{74, 139, 78, 255});
+    DrawCircleV(Vector2{378, 214}, 7.0F, Color{107, 168, 89, 255});
+    DrawRectangle(404, 220, 6, 22, Color{102, 78, 52, 255});
+    DrawCircleV(Vector2{407, 218}, 9.0F, Color{74, 139, 78, 255});
+    DrawCircleV(Vector2{405, 216}, 5.0F, Color{107, 168, 89, 255});
+    DrawRectangle(390, 250, 22, 12, Color{151, 104, 63, 255});
+    DrawRectangleLinesEx(Rectangle{390, 250, 22, 12}, 2.0F, Color{91, 65, 45, 255});
+    DrawCircleV(Vector2{374, 260}, 3.0F, Color{255, 224, 154, 255});
+    DrawCircleV(Vector2{418, 258}, 3.0F, Color{255, 205, 214, 255});
+}
+
 void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
+              const Texture2D& generated_full_map_scene,
               const Texture2D& generated_map_background, const Texture2D& generated_buildings,
               const GameAppState& state, bool audio_enabled, Vector2 mouse) {
     ClearBackground(Color{221, 211, 174, 255});
-    if (generated_map_background.id != 0) {
+    const bool has_full_scene = generated_full_map_scene.id != 0;
+    if (has_full_scene) {
+        DrawTexturePro(
+            generated_full_map_scene,
+            Rectangle{0.0F, 0.0F, static_cast<float>(generated_full_map_scene.width),
+                      static_cast<float>(generated_full_map_scene.height)},
+            Rectangle{0.0F, 0.0F, 640.0F, 360.0F}, Vector2{0.0F, 0.0F}, 0.0F, WHITE);
+    } else if (generated_map_background.id != 0) {
         DrawTexturePro(
             generated_map_background,
             Rectangle{0.0F, 0.0F, static_cast<float>(generated_map_background.width),
@@ -241,6 +308,9 @@ void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
         draw_map_decoration(marker, tiles);
     }
     draw_status(font, state.session, audio_enabled);
+    if (!has_full_scene && generated_map_background.id != 0) {
+        draw_home_plot_decoration();
+    }
 
     const auto bounds = location_bounds();
     const std::array<Color, 5> colors{Color{231, 151, 103, 255}, gold,
@@ -251,8 +321,12 @@ void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
         const auto permission = state.session.can_enter(map_locations[index]);
         const Rectangle button = bounds[index];
         const bool hovered = CheckCollisionPointRec(mouse, button);
-        draw_location_building(font, tiles, generated_buildings, button, map_locations[index],
-                               colors[index], permission.allowed, hovered, icons[index], index);
+        if (has_full_scene) {
+            draw_location_label(font, map_locations[index], permission.allowed, hovered);
+        } else {
+            draw_location_building(font, tiles, generated_buildings, button, map_locations[index],
+                                   colors[index], permission.allowed, hovered, icons[index], index);
+        }
     }
 
     panel(Rectangle{28, 300, 584, 42}, Color{65, 91, 89, 245});
@@ -433,7 +507,8 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
 }
 
 void draw_game_flow(const Font& font, const Texture2D& town_marker,
-                    const Texture2D& kenney_tiles, const Texture2D& generated_map_background,
+                    const Texture2D& kenney_tiles, const Texture2D& generated_full_map_scene,
+                    const Texture2D& generated_map_background,
                     const Texture2D& generated_buildings, const GameAppState& state,
                     bool audio_enabled, Vector2 logical_mouse) {
     if (!state.has_session) {
@@ -443,8 +518,9 @@ void draw_game_flow(const Font& font, const Texture2D& town_marker,
 
     if (state.session.phase() == GamePhase::day_choice ||
         state.session.phase() == GamePhase::night_choice) {
-        draw_map(font, town_marker, kenney_tiles, generated_map_background, generated_buildings,
-                 state, audio_enabled, logical_mouse);
+        draw_map(font, town_marker, kenney_tiles, generated_full_map_scene,
+                 generated_map_background, generated_buildings, state, audio_enabled,
+                 logical_mouse);
     } else if (state.session.phase() == GamePhase::day_location ||
                state.session.phase() == GamePhase::night_location) {
         draw_location(font, state, logical_mouse);

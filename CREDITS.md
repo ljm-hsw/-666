@@ -59,7 +59,20 @@
 - 处理后运行时背景 SHA-256：`386c7087135e21ba2cf7ad03f322567d8359965383c32e907977a7a96ebdf770`
 - 原始生成文件：`/Users/quhongye/.codex/generated_images/019f3531-521a-7541-a0e7-03eaae59f588/ig_0bf9c0faeb9bc89b016a4c70734cc0819aacb55bc4a939dd7e.png`
 
-该资源是 P1 地图页的当前主体背景资产。运行时代码优先加载该背景；缺失时才回退到 Kenney/代码拼接地图。它仍属于候选美术资产，是否进入最终交付需后续美术验收确认。
+该资源是 P1 地图页的分层背景候选。当前运行时代码优先加载完整 imagegen 场景图；完整场景图缺失时才回退到该背景与独立建筑 sprite 的组合方案。它仍属于候选美术资产，是否进入最终交付需后续美术验收确认。
+
+## Imagegen P1 Town Map Full Scene
+
+- 名称：P1 town map full scene
+- 生成方式：内置 imagegen，按“背景与五个地点房屋一起生成”的可直接使用地图方案生成
+- 生成日期：2026-07-07
+- 候选原图：[`assets/textures/imagegen_backgrounds/town_map_full_scene_source.png`](assets/textures/imagegen_backgrounds/town_map_full_scene_source.png)
+- 候选原图 SHA-256：`112b546f9d85d581ecf6482959c964f6bf79bc7b95943d807d5aaecd442ccf15`
+- 处理后运行时背景：[`assets/textures/imagegen_backgrounds/town_map_full_scene.png`](assets/textures/imagegen_backgrounds/town_map_full_scene.png)
+- 处理后运行时背景 SHA-256：`fc78b733e0847c71cb11dad53c247d39dd789ad4aaa4efd05c42b6ded3b5ceef`
+- 原始生成文件：`/Users/quhongye/.codex/generated_images/019f3531-521a-7541-a0e7-03eaae59f588/ig_037ec6ddc81fb7eb016a4c96e62440819a898a6847e37def57.png`
+
+该资源是当前 P1 地图页的优先视觉方案。五个地点建筑已经和地图背景一起生成，运行时代码只叠加交互标签与点击热区，以避免独立房屋 sprite 和地块错位。该图仍属于候选美术资产，是否进入最终交付需后续美术验收确认。
 
 ## Imagegen P1 Building Candidates
 

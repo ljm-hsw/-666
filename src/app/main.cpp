@@ -157,6 +157,7 @@ int main(int argc, char* argv[]) {
         pixel_town::write_latest_log("logs/latest.log", PIXEL_TOWN_VERSION, startup_stage, resources);
 
     Texture2D kenney_tiles{};
+    Texture2D generated_full_map_scene{};
     Texture2D generated_map_background{};
     Texture2D generated_buildings{};
     const std::array<std::filesystem::path, 2> kenney_tiles_paths{
@@ -172,6 +173,14 @@ int main(int argc, char* argv[]) {
             if (kenney_tiles.id != 0) {
                 SetTextureFilter(kenney_tiles, TEXTURE_FILTER_POINT);
                 break;
+            }
+        }
+        if (std::filesystem::is_regular_file(
+                "assets/textures/imagegen_backgrounds/town_map_full_scene.png")) {
+            generated_full_map_scene =
+                LoadTexture("assets/textures/imagegen_backgrounds/town_map_full_scene.png");
+            if (generated_full_map_scene.id != 0) {
+                SetTextureFilter(generated_full_map_scene, TEXTURE_FILTER_POINT);
             }
         }
         if (std::filesystem::is_regular_file(
@@ -263,8 +272,9 @@ int main(int argc, char* argv[]) {
                                                   resources.audio_enabled, legacy_ui_mouse);
             } else {
                 pixel_town::draw_game_flow(ui_font, town_marker, kenney_tiles,
-                                           generated_map_background, generated_buildings, game_flow,
-                                           resources.audio_enabled, legacy_ui_mouse);
+                                           generated_full_map_scene, generated_map_background,
+                                           generated_buildings, game_flow, resources.audio_enabled,
+                                           legacy_ui_mouse);
             }
             EndMode2D();
         } else {
@@ -326,6 +336,9 @@ int main(int argc, char* argv[]) {
     }
     if (kenney_tiles.id != 0) {
         UnloadTexture(kenney_tiles);
+    }
+    if (generated_full_map_scene.id != 0) {
+        UnloadTexture(generated_full_map_scene);
     }
     if (generated_map_background.id != 0) {
         UnloadTexture(generated_map_background);

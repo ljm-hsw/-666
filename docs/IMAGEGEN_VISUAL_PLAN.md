@@ -30,8 +30,9 @@
 
 | 资产 | 状态 | 仓库路径 | 运行时策略 |
 | --- | --- | --- | --- |
-| 小镇地图背景 | 已生成并接入 P1 game-flow 地图页 | `assets/textures/imagegen_backgrounds/town_map_background.png` | 优先加载 imagegen 背景；缺失时回退到 Kenney/代码拼接地图 |
-| 五个地点建筑 sprite sheet | 已生成并接入 P1 game-flow 地图页 | `assets/textures/imagegen_buildings/p1_building_sprites.png` | 优先加载 imagegen 建筑；缺失时回退到 Kenney/代码绘制地点卡片 |
+| 小镇完整地图场景 | 已生成并接入 P1 game-flow 地图页 | `assets/textures/imagegen_backgrounds/town_map_full_scene.png` | 第一优先级；背景和五个地点建筑在同一张图中，代码只叠加标签/热区 |
+| 小镇地图背景 | 已生成，作为 fallback | `assets/textures/imagegen_backgrounds/town_map_background.png` | 完整场景缺失时使用，再叠加独立 imagegen 建筑 |
+| 五个地点建筑 sprite sheet | 已生成，作为 fallback | `assets/textures/imagegen_buildings/p1_building_sprites.png` | 完整场景缺失时使用；再缺失时回退到 Kenney/代码绘制地点卡片 |
 | 标题页/总结页/结局页背景 | 待生成 | 待定 | 继续使用程序绘制背景，后续逐页替换 |
 
 ## 资产生成清单
