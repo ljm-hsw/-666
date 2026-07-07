@@ -2,6 +2,18 @@
 
 #include "core/game_session.hpp"
 
+namespace {
+
+void complete_day_with_rest(pixel_town::GameSession& session, pixel_town::Location day_location) {
+    REQUIRE(session.enter_location(day_location));
+    REQUIRE(session.start_location() != 0);
+    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+    REQUIRE(session.apply_action_result(session.home_rest_result()).accepted);
+    REQUIRE(session.finish_day_summary());
+}
+
+}  // namespace
+
 TEST_CASE("new game starts on the first day map") {
     const auto session = pixel_town::GameSession::new_game();
 
@@ -68,6 +80,99 @@ TEST_CASE("full one-day path reaches day two") {
     CHECK(session.day() == 2);
     CHECK(session.phase() == pixel_town::GamePhase::day_choice);
     CHECK(session.can_enter(pixel_town::Location::library).allowed);
+}
+
+TEST_CASE("ten-day path ends with one placeholder ending") {
+    auto session = pixel_town::GameSession::new_game(20260707);
+
+    for (int expected_day = 1; expected_day <= 10; ++expected_day) {
+        CHECK(session.day() == expected_day);
+        REQUIRE(session.phase() == pixel_town::GamePhase::day_choice);
+        complete_day_with_rest(session, pixel_town::Location::restaurant);
+    }
+
+    CHECK(session.day() == 10);
+    CHECK(session.phase() == pixel_town::GamePhase::ending);
+    CHECK(session.is_ended());
+    CHECK(session.main_ending() == std::string{"平凡小镇新人"});
+    CHECK(session.final_summary().find("最终状态") != std::string::npos);
+    CHECK_FALSE(session.can_enter(pixel_town::Location::restaurant).allowed);
+    CHECK_FALSE(session.finish_day_summary());
+}
+
+TEST_CASE("fixed seed produces repeatable daily context and results") {
+    auto first = pixel_town::GameSession::new_game(42);
+    auto second = pixel_town::GameSession::new_game(42);
+
+    for (int day = 1; day <= 3; ++day) {
+        const auto first_context = first.current_day_context();
+        const auto second_context = second.current_day_context();
+        CHECK(first_context.day == second_context.day);
+        CHECK(first_context.seed == second_context.seed);
+        CHECK(first_context.weather == second_context.weather);
+        CHECK(first_context.event == second_context.event);
+
+        REQUIRE(first.enter_location(pixel_town::Location::library));
+        REQUIRE(second.enter_location(pixel_town::Location::library));
+        REQUIRE(first.start_location() != 0);
+        REQUIRE(second.start_location() != 0);
+        CHECK(first.simulated_success_result().delta.money ==
+              second.simulated_success_result().delta.money);
+        CHECK(first.simulated_success_result().summary ==
+              second.simulated_success_result().summary);
+
+        REQUIRE(first.apply_action_result(first.simulated_success_result()).accepted);
+        REQUIRE(second.apply_action_result(second.simulated_success_result()).accepted);
+        REQUIRE(first.apply_action_result(first.home_rest_result()).accepted);
+        REQUIRE(second.apply_action_result(second.home_rest_result()).accepted);
+        REQUIRE(first.finish_day_summary());
+        REQUIRE(second.finish_day_summary());
+    }
+}
+
+TEST_CASE("day nine advances to day ten and day ten does not advance to eleven") {
+    auto session = pixel_town::GameSession::new_game();
+
+    for (int day = 1; day <= 8; ++day) {
+        complete_day_with_rest(session, pixel_town::Location::restaurant);
+    }
+    CHECK(session.day() == 9);
+    CHECK(session.phase() == pixel_town::GamePhase::day_choice);
+
+    complete_day_with_rest(session, pixel_town::Location::restaurant);
+    CHECK(session.day() == 10);
+    CHECK(session.phase() == pixel_town::GamePhase::day_choice);
+
+    complete_day_with_rest(session, pixel_town::Location::restaurant);
+    CHECK(session.day() == 10);
+    CHECK(session.phase() == pixel_town::GamePhase::ending);
+    CHECK_FALSE(session.finish_day_summary());
+}
+
+TEST_CASE("attribute floor does not end the schedule early") {
+    auto session = pixel_town::GameSession::new_game();
+    REQUIRE(session.enter_location(pixel_town::Location::restaurant));
+    const int result_id = session.start_location();
+    REQUIRE(result_id != 0);
+
+    const pixel_town::ActionResult exhausting_result{
+        result_id,
+        pixel_town::ActionSlot::day,
+        pixel_town::Location::restaurant,
+        pixel_town::ActionOutcome::completed,
+        pixel_town::StatDelta{0, -999, 0, 0, -999},
+        "压力测试：属性触底但不提前结束。",
+    };
+    REQUIRE(session.apply_action_result(exhausting_result).accepted);
+
+    CHECK(session.player().stamina == 0);
+    CHECK(session.player().mood == 0);
+    CHECK(session.phase() == pixel_town::GamePhase::night_choice);
+    CHECK(session.can_enter(pixel_town::Location::home).allowed);
+    REQUIRE(session.apply_action_result(session.home_rest_result()).accepted);
+    REQUIRE(session.finish_day_summary());
+    CHECK(session.day() == 2);
+    CHECK(session.phase() == pixel_town::GamePhase::day_choice);
 }
 
 TEST_CASE("returning before start does not consume the day action") {

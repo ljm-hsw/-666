@@ -19,7 +19,7 @@ constexpr std::array<Location, 5> map_locations{
     Location::restaurant, Location::convenience_store, Location::library, Location::tavern,
     Location::home};
 
-constexpr std::array<const char*, 28> ui_texts{
+constexpr std::array<const char*, 32> ui_texts{
     "像素小镇",
     "十日经营计划",
     "新游戏",
@@ -30,6 +30,7 @@ constexpr std::array<const char*, 28> ui_texts{
     "夜晚选择",
     "夜晚地点",
     "每日总结",
+    "最终结局",
     "金钱",
     "体力",
     "声望",
@@ -47,6 +48,9 @@ constexpr std::array<const char*, 28> ui_texts{
     "主动放弃",
     "回家休息",
     "继续到下一天",
+    "十日计划完成",
+    "主结局",
+    "最终状态",
     "静音",
 };
 
@@ -153,8 +157,11 @@ void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
         draw_tile(tiles, icons[index], Rectangle{button.x + 80, button.y + 10, 24, 24});
     }
 
-    panel(Rectangle{28, 304, 584, 34}, Color{65, 91, 89, 245});
-    text(font, state.notice, 42, 314, 12, RAYWHITE);
+    panel(Rectangle{28, 296, 584, 44}, Color{65, 91, 89, 245});
+    const auto context = state.session.current_day_context();
+    text(font, std::string{"今日提示："} + context.weather + " · " + context.event, 42, 304, 12,
+         Color{255, 224, 154, 255});
+    text(font, state.notice, 42, 322, 12, RAYWHITE);
 }
 
 void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
@@ -190,10 +197,23 @@ void draw_summary(const Font& font, const GameAppState& state, Vector2 mouse) {
     panel(Rectangle{90, 88, 460, 188}, cream);
     text(font, "每日总结", 124, 116, 24, red);
     text(font, state.session.last_summary(), 124, 162, 12, ink);
-    text(font, "确认后进入下一游戏日。", 124, 190, 12, ink);
+    text(font, state.session.day() == 10 ? "确认后进入占位主结局。"
+                                         : "确认后进入下一游戏日。",
+         124, 190, 12, ink);
     const Rectangle next_button{242, 224, 156, 34};
     panel(next_button, CheckCollisionPointRec(mouse, next_button) ? paper : green);
     text(font, "继续到下一天", 280, 234, 12, RAYWHITE);
+}
+
+void draw_ending(const Font& font, const GameAppState& state) {
+    ClearBackground(Color{37, 50, 57, 255});
+    draw_status(font, state.session, true);
+    panel(Rectangle{72, 82, 496, 218}, cream);
+    text(font, "十日计划完成", 118, 112, 24, red);
+    text(font, std::string{"主结局："} + state.session.main_ending(), 118, 154, 18, ink);
+    text(font, state.session.final_summary(), 118, 194, 12, ink);
+    text(font, "结局之后不能继续提交地点行动或推进天数。", 118, 246, 12,
+         Color{78, 78, 72, 255});
 }
 
 }  // namespace
@@ -212,7 +232,8 @@ const char* game_flow_glyphs() {
             "阶段不能进入今晚的行动已经完成酒馆玩法将在后续issue接入本切片先开放回家休息白天工作"
             "已经结束不能再进入该地点当前正在处理另一个阶段不能选择新地点餐馆模拟工作完成服务了"
             "午餐客流获得金钱与声望便利店模拟经营完成一次进货与销售结算图书馆帮助读者找书并提升"
-            "知识行动完成回家休息恢复体力并结束今天主动放弃阶段已消耗本次无收益确认后进入下一游戏日";
+            "知识行动完成回家休息恢复体力并结束今天主动放弃阶段已消耗本次无收益确认后进入下一游戏日"
+            "占位主结局最终状态成长路线摘要均衡体验小镇生活十日经营计划已经结束不能继续选择地点";
         return result;
     }();
     return glyphs.c_str();
@@ -317,8 +338,10 @@ void draw_game_flow(const Font& font, const Texture2D& town_marker,
     } else if (state.session.phase() == GamePhase::day_location ||
                state.session.phase() == GamePhase::night_location) {
         draw_location(font, state, logical_mouse);
-    } else {
+    } else if (state.session.phase() == GamePhase::day_summary) {
         draw_summary(font, state, logical_mouse);
+    } else {
+        draw_ending(font, state);
     }
 
     if (!audio_enabled && state.has_session) {

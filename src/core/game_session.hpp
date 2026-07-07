@@ -11,6 +11,7 @@ enum class GamePhase {
     night_choice,
     night_location,
     day_summary,
+    ending,
 };
 
 enum class Location {
@@ -37,6 +38,13 @@ struct PlayerState {
     int reputation{0};
     int knowledge{0};
     int mood{70};
+};
+
+struct DayContext {
+    int day{1};
+    unsigned int seed{0};
+    std::string weather;
+    std::string event;
 };
 
 struct StatDelta {
@@ -71,12 +79,16 @@ struct ApplyResult {
 
 class GameSession {
 public:
-    [[nodiscard]] static GameSession new_game();
+    [[nodiscard]] static GameSession new_game(unsigned int seed = 20260707);
 
     [[nodiscard]] int day() const noexcept { return day_; }
     [[nodiscard]] GamePhase phase() const noexcept { return phase_; }
     [[nodiscard]] const PlayerState& player() const noexcept { return player_; }
+    [[nodiscard]] DayContext current_day_context() const;
     [[nodiscard]] const std::string& last_summary() const noexcept { return last_summary_; }
+    [[nodiscard]] const std::string& main_ending() const noexcept { return main_ending_; }
+    [[nodiscard]] const std::string& final_summary() const noexcept { return final_summary_; }
+    [[nodiscard]] bool is_ended() const noexcept { return phase_ == GamePhase::ending; }
     [[nodiscard]] bool has_pending_location() const noexcept { return pending_location_ != none_; }
     [[nodiscard]] bool location_started() const noexcept { return location_started_; }
     [[nodiscard]] Location pending_location() const noexcept;
@@ -95,6 +107,7 @@ private:
     static constexpr Location none_{static_cast<Location>(-1)};
 
     int day_{1};
+    unsigned int seed_{20260707};
     int next_result_id_{1};
     int active_result_id_{0};
     GamePhase phase_{GamePhase::day_choice};
@@ -104,11 +117,14 @@ private:
     bool day_action_done_{false};
     bool night_action_done_{false};
     std::string last_summary_;
+    std::string main_ending_;
+    std::string final_summary_;
     std::vector<int> applied_result_ids_;
 
     [[nodiscard]] bool result_was_applied(int result_id) const;
     void clear_pending_location();
     void apply_delta(const StatDelta& delta);
+    void create_placeholder_ending();
 };
 
 }  // namespace pixel_town

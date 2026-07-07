@@ -1,6 +1,7 @@
 #include "core/game_session.hpp"
 
 #include <algorithm>
+#include <array>
 
 namespace pixel_town {
 namespace {
@@ -27,6 +28,15 @@ StatDelta day_work_delta(Location location) {
             break;
     }
     return {};
+}
+
+DayContext make_day_context(int day, unsigned int seed) {
+    constexpr std::array<const char*, 4> weather{"晴天", "多云", "小雨", "微风"};
+    constexpr std::array<const char*, 4> event{"餐馆客流增加", "便利店零食更受欢迎",
+                                               "图书馆读者变多", "小镇节奏平稳"};
+    const std::size_t weather_index = static_cast<std::size_t>((seed + day * 3U) % weather.size());
+    const std::size_t event_index = static_cast<std::size_t>((seed / 7U + day * 5U) % event.size());
+    return DayContext{day, seed, weather[weather_index], event[event_index]};
 }
 
 std::string completed_summary(Location location) {
@@ -59,6 +69,8 @@ const char* phase_label(GamePhase phase) {
             return "夜晚地点";
         case GamePhase::day_summary:
             return "每日总结";
+        case GamePhase::ending:
+            return "最终结局";
     }
     return "未知阶段";
 }
@@ -79,8 +91,14 @@ const char* location_label(Location location) {
     return "未知地点";
 }
 
-GameSession GameSession::new_game() {
-    return GameSession{};
+GameSession GameSession::new_game(unsigned int seed) {
+    GameSession session;
+    session.seed_ = seed;
+    return session;
+}
+
+DayContext GameSession::current_day_context() const {
+    return make_day_context(day_, seed_);
 }
 
 Location GameSession::pending_location() const noexcept {
@@ -112,6 +130,10 @@ ActionPermission GameSession::can_enter(Location location) const {
             return {false, "酒馆玩法将在后续 issue 接入；本切片先开放回家休息。"};
         }
         return {false, "白天工作已经结束，夜晚不能再进入该地点。"};
+    }
+
+    if (phase_ == GamePhase::ending) {
+        return {false, "十日经营计划已经结束，不能继续选择地点。"};
     }
 
     return {false, "当前正在处理另一个阶段，不能选择新地点。"};
@@ -228,12 +250,17 @@ bool GameSession::finish_day_summary() {
     }
     if (day_ < 10) {
         ++day_;
+        day_action_done_ = false;
+        night_action_done_ = false;
+        clear_pending_location();
+        last_summary_.clear();
+        phase_ = GamePhase::day_choice;
+    } else {
+        create_placeholder_ending();
+        clear_pending_location();
+        phase_ = GamePhase::ending;
+        return true;
     }
-    day_action_done_ = false;
-    night_action_done_ = false;
-    clear_pending_location();
-    last_summary_.clear();
-    phase_ = GamePhase::day_choice;
     return true;
 }
 
@@ -254,6 +281,15 @@ void GameSession::apply_delta(const StatDelta& delta) {
     player_.reputation = clamp_value(player_.reputation + delta.reputation, 0, 100);
     player_.knowledge = clamp_value(player_.knowledge + delta.knowledge, 0, 100);
     player_.mood = clamp_value(player_.mood + delta.mood, 0, 100);
+}
+
+void GameSession::create_placeholder_ending() {
+    main_ending_ = "平凡小镇新人";
+    final_summary_ = "最终状态：金钱 " + std::to_string(player_.money) + "，体力 " +
+                     std::to_string(player_.stamina) + "，声望 " +
+                     std::to_string(player_.reputation) + "，知识 " +
+                     std::to_string(player_.knowledge) + "，心情 " +
+                     std::to_string(player_.mood) + "。成长路线摘要：均衡体验小镇生活。";
 }
 
 }  // namespace pixel_town
