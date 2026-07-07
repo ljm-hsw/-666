@@ -12,7 +12,7 @@
 4. PRD、核心设计和领域上下文。
 5. 阶段计划、运行说明和历史记录。
 
-当前仓库尚未进入实现阶段，因此在代码出现前，PRD、`CONTEXT.md`、ADR 和已批准 issue 共同构成执行契约。
+当前仓库已进入 P1 部分实现：已实现部分以代码、自动化测试和构建配置为准；未实现部分仍以 PRD、`CONTEXT.md`、ADR 和已批准 issue 共同构成执行契约。
 
 ## 核心文档
 
@@ -20,7 +20,10 @@
 - [`../.scratch/pixel-town-ten-day-plan/PRD.md`](../.scratch/pixel-town-ten-day-plan/PRD.md)：产品范围、用户故事、实现决策和测试决策。
 - [`PROJECT_PLAN.md`](PROJECT_PLAN.md)：P0-P4 阶段目标、门槛、依赖和 issue 总览。
 - [`DESIGN.md`](DESIGN.md)：核心架构、状态机、模块契约、存档、随机性和测试边界。
+- [`VISUAL_PROTOTYPE.md`](VISUAL_PROTOTYPE.md)：P0 待审视觉方案、调色板、像素尺寸与资源命名候选。
+- [`IMAGEGEN_VISUAL_PLAN.md`](IMAGEGEN_VISUAL_PLAN.md)：960×540 画布迁移与 imagegen 页面背景/建筑资产规划。
 - [`adr/0001-adopt-raylib-and-doctest.md`](adr/0001-adopt-raylib-and-doctest.md)：raylib、doctest 与离线依赖策略。
+- [`../CREDITS.md`](../CREDITS.md)：第三方字体、贴图和许可证来源登记。
 
 ## 工作流文档
 

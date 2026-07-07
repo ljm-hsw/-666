@@ -8,6 +8,7 @@
 *.yml text eol=lf
 
 *.png binary
+*.ttf binary
 
 # Preserve vendored upstream sources without applying project whitespace rules.
 third_party/** -text -whitespace

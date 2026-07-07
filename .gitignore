@@ -21,6 +21,8 @@ Desktop.ini
 /build/
 /out/
 /dist/
+/prototype-captures/
+/game-flow-captures/
 /cmake-build-*/
 CMakeFiles/
 CMakeCache.txt

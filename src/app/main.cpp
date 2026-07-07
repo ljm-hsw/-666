@@ -1,50 +1,22 @@
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <filesystem>
 #include <string>
+#include <string_view>
 
 #include <raylib.h>
 
+#include "app/game_flow.hpp"
+#include "app/visual_prototype.hpp"
 #include "core/display_config.hpp"
 #include "io/resource_diagnostics.hpp"
 #include "io/startup_log.hpp"
 
 namespace {
 
-void draw_baseline_scene(const Texture2D& town_marker, bool audio_enabled) {
-    constexpr Color sky{127, 195, 219, 255};
-    constexpr Color grass{102, 168, 89, 255};
-    constexpr Color road{104, 105, 112, 255};
-    constexpr Color wall{238, 199, 126, 255};
-    constexpr Color roof{169, 70, 64, 255};
-    constexpr Color window{91, 155, 213, 255};
-
-    ClearBackground(sky);
-    DrawCircle(545, 65, 28.0F, Color{255, 226, 118, 255});
-    DrawRectangle(0, 205, 640, 155, grass);
-    DrawRectangle(0, 275, 640, 85, road);
-    DrawRectangle(0, 294, 640, 4, Color{229, 210, 142, 255});
-    DrawRectangle(0, 332, 640, 4, Color{229, 210, 142, 255});
-
-    DrawTriangle(Vector2{70.0F, 145.0F}, Vector2{205.0F, 145.0F}, Vector2{137.0F, 82.0F}, roof);
-    DrawRectangle(82, 145, 112, 104, wall);
-    DrawRectangle(126, 198, 25, 51, Color{112, 73, 61, 255});
-    DrawRectangle(96, 165, 22, 22, window);
-    DrawRectangle(159, 165, 22, 22, window);
-
-    DrawRectangle(362, 151, 158, 98, Color{216, 176, 103, 255});
-    DrawRectangle(350, 137, 182, 19, Color{89, 119, 80, 255});
-    DrawRectangle(378, 181, 34, 68, Color{112, 73, 61, 255});
-    DrawRectangle(438, 174, 59, 37, window);
-    DrawText("STORE", 428, 113, 20, Color{55, 63, 67, 255});
-
-    DrawRectangle(263, 172, 12, 78, Color{101, 71, 51, 255});
-    DrawCircle(269, 150, 35.0F, Color{54, 127, 68, 255});
-    DrawTextureEx(town_marker, Vector2{249.0F, 126.0F}, 0.0F, 4.0F, WHITE);
-    DrawText("PIXEL TOWN", 16, 18, 26, Color{48, 58, 64, 255});
-    DrawText("DAY 1 / 10", 18, 50, 16, Color{48, 58, 64, 255});
-    if (!audio_enabled) {
-        DrawText("AUDIO: MUTED", 508, 338, 10, Color{220, 220, 220, 255});
-    }
-}
+constexpr int legacy_ui_width = 640;
+constexpr int legacy_ui_height = 360;
 
 void draw_resource_error(const pixel_town::ResourceReport& report, bool log_written) {
     ClearBackground(Color{47, 30, 35, 255});
@@ -70,18 +42,77 @@ void draw_resource_error(const pixel_town::ResourceReport& report, bool log_writ
              Color{205, 211, 215, 255});
 }
 
+bool complete_day_with_rest(pixel_town::GameSession& session, pixel_town::Location location) {
+    if (!session.enter_location(location)) {
+        return false;
+    }
+    if (session.start_location() == 0) {
+        return false;
+    }
+    if (!session.apply_action_result(session.simulated_success_result()).accepted) {
+        return false;
+    }
+    if (!session.apply_action_result(session.home_rest_result()).accepted) {
+        return false;
+    }
+    return session.finish_day_summary();
+}
+
+void advance_to_placeholder_ending(pixel_town::GameAppState& state) {
+    state.has_session = true;
+    state.session = pixel_town::GameSession::new_game();
+    for (int day = 1; day <= 10 && !state.session.is_ended(); ++day) {
+        if (!complete_day_with_rest(state.session, pixel_town::Location::restaurant)) {
+            break;
+        }
+    }
+    state.notice = "十日计划完成。";
+}
+
+bool export_canvas_capture(RenderTexture2D canvas, const char* capture_path, int output_width,
+                           int output_height) {
+    Image image = LoadImageFromTexture(canvas.texture);
+    if (image.data == nullptr) {
+        return false;
+    }
+    ImageFlipVertical(&image);
+    ImageResizeNN(&image, output_width, output_height);
+    const bool exported = ExportImage(image, capture_path);
+    UnloadImage(image);
+    return exported;
+}
+
 }  // namespace
 
-int main() {
+int main(int argc, char* argv[]) {
     constexpr auto display = pixel_town::default_display_config();
+    constexpr float legacy_ui_scale =
+        static_cast<float>(display.logical_width) / static_cast<float>(legacy_ui_width);
+    static_assert(display.logical_width * legacy_ui_height ==
+                      display.logical_height * legacy_ui_width,
+                  "legacy UI scale requires the same 16:9 aspect ratio");
+    const bool capture_prototype =
+        argc == 2 && std::string_view{argv[1]} == "--capture-prototype";
+    const bool capture_game_flow =
+        argc == 2 && std::string_view{argv[1]} == "--capture-game-flow";
     auto resources = pixel_town::validate_resources("assets", pixel_town::baseline_resource_manifest());
 
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(display.window_width, display.window_height, "Pixel Town: Ten-Day Plan");
+    SetWindowMinSize(display.logical_width, display.logical_height);
     SetTargetFPS(60);
 
     RenderTexture2D canvas = LoadRenderTexture(display.logical_width, display.logical_height);
-    SetTextureFilter(canvas.texture, TEXTURE_FILTER_POINT);
+    const bool canvas_loaded = canvas.texture.id != 0;
+    if (canvas_loaded) {
+        SetTextureFilter(canvas.texture, TEXTURE_FILTER_POINT);
+    } else {
+        resources.can_start = false;
+        resources.issues.push_back(
+            {"render_texture", "raylib could not create render target", true});
+    }
     Texture2D town_marker{};
+    Font ui_font{};
     if (resources.can_start) {
         town_marker = LoadTexture("assets/textures/town_marker.png");
         if (town_marker.id == 0) {
@@ -91,25 +122,165 @@ int main() {
         } else {
             SetTextureFilter(town_marker, TEXTURE_FILTER_POINT);
         }
+        const std::string required_glyphs =
+            std::string{pixel_town::visual_prototype_glyphs()} + pixel_town::game_flow_glyphs();
+        int codepoint_count = 0;
+        int* codepoints = LoadCodepoints(required_glyphs.c_str(), &codepoint_count);
+        const int font_pixel_size = capture_prototype ? 12 : 20;
+        ui_font = LoadFontEx("assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf",
+                             font_pixel_size, codepoints, codepoint_count);
+        bool required_glyphs_available = ui_font.texture.id != 0;
+        if (required_glyphs_available) {
+            for (int index = 0; index < codepoint_count; ++index) {
+                const int glyph_index = GetGlyphIndex(ui_font, codepoints[index]);
+                if (ui_font.glyphs[glyph_index].value != codepoints[index]) {
+                    TraceLog(LOG_WARNING, "FONT: Missing required prototype glyph U+%04X",
+                             codepoints[index]);
+                    required_glyphs_available = false;
+                }
+            }
+        }
+        UnloadCodepoints(codepoints);
+        if (!required_glyphs_available) {
+            resources.can_start = false;
+            resources.issues.push_back(
+                {"fonts/fusion-pixel-12px-proportional-zh_hans.ttf",
+                 "font is missing required game flow glyphs", true});
+        } else {
+            SetTextureFilter(ui_font.texture, TEXTURE_FILTER_POINT);
+        }
     }
-    const std::string startup_stage = resources.can_start ? "baseline_scene" : "resource_error";
+    const std::string startup_stage =
+        resources.can_start ? (capture_prototype ? "visual_prototype" : "p1_game_flow")
+                            : "resource_error";
     const bool log_written =
         pixel_town::write_latest_log("logs/latest.log", PIXEL_TOWN_VERSION, startup_stage, resources);
 
+    Texture2D kenney_tiles{};
+    Texture2D generated_full_map_scene{};
+    Texture2D generated_map_background{};
+    Texture2D generated_buildings{};
+    const std::array<std::filesystem::path, 2> kenney_tiles_paths{
+        "assets/textures/kenney_tiny_town/Tilemap/tilemap_packed.png",
+        "assets/textures/kenney_tiny_farm/Tilemap/tilemap_packed.png",
+    };
+    if (resources.can_start) {
+        for (const std::filesystem::path& tiles_path : kenney_tiles_paths) {
+            if (!std::filesystem::is_regular_file(tiles_path)) {
+                continue;
+            }
+            kenney_tiles = LoadTexture(tiles_path.string().c_str());
+            if (kenney_tiles.id != 0) {
+                SetTextureFilter(kenney_tiles, TEXTURE_FILTER_POINT);
+                break;
+            }
+        }
+        if (std::filesystem::is_regular_file(
+                "assets/textures/imagegen_backgrounds/town_map_full_scene.png")) {
+            generated_full_map_scene =
+                LoadTexture("assets/textures/imagegen_backgrounds/town_map_full_scene.png");
+            if (generated_full_map_scene.id != 0) {
+                SetTextureFilter(generated_full_map_scene, TEXTURE_FILTER_POINT);
+            }
+        }
+        if (std::filesystem::is_regular_file(
+                "assets/textures/imagegen_backgrounds/town_map_background.png")) {
+            generated_map_background =
+                LoadTexture("assets/textures/imagegen_backgrounds/town_map_background.png");
+            if (generated_map_background.id != 0) {
+                SetTextureFilter(generated_map_background, TEXTURE_FILTER_POINT);
+            }
+        }
+        if (std::filesystem::is_regular_file(
+                "assets/textures/imagegen_buildings/p1_building_sprites.png")) {
+            generated_buildings =
+                LoadTexture("assets/textures/imagegen_buildings/p1_building_sprites.png");
+            if (generated_buildings.id != 0) {
+                SetTextureFilter(generated_buildings, TEXTURE_FILTER_POINT);
+            }
+        }
+    }
+
+    pixel_town::VisualPrototypeState prototype;
+    pixel_town::GameAppState game_flow;
+    bool capture_ready = capture_prototype || capture_game_flow;
+    if (capture_ready) {
+        prototype.modal_open = false;
+        std::error_code capture_error;
+        const std::filesystem::path capture_directory =
+            capture_prototype ? "prototype-captures" : "game-flow-captures";
+        std::filesystem::create_directories(capture_directory, capture_error);
+        capture_ready =
+            !capture_error && std::filesystem::is_directory(capture_directory, capture_error);
+        if (!capture_ready) {
+            TraceLog(LOG_WARNING, "CAPTURE: Could not create capture directory");
+        }
+    }
+    const std::array<const char*, 4> prototype_capture_paths{
+        "prototype-captures/variant-a.png",
+        "prototype-captures/variant-b.png",
+        "prototype-captures/variant-c.png",
+        "prototype-captures/modal.png",
+    };
+    const std::array<const char*, 3> game_flow_capture_paths{
+        "game-flow-captures/title.png",
+        "game-flow-captures/map.png",
+        "game-flow-captures/ending.png",
+    };
+    std::size_t capture_index = 0;
+    int capture_delay = 0;
     while (!WindowShouldClose()) {
+        if (!canvas_loaded) {
+            BeginDrawing();
+            draw_resource_error(resources, log_written);
+            EndDrawing();
+            if (capture_prototype) {
+                break;
+            }
+            continue;
+        }
+
+        const float scale = std::max(
+            1.0F,
+            std::floor(std::min(
+                static_cast<float>(GetScreenWidth()) / static_cast<float>(display.logical_width),
+                static_cast<float>(GetScreenHeight()) / static_cast<float>(display.logical_height))));
+        const float width = static_cast<float>(display.logical_width) * scale;
+        const float height = static_cast<float>(display.logical_height) * scale;
+        const float offset_x = (static_cast<float>(GetScreenWidth()) - width) / 2.0F;
+        const float offset_y = (static_cast<float>(GetScreenHeight()) - height) / 2.0F;
+        const Vector2 screen_mouse = GetMousePosition();
+        const Vector2 logical_mouse{(screen_mouse.x - offset_x) / scale,
+                                    (screen_mouse.y - offset_y) / scale};
+        const Vector2 legacy_ui_mouse{logical_mouse.x / legacy_ui_scale,
+                                      logical_mouse.y / legacy_ui_scale};
+
+        if (resources.can_start && log_written && !capture_game_flow) {
+            if (capture_prototype) {
+                pixel_town::update_visual_prototype(prototype, legacy_ui_mouse);
+            } else {
+                pixel_town::update_game_flow(game_flow, legacy_ui_mouse);
+            }
+        }
         BeginTextureMode(canvas);
         if (resources.can_start && log_written) {
-            draw_baseline_scene(town_marker, resources.audio_enabled);
+            const Camera2D legacy_ui_camera{Vector2{0.0F, 0.0F}, Vector2{0.0F, 0.0F}, 0.0F,
+                                            legacy_ui_scale};
+            BeginMode2D(legacy_ui_camera);
+            if (capture_prototype) {
+                pixel_town::draw_visual_prototype(ui_font, town_marker, kenney_tiles, prototype,
+                                                  resources.audio_enabled, legacy_ui_mouse);
+            } else {
+                pixel_town::draw_game_flow(ui_font, town_marker, kenney_tiles,
+                                           generated_full_map_scene, generated_map_background,
+                                           generated_buildings, game_flow, resources.audio_enabled,
+                                           legacy_ui_mouse);
+            }
+            EndMode2D();
         } else {
             draw_resource_error(resources, log_written);
         }
         EndTextureMode();
-
-        const float scale = std::min(
-            static_cast<float>(GetScreenWidth()) / static_cast<float>(display.logical_width),
-            static_cast<float>(GetScreenHeight()) / static_cast<float>(display.logical_height));
-        const float width = static_cast<float>(display.logical_width) * scale;
-        const float height = static_cast<float>(display.logical_height) * scale;
 
         BeginDrawing();
         ClearBackground(BLACK);
@@ -117,16 +288,67 @@ int main() {
             canvas.texture,
             Rectangle{0.0F, 0.0F, static_cast<float>(display.logical_width),
                       -static_cast<float>(display.logical_height)},
-            Rectangle{(static_cast<float>(GetScreenWidth()) - width) / 2.0F,
-                      (static_cast<float>(GetScreenHeight()) - height) / 2.0F, width, height},
+            Rectangle{offset_x, offset_y, width, height},
             Vector2{0.0F, 0.0F}, 0.0F, WHITE);
         EndDrawing();
+
+        if ((capture_prototype || capture_game_flow) && !capture_ready) {
+            break;
+        }
+        if (capture_ready && ++capture_delay >= 3) {
+            const char* capture_path = capture_prototype ? prototype_capture_paths[capture_index]
+                                                         : game_flow_capture_paths[capture_index];
+            if (!export_canvas_capture(canvas, capture_path, display.window_width,
+                                       display.window_height) ||
+                !std::filesystem::is_regular_file(capture_path)) {
+                TraceLog(LOG_WARNING, "CAPTURE: Screenshot was not written: %s", capture_path);
+            }
+            ++capture_index;
+            capture_delay = 0;
+            if (capture_index == 1) {
+                prototype.variant = 1;
+            } else if (capture_index == 2) {
+                prototype.variant = 2;
+            } else if (capture_index == 3) {
+                prototype.variant = 0;
+                prototype.modal_open = true;
+            }
+            if (capture_game_flow && capture_index == 1) {
+                game_flow.has_session = true;
+                game_flow.session = pixel_town::GameSession::new_game();
+                game_flow.notice = "第 1 天开始：请选择一个白天工作地点。";
+            } else if (capture_game_flow && capture_index == 2) {
+                advance_to_placeholder_ending(game_flow);
+            }
+            const std::size_t capture_count =
+                capture_prototype ? prototype_capture_paths.size() : game_flow_capture_paths.size();
+            if (capture_index == capture_count) {
+                break;
+            }
+        }
     }
 
     if (town_marker.id != 0) {
         UnloadTexture(town_marker);
     }
-    UnloadRenderTexture(canvas);
+    if (ui_font.texture.id != 0) {
+        UnloadFont(ui_font);
+    }
+    if (kenney_tiles.id != 0) {
+        UnloadTexture(kenney_tiles);
+    }
+    if (generated_full_map_scene.id != 0) {
+        UnloadTexture(generated_full_map_scene);
+    }
+    if (generated_map_background.id != 0) {
+        UnloadTexture(generated_map_background);
+    }
+    if (generated_buildings.id != 0) {
+        UnloadTexture(generated_buildings);
+    }
+    if (canvas_loaded) {
+        UnloadRenderTexture(canvas);
+    }
     CloseWindow();
     return 0;
 }

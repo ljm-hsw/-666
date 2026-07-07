@@ -32,6 +32,7 @@ User stories: 58, 59, 61, 63, 67
 - [11 P2：接入数据驱动的图书馆工作](11-p2-library-work.md)
 - [13 P3：接入自由五子棋和启发式电脑对手](13-p3-gomoku.md)
 - [14 P3：接入 1v1 骗子骰子](14-p3-liars-dice.md)
+- [15 P3：完成库存清算与七种主结局](15-p3-endings.md)
 
 ## Comments
 

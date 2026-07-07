@@ -71,7 +71,11 @@ ResourceReport validate_resources(const std::filesystem::path& root,
 
 std::vector<ResourceSpec> baseline_resource_manifest() {
     return {
+        {"fonts/fusion-pixel-12px-proportional-zh_hans.ttf", ResourceKind::font, true},
         {"textures/town_marker.png", ResourceKind::texture, true},
+        {"textures/kenney_tiny_town/Tilemap/tilemap_packed.png", ResourceKind::texture, false},
+        {"textures/kenney_tiny_farm/Tilemap/tilemap_packed.png", ResourceKind::texture, false},
+        {"textures/imagegen_buildings/p1_building_sprites.png", ResourceKind::texture, false},
         {"data/baseline.txt", ResourceKind::data, true},
         {"audio/theme.ogg", ResourceKind::audio, false},
     };

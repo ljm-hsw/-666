@@ -6,12 +6,14 @@
 
 ## 当前状态
 
-项目处于 **P0 工程基线验证阶段**：
+项目处于 **P1 核心闭环实现阶段**：
 
 - 产品范围、领域语言和核心设计已确认。
 - P0-P4 已拆分为 18 个本地实施 issue。
 - C++17/CMake 应用、raylib 6.0、doctest 2.5.2 和跨平台 CI 已初始化。
-- macOS 本地配置、构建和 CTest 已通过；Windows 基线由 GitHub Actions 验证。
+- Issue 01 的 macOS 本地配置、构建、CTest，以及 GitHub Actions 上的 Windows 2022/MSVC 与 macOS/Apple Clang 矩阵验证已通过。
+- Issue 04 已跑通从标题创建新游戏、第一日地图、模拟白天工作、回家休息、每日总结到第二日开始的核心闭环。
+- Issue 05 已扩展为固定十日周期，第十日完整结算后进入占位主结局和最终状态总结。
 
 当前不应把文档中的临时数值视为最终平衡承诺。
 
@@ -40,6 +42,7 @@
 | [`docs/README.md`](docs/README.md) | 文档地图与事实来源顺序 |
 | [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) | P0-P4 阶段门槛、依赖图和 issue 索引 |
 | [`docs/DESIGN.md`](docs/DESIGN.md) | 核心架构、状态机、模块契约和数据流 |
+| [`docs/VISUAL_PROTOTYPE.md`](docs/VISUAL_PROTOTYPE.md) | P0 三套视觉原型、候选调色板和资源规范 |
 | [PRD](.scratch/pixel-town-ten-day-plan/PRD.md) | 产品范围、70 条用户故事和验收方向 |
 | [实施 Issues](.scratch/pixel-town-ten-day-plan/issues/) | 18 个依赖有序的本地 Markdown issue |
 
@@ -88,7 +91,14 @@ ctest --test-dir build -C Debug --output-on-failure
 .\build\Debug\pixel_town.exe
 ```
 
-应用默认创建 1280×720 窗口，并用点采样放大 640×360 逻辑画布。删除 `build/` 后重复以上命令即可验证干净构建；构建目录和本机工具目录 `.tools/` 均不会提交。
+应用默认创建 1920×1080 窗口，并用点采样放大 960×540 逻辑画布。删除 `build/` 后重复以上命令即可验证干净构建；构建目录和本机工具目录 `.tools/` 均不会提交。
+
+普通启动进入 P1 核心闭环界面：标题页点击“新游戏”进入第一日地图，选择白天地点后可完成模拟工作或主动放弃，夜晚回家休息后进入每日总结；第十日总结后进入占位主结局，不进入第十一日。
+
+P0 视觉原型仍可通过 `./build/pixel_town --capture-prototype` 生成评审截图。原型已接入 Kenney Tiny Town 和 Tiny Farm 作为 CC0 视觉参考素材，来源见 [`CREDITS.md`](CREDITS.md)。原型仍需人工批准，不代表最终 UI。
+
+原型评审截图可通过 `./build/pixel_town --capture-prototype` 生成到被 Git 忽略的 `prototype-captures/`。
+P1 核心闭环截图可通过 `./build/pixel_town --capture-game-flow` 生成到被 Git 忽略的 `game-flow-captures/`，用于复查标题、地图和结局页的文字可读性。
 
 ## 启动资源与日志
 

@@ -10,7 +10,7 @@ struct DisplayConfig {
 };
 
 [[nodiscard]] constexpr DisplayConfig default_display_config() noexcept {
-    return DisplayConfig{640, 360, 1280, 720};
+    return DisplayConfig{960, 540, 1920, 1080};
 }
 
 }  // namespace pixel_town

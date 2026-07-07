@@ -1,0 +1,88 @@
+# 第三方资源署名
+
+## Fusion Pixel Font
+
+- 名称：Fusion Pixel Font 12px Proportional zh_hans
+- 作者：TakWolf 及项目贡献者
+- 版本：2026.07.01
+- 来源：`https://github.com/TakWolf/fusion-pixel-font/releases/tag/2026.07.01`
+- 许可证：SIL Open Font License 1.1
+- 上游归档：`fusion-pixel-font-12px-proportional-ttf-v2026.07.01.zip`
+- 上游归档 SHA-256：`917888b28d3cf854d6b29b9c1e38d3c88ee9a0d0339a790024adfeb77bcc8e9e`
+- 仓库字体 SHA-256：`5b27e9eb9d9dd93cff727d8919ddd2e7a482b19314b62991cb1e7806852e8734`
+- 许可证文件：[`assets/fonts/OFL.txt`](assets/fonts/OFL.txt) 及 [`assets/fonts/LICENSES/`](assets/fonts/LICENSES/)
+
+该字体融合多个 OFL 字形来源，因此随仓库保留上游提供的完整许可证集合。它当前是 P0 视觉原型路线的必要运行时字体，用于阻止缺字或替代字形进入评审；最终 UI 字体是否沿用仍需 Issue 03 人工批准。
+
+## Kenney Tiny Farm
+
+- 名称：Tiny Farm
+- 作者：Kenney
+- 版本：1.0
+- 来源：`https://www.kenney.nl/assets/tiny-farm`
+- 下载包：`https://www.kenney.nl/media/pages/assets/tiny-farm/dfded1ae3e-1782913588/kenney_tiny-farm.zip`
+- 许可证：Creative Commons Zero，CC0 1.0
+- 上游页面标注：16×16 tile，130 个素材文件，CC0；包内 `Tilesheet.txt` 标注 tilesheet 为 12×11，共 132 个 tile。
+- 上游 ZIP SHA-256：`a06f75f312c27eff15a2288475612e6f6699411be7259d408323cd15a790decc`
+- 仓库路径：[`assets/textures/kenney_tiny_farm/`](assets/textures/kenney_tiny_farm/)
+- 许可证文件 SHA-256：`9c4b5fc75e585a3495f6aa55b62172504780a51b7b4394066e1dc1a45403c548`
+- `Tilemap/tilemap_packed.png` SHA-256：`0c4b3b4058cacf6a9bf021666838156d46da9ce27500d4c13e30cd5a92b722f4`
+- `Tilemap/tilemap.png` SHA-256：`af7608d355329f0ca3b61981eca963ffdf3509a00983f7c424b28f2ee4fb0f11`
+
+当前仓库保留 `Tilemap/`、`Tiles/`、`License.txt` 和 `Tilesheet.txt`；未保留上游 `.url` 快捷方式、预览图和下载 ZIP。Tiny Farm 作为 P0 视觉原型参考素材，用于验证 16×16 tile 规格、小镇地图质感和 CC0 第三方素材接入流程。正式美术仍需 Issue 03 人工批准后锁定。
+
+## Kenney Tiny Town
+
+- 名称：Tiny Town
+- 作者：Kenney
+- 版本：1.1
+- 来源：`https://www.kenney.nl/assets/tiny-town`
+- 下载包：`https://www.kenney.nl/media/pages/assets/tiny-town/a415fbeb49-1735736916/kenney_tiny-town.zip`
+- 许可证：Creative Commons Zero，CC0 1.0
+- 上游页面标注：16×16 tile，130 个素材文件，CC0；包内 `Tilesheet.txt` 标注 tilesheet 为 12×11，共 132 个 tile。
+- 上游 ZIP SHA-256：`9768692dccff1d706408a5aedd6ca4f6cd1409506cbc84cb2f862919764be977`
+- 仓库路径：[`assets/textures/kenney_tiny_town/`](assets/textures/kenney_tiny_town/)
+- 许可证文件 SHA-256：`c483c167cc3bdfe17c15f957ff847d409f64d81b410b28783636cf3b2b7814c5`
+- `Tilemap/tilemap_packed.png` SHA-256：`3a54d99ecde790d4fdea207a3644cf130fc56fa838f1beb1507c185a95b8e902`
+- `Tilemap/tilemap.png` SHA-256：`b9e9fb80b95d0b90b52f12d914f000cf16f8b22c1faa815aa94500abfa57bc50`
+
+当前仓库保留 `Tilemap/`、`Tiles/`、`License.txt` 和 `Tilesheet.txt`；未保留上游 `.url` 快捷方式、预览图和下载 ZIP。Tiny Town 与当前小镇地图语义更匹配，P0 原型优先使用它绘制草地、道路、房体纹理、门窗和地点图标；最终是否作为正式小镇美术仍需 Issue 03 人工批准。
+
+## Imagegen P1 Town Map Background
+
+- 名称：P1 town map background
+- 生成方式：内置 imagegen，按项目 960×540 地图页主背景需求生成
+- 生成日期：2026-07-07
+- 候选原图：[`assets/textures/imagegen_backgrounds/town_map_background_source.png`](assets/textures/imagegen_backgrounds/town_map_background_source.png)
+- 候选原图 SHA-256：`935bffd470845cd17a397191385a6633033009d453c6f730f906e1355706781d`
+- 处理后运行时背景：[`assets/textures/imagegen_backgrounds/town_map_background.png`](assets/textures/imagegen_backgrounds/town_map_background.png)
+- 处理后运行时背景 SHA-256：`386c7087135e21ba2cf7ad03f322567d8359965383c32e907977a7a96ebdf770`
+- 原始生成文件：`/Users/quhongye/.codex/generated_images/019f3531-521a-7541-a0e7-03eaae59f588/ig_0bf9c0faeb9bc89b016a4c70734cc0819aacb55bc4a939dd7e.png`
+
+该资源是 P1 地图页的分层背景候选。当前运行时代码优先加载完整 imagegen 场景图；完整场景图缺失时才回退到该背景与独立建筑 sprite 的组合方案。它仍属于候选美术资产，是否进入最终交付需后续美术验收确认。
+
+## Imagegen P1 Town Map Full Scene
+
+- 名称：P1 town map full scene
+- 生成方式：内置 imagegen，按“背景与五个地点房屋一起生成”的可直接使用地图方案生成
+- 生成日期：2026-07-07
+- 候选原图：[`assets/textures/imagegen_backgrounds/town_map_full_scene_source.png`](assets/textures/imagegen_backgrounds/town_map_full_scene_source.png)
+- 候选原图 SHA-256：`112b546f9d85d581ecf6482959c964f6bf79bc7b95943d807d5aaecd442ccf15`
+- 处理后运行时背景：[`assets/textures/imagegen_backgrounds/town_map_full_scene.png`](assets/textures/imagegen_backgrounds/town_map_full_scene.png)
+- 处理后运行时背景 SHA-256：`fc78b733e0847c71cb11dad53c247d39dd789ad4aaa4efd05c42b6ded3b5ceef`
+- 原始生成文件：`/Users/quhongye/.codex/generated_images/019f3531-521a-7541-a0e7-03eaae59f588/ig_037ec6ddc81fb7eb016a4c96e62440819a898a6847e37def57.png`
+
+该资源是当前 P1 地图页的优先视觉方案。五个地点建筑已经和地图背景一起生成，运行时代码只叠加交互标签与点击热区，以避免独立房屋 sprite 和地块错位。该图仍属于候选美术资产，是否进入最终交付需后续美术验收确认。
+
+## Imagegen P1 Building Candidates
+
+- 名称：P1 building candidates
+- 生成方式：内置 imagegen，按项目当前 P1 地图房屋 UI 替换需求生成
+- 生成日期：2026-07-07
+- 候选原图：[`assets/textures/imagegen_buildings/p1_building_candidates.png`](assets/textures/imagegen_buildings/p1_building_candidates.png)
+- 候选原图 SHA-256：`98d97717d4c2f1e0a1a2a72c3094e8ebfa07b188afb785d0174cd83ef5910a1b`
+- 处理后运行时 sprite sheet：[`assets/textures/imagegen_buildings/p1_building_sprites.png`](assets/textures/imagegen_buildings/p1_building_sprites.png)
+- 处理后 sprite sheet SHA-256：`836388b286b25b946d93b587765ede67adf80f3b9de7eb8a98219ce014ae3e37`
+- 原始生成文件：`/Users/quhongye/.codex/generated_images/019f3531-521a-7541-a0e7-03eaae59f588/ig_062e8dc727820bc0016a4c6b564ba0819887591b961e35f264.png`
+
+该资源是项目内 P1 地图 UI 的候选生成资产，不是第三方素材，也不是最终美术批准结果。当前代码把处理后的 sprite sheet 作为地图页主体建筑资源优先显示；缺失时仍回退到 Kenney/代码绘制方案。是否进入最终交付仍需 Issue 03 或后续美术验收确认。
