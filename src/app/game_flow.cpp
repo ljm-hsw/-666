@@ -24,7 +24,7 @@ constexpr std::array<Location, 5> map_locations{
     Location::restaurant, Location::convenience_store, Location::library, Location::tavern,
     Location::home};
 
-constexpr std::array<const char*, 48> ui_texts{
+constexpr std::array<const char*, 58> ui_texts{
     "像素小镇",
     "十日经营计划",
     "新游戏",
@@ -73,6 +73,9 @@ constexpr std::array<const char*, 48> ui_texts{
     "已取消新游戏，原存档保持不变",
     "存档版本不兼容，原文件已保留",
     "存档损坏或缺字段，原文件已保留",
+    "炒饭", "面条", "汤", "饺子", "沙拉",
+    "正确", "错单", "超时", "餐馆工作完成",
+    "准备根据顾客订单按至菜品选择上想要等待秒剩余结算",
 };
 
 float scaled(float value) {
@@ -400,7 +403,75 @@ void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
     text(font, state.notice, 42, 324, 18, RAYWHITE);
 }
 
+void draw_restaurant_ui(const Font& font, const GameAppState& state, Vector2 mouse) {
+    ClearBackground(Color{215, 221, 194, 255});
+    draw_status(font, state.session, true);
+    const auto& rest = *state.restaurant;
+
+    panel(Rectangle{40, 92, 560, 230}, cream);
+    text(font, "餐馆", 56, 98, 24, red);
+
+    // X button
+    const Rectangle close_btn{568, 94, 28, 28};
+    DrawRectangleRec(scaled_rect(close_btn),
+                     CheckCollisionPointRec(mouse, scaled_rect(close_btn)) ? red : Color{183, 83, 72, 255});
+    centered_text(font, "X", close_btn, 18, RAYWHITE);
+
+    if (rest.phase() == RestaurantPhase::showing_instructions) {
+        text(font, "准备开始餐馆工作", 56, 136, 20, ink);
+        text(font, "根据顾客订单按1至5选择菜品上菜", 56, 166, 16, ink);
+        const Rectangle start_btn{232, 200, 176, 30};
+        panel(start_btn, CheckCollisionPointRec(mouse, scaled_rect(start_btn)) ? paper : green);
+        centered_text(font, "开始", start_btn, 18, RAYWHITE);
+
+    } else if (rest.phase() == RestaurantPhase::waiting_for_order ||
+               rest.phase() == RestaurantPhase::order_feedback) {
+        const auto* order = rest.current_order();
+        if (order) {
+            text(font, "顾客想要", 56, 126, 18, ink);
+            text(font, dish_label(order->required_dish), 180, 126, 22, red);
+            text(font, std::string("等待 ") + std::to_string(rest.time_remaining()) + " 秒",
+                 400, 126, 18, rest.time_remaining() <= 1 ? red : ink);
+            if (rest.phase() == RestaurantPhase::order_feedback) {
+                text(font, rest.last_serve_correct() ? "正确" : "错单",
+                     400, 150, 20, rest.last_serve_correct() ? green : red);
+            }
+        }
+        if (rest.phase() == RestaurantPhase::waiting_for_order) {
+            text(font, "菜品选择", 56, 176, 16, ink);
+            for (int i = 0; i < dish_count(); ++i) {
+                const float bx = 56.0F + i * 108.0F;
+                const Rectangle btn{bx, 198, 96, 26};
+                panel(btn, CheckCollisionPointRec(mouse, scaled_rect(btn)) ? cream : Color{211, 202, 174, 255});
+                const std::string label = std::to_string(i + 1) + "." + dish_label(static_cast<Dish>(i));
+                centered_text(font, label.c_str(), btn, 16, ink);
+            }
+        }
+        const auto& stats = rest.stats();
+        panel(Rectangle{40, 236, 560, 30}, Color{65, 91, 89, 245});
+        text(font, std::string("正确 ") + std::to_string(stats.correct) +
+                 "  错单 " + std::to_string(stats.wrong) +
+                 "  超时 " + std::to_string(stats.timeout) +
+                 "  剩余 " + std::to_string(rest.orders_remaining()),
+             56, 242, 16, RAYWHITE);
+    } else if (rest.phase() == RestaurantPhase::finished) {
+        const auto& stats = rest.stats();
+        text(font, "餐馆工作完成", 56, 136, 22, ink);
+        text(font, std::string("正确 ") + std::to_string(stats.correct) +
+                 "  错单 " + std::to_string(stats.wrong) +
+                 "  超时 " + std::to_string(stats.timeout), 56, 168, 18, ink);
+        const Rectangle done_btn{232, 210, 176, 28};
+        panel(done_btn, CheckCollisionPointRec(mouse, scaled_rect(done_btn)) ? paper : green);
+        centered_text(font, "完成结算", done_btn, 16, RAYWHITE);
+    }
+}
+
+
 void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
+    if (state.session.pending_location() == Location::restaurant && state.restaurant) {
+        draw_restaurant_ui(font, state, mouse);
+        return;
+    }
     ClearBackground(Color{215, 221, 194, 255});
     draw_status(font, state.session, true);
     panel(Rectangle{96, 78, 448, 210}, cream);
@@ -475,7 +546,7 @@ void draw_pause_overlay(const Font& font, bool audio_enabled) {
 const char* game_flow_glyphs() {
     static const std::string glyphs = [] {
         std::string result =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 "
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789. "
             "·/：，。；“”+-";
         for (const char* value : ui_texts) {
             result += value;
@@ -489,7 +560,7 @@ const char* game_flow_glyphs() {
             "知识行动完成回家休息恢复体力并结束今天主动放弃阶段已消耗本次无收益确认后进入下一游戏日"
             "占位主结局最终状态成长路线摘要均衡体验小镇生活十日经营计划已经结束不能继续选择地点"
             "点击地点查看原因成长路线均衡体验已暂停按P继续按M切换静音恢复声音"
-            "演示参数错误预设加载失败已加载正式存档不会被读取或覆盖";
+            "演示参数错误预设加载失败已加载正式存档不会被读取或覆盖炒饭面条汤饺子沙拉正确错单超时餐馆工作完成准备根据顾客订单按至菜品选择上想要等待秒剩余结算";
         return result;
     }();
     return glyphs.c_str();
@@ -538,8 +609,15 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 return;
             }
             if (state.session.enter_location(location)) {
-                state.notice =
-                    std::string{"已进入"} + location_label(location) + "，开始前可返回地图。";
+                if (location == Location::restaurant) {
+                    state.restaurant = std::make_unique<RestaurantSession>(
+                        state.session.current_day_context().seed);
+                    state.notice = "已进入餐馆";
+                    state.restaurant_timer = 0.0F;
+                } else {
+                    state.notice =
+                        std::string{"已进入"} + location_label(location) + "，开始前可返回地图。";
+                }
             }
             return;
         }
@@ -565,6 +643,67 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 return;
             }
         } else {
+            // Restaurant-specific logic
+            if (state.session.pending_location() == Location::restaurant && state.restaurant) {
+                auto& rest = *state.restaurant;
+                // X button abandon
+                const Rectangle close_btn{568, 94, 28, 28};
+                if (clicked(close_btn, logical_mouse)) {
+                    state.session.apply_action_result(state.session.abandon_current_location());
+                    state.restaurant.reset();
+                    state.notice = "已放弃餐馆工作";
+                    return;
+                }
+                // Start button -> skip instructions
+                if (rest.phase() == RestaurantPhase::showing_instructions) {
+                    const Rectangle start_btn{232, 200, 176, 30};
+                    if (activated(start_btn, logical_mouse, KEY_SPACE)) {
+                        rest.skip_instructions();
+                    }
+                    return;
+                }
+                // Dish selection
+                if (rest.phase() == RestaurantPhase::waiting_for_order) {
+                    for (int i = 0; i < dish_count(); ++i) {
+                        if (IsKeyPressed(static_cast<KeyboardKey>(KEY_ONE + i))) {
+                            rest.serve_dish(static_cast<Dish>(i));
+                            break;
+                        }
+                    }
+    // Timer tick - once per second
+                    state.restaurant_timer += GetFrameTime();
+                    while (state.restaurant_timer >= 1.0F) {
+                        state.restaurant_timer -= 1.0F;
+                        rest.advance_time();
+                    }
+                }
+                // Feedback -> next order
+                if (rest.phase() == RestaurantPhase::order_feedback) {
+                    if (IsKeyPressed(KEY_SPACE)) {
+                        rest.advance_time();
+                    }
+                }
+                // Finished -> apply result
+                if (rest.phase() == RestaurantPhase::finished) {
+                    const Rectangle done_btn{232, 210, 176, 28};
+                    if (activated(done_btn, logical_mouse, KEY_SPACE)) {
+                        const auto result = rest.build_result(state.session.active_result_id());
+                        const auto applied = state.session.apply_action_result(result);
+                        state.restaurant.reset();
+                        state.notice = applied.message;
+                        return;
+                    }
+                }
+                // Abandon
+                if (clicked(abandon_button, logical_mouse)) {
+                    state.session.apply_action_result(state.session.abandon_current_location());
+                    state.restaurant.reset();
+                    state.notice = "已放弃餐馆工作";
+                    return;
+                }
+                return;
+            }
+            // Non-restaurant: original logic
             if (activated(start_button_location, logical_mouse, KEY_SPACE)) {
                 const auto applied =
                     state.session.apply_action_result(state.session.simulated_success_result());
