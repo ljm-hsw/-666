@@ -27,7 +27,6 @@
 #include "io/resource_diagnostics.hpp"
 #include "io/save_game.hpp"
 #include "io/startup_log.hpp"
-#include "locations/library_data.hpp"
 
 namespace {
 
@@ -231,15 +230,8 @@ int main(int argc, char* argv[]) {
         } else {
             SetTextureFilter(town_marker, TEXTURE_FILTER_POINT);
         }
-        std::string required_glyphs =
+        const std::string required_glyphs =
             std::string{pixel_town::visual_prototype_glyphs()} + pixel_town::game_flow_glyphs();
-
-        auto library_load_result = pixel_town::library::load_library_data("assets/data/library_data.txt");
-        if (library_load_result.success) {
-            std::string library_chars = pixel_town::library::collect_all_text_characters(library_load_result.data);
-            required_glyphs += library_chars;
-        }
-
         int codepoint_count = 0;
         int* codepoints = LoadCodepoints(required_glyphs.c_str(), &codepoint_count);
         const int font_pixel_size = capture_prototype ? 12 : 24;

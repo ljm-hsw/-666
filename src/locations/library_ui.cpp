@@ -196,7 +196,7 @@ void draw_npc_talk_screen(const LibraryRuleEngine& engine, const LibraryRenderCo
 
     panel(Rectangle{50, 200, 540, 120}, paper);
     text(font, "管理员说：", 70, 215, 18, ink);
-    draw_text_wrapped(font, dialogue.c_str(), 70, 240, scaled(500), 22, 14, ink);
+    draw_text_wrapped(font, dialogue, 70, 240, scaled(500), 22, 14, ink);
 
     const int btn_y = 330;
     const int btn_w = 200;
@@ -227,10 +227,10 @@ void draw_plot_event_screen(const LibraryRuleEngine& engine, const LibraryRender
     
     panel(Rectangle{50, 80, 540, 200}, plot_highlight);
     text(font, "【剧情事件】", 70, 95, 24, gold);
-    draw_text_wrapped(font, interaction.current_plot_title.c_str(), 70, 125, scaled(500), 36, 28, ink);
+    draw_text_wrapped(font, interaction.current_plot_title, 70, 125, scaled(500), 36, 28, ink);
     
     panel(Rectangle{70, 170, 500, 80}, paper);
-    draw_text_wrapped(font, interaction.current_plot_description.c_str(), 90, 185, scaled(460), 24, 16, ink);
+    draw_text_wrapped(font, interaction.current_plot_description, 90, 185, scaled(460), 24, 16, ink);
 
     const int btn_y = 340;
     const int btn_w = 200;
@@ -279,7 +279,7 @@ void draw_map_reveal_screen(const LibraryRuleEngine& engine, const LibraryRender
 
     const auto& dialogue = engine.get_dialogue().old_map_reveal;
     panel(Rectangle{50, 275, 540, 65}, paper);
-    draw_text_wrapped(font, dialogue.c_str(), 70, 290, scaled(500), 22, 14, ink);
+    draw_text_wrapped(font, dialogue, 70, 290, scaled(500), 22, 14, ink);
 
     const int btn_y = 340;
     const int btn_w = 200;
@@ -319,7 +319,7 @@ void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState
 
     panel(Rectangle{50, 100, 540, 60}, paper);
     text(font, "读者问：", 70, 110, 18, ink);
-    draw_text_wrapped(font, question.question.c_str(), 70, 135, scaled(500), 22, 14, ink);
+    draw_text_wrapped(font, question.question, 70, 135, scaled(500), 22, 14, ink);
 
     if (ui_state.show_hint && !question.hint.empty()) {
         panel(Rectangle{50, 155, 540, 35}, Color{245, 240, 220, 255});
@@ -416,7 +416,7 @@ void draw_summary_screen(const ActionResult& result, const LibraryRenderConfig& 
     panel(Rectangle{50, 80, 540, 240}, paper);
     text(font, "图书馆工作完成", config.logical_width / 2 - 100, 95, 24, ink);
 
-    draw_text_wrapped(font, result.summary.c_str(), 70, 130, scaled(500), 24, 16, ink);
+    draw_text_wrapped(font, result.summary, 70, 130, scaled(500), 24, 16, ink);
 
     int y = 170;
 
@@ -459,13 +459,12 @@ void draw_summary_screen(const ActionResult& result, const LibraryRenderConfig& 
         panel(Rectangle{50, y + 5, 540, 70}, plot_highlight);
         text(font, "【剧情触发】", 70, y + 15, 16, gold);
         text(font, result.plot_title.c_str(), 170, y + 15, 16, ink);
-        draw_text_wrapped(font, result.plot_description.c_str(), 70, y + 35, scaled(500), 22, 14, faded_ink);
-        y += 80;
+        draw_text_wrapped(font, result.plot_description, 70, y + 35, scaled(500), 22, 14, faded_ink);
     }
 
     if (!result.narrative_echo.empty()) {
         panel(Rectangle{50, y + 5, 540, 50}, Color{245, 240, 220, 255});
-        draw_text_wrapped(font, result.narrative_echo.c_str(), 70, y + 15, scaled(500), 22, 14, faded_ink);
+        draw_text_wrapped(font, result.narrative_echo, 70, y + 15, scaled(500), 22, 14, faded_ink);
         y += 60;
     }
 
