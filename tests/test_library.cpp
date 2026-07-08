@@ -6,35 +6,39 @@
 namespace {
 
 pixel_town::library::LibraryData create_test_data() {
-    return pixel_town::library::LibraryData{
-        .categories = {
-            {"history", "历史", "记录人类文明发展历程"},
-            {"science", "科学", "探索自然规律"},
-            {"literature", "文学", "人类情感表达"},
-            {"art", "艺术", "视觉美学创造"},
-            {"technology", "技术", "智慧与工具结合"},
-        },
-        .questions = {
-            {"人类第一次登月是在哪一年？", "history", "1969年", "回答正确！", "回答错误"},
-            {"光速大约是多少公里每秒？", "science", "30万公里", "回答正确！", "回答错误"},
-            {"《红楼梦》的作者是谁？", "literature", "曹雪芹", "回答正确！", "回答错误"},
-            {"蒙娜丽莎是谁的作品？", "art", "达芬奇", "回答正确！", "回答错误"},
-            {"计算机的基本组成部分有哪些？", "technology", "CPU内存等", "回答正确！", "回答错误"},
-        },
-        .dialogue = {
-            .greeting = "欢迎来到图书馆",
-            .introduction = "书架按类别分的",
-            .familiar_talk = "窗台晒着借书卡",
-            .close_friend_talk = "管理员递给你一杯热茶",
-            .old_map_reveal = "掉出一张旧集市地图",
-            .borrow_card = "借书卡盒子里多了几张新记录",
-        },
-        .plot_events = {
-            {"test_plot", "测试剧情", "测试描述", 2, 30, false},
-        },
-        .welcome_message = "欢迎来到小镇图书馆",
-        .work_intro = "读者会提出各种问题",
+    pixel_town::library::LibraryData data;
+
+    data.categories = {
+        {"history", "历史", "记录人类文明发展历程"},
+        {"science", "科学", "探索自然规律"},
+        {"literature", "文学", "人类情感表达"},
+        {"art", "艺术", "视觉美学创造"},
+        {"technology", "技术", "智慧与工具结合"},
     };
+
+    data.questions = {
+        {"人类第一次登月是在哪一年？", "history", "1969年", "回答正确！", "回答错误"},
+        {"光速大约是多少公里每秒？", "science", "30万公里", "回答正确！", "回答错误"},
+        {"《红楼梦》的作者是谁？", "literature", "曹雪芹", "回答正确！", "回答错误"},
+        {"蒙娜丽莎是谁的作品？", "art", "达芬奇", "回答正确！", "回答错误"},
+        {"计算机的基本组成部分有哪些？", "technology", "CPU内存等", "回答正确！", "回答错误"},
+    };
+
+    data.dialogue.greeting = "欢迎来到图书馆";
+    data.dialogue.introduction = "书架按类别分的";
+    data.dialogue.familiar_talk = "窗台晒着借书卡";
+    data.dialogue.close_friend_talk = "管理员递给你一杯热茶";
+    data.dialogue.old_map_reveal = "掉出一张旧集市地图";
+    data.dialogue.borrow_card = "借书卡盒子里多了几张新记录";
+
+    data.plot_events = {
+        {"test_plot", "测试剧情", "测试描述", 2, 30, false},
+    };
+
+    data.welcome_message = "欢迎来到小镇图书馆";
+    data.work_intro = "读者会提出各种问题";
+
+    return data;
 }
 
 }  // namespace
