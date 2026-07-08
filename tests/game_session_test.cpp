@@ -74,7 +74,7 @@ TEST_CASE("full one-day path reaches day two") {
     const auto night_result = session.home_rest_result();
     REQUIRE(session.apply_action_result(night_result).accepted);
     CHECK(session.phase() == pixel_town::GamePhase::day_summary);
-    CHECK(session.last_summary().find("回家休息") != std::string::npos);
+    CHECK(session.last_summary().find("热水") != std::string::npos);
 
     REQUIRE(session.finish_day_summary());
     CHECK(session.day() == 2);
@@ -95,7 +95,8 @@ TEST_CASE("ten-day path ends with one placeholder ending") {
     CHECK(session.phase() == pixel_town::GamePhase::ending);
     CHECK(session.is_ended());
     CHECK(session.main_ending() == std::string{"平凡小镇新人"});
-    CHECK(session.final_summary().find("最终状态") != std::string::npos);
+    CHECK(session.final_summary().find("十天不长") != std::string::npos);
+    CHECK(session.final_summary().find("均衡体验") != std::string::npos);
     CHECK_FALSE(session.can_enter(pixel_town::Location::restaurant).allowed);
     CHECK_FALSE(session.finish_day_summary());
 }

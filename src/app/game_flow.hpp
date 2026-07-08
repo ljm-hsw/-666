@@ -12,6 +12,8 @@ struct GameAppState {
     bool has_session{false};
     GameSession session{GameSession::new_game()};
     bool save_present{false};
+    bool resume_available{false};
+    GameSession resume_session{GameSession::new_game()};
     bool confirm_new_game_overwrite{false};
     std::string notice{"点击“新游戏”开始第一天。"};
 };

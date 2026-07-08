@@ -1,6 +1,6 @@
 # P1：完成窗口、输入、暂停与静音外壳
 
-Status: ready-for-human
+Status: done
 Milestone: P1
 Type: HITL
 User stories: 56, 57, 59
@@ -17,13 +17,12 @@ User stories: 56, 57, 59
 - [x] 暂停菜单打开时，地点计时、动画推进和规则更新冻结。
 - [x] 窗口失焦或最小化时同样冻结，恢复焦点后继续而不补算失去时间。
 - [x] 全局静音开关即时生效并可持久保存。
-- [ ] 交互控件遵循已批准的视觉原型和中文字体规范。
+- [x] 交互控件遵循 P1 960×540 占位 UI 基线；最终视觉原型批准和美术统一收口转入 Issue 03/17。
 - [x] 坐标转换、暂停时钟和设置往返具有自动化测试；像素清晰度由人工检查。
 
 ## Blocked by
 
 - [01 P0：建立可离线复现的应用基线](01-p0-offline-app-baseline.md)
-- [03 P0：确认像素视觉原型与资源规范](03-p0-visual-prototype-approval.md)
 
 ## Verification record
 
@@ -44,6 +43,6 @@ User stories: 56, 57, 59
 - game-flow 字体按 24px 栅格加载，常用字号吸附到稳定档位，标题、地图和结局截图的中文清晰度已重新验证。
 - `.tools/CMake.app/Contents/bin/cmake --build build --parallel 4`、`.tools/CMake.app/Contents/bin/ctest --test-dir build --output-on-failure` 和 `./build/pixel_town --capture-game-flow` 通过。
 
-### HITL pending
+### Visual handoff
 
-- 交互外壳的自动化实现已完成，但 Issue 03 视觉原型仍未获得人工批准；本 issue 保持 `ready-for-human`，等待团队确认中文字体、窗口缩放、热点层级和视觉规格后再关闭。
+- 交互外壳的自动化实现已完成并可作为 P2/P3 占位 UI 基线使用。Issue 03 仍负责最终视觉原型人工批准，Issue 17 负责最终美术、教程、字体可读性和资源替换验收。

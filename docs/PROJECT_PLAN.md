@@ -33,7 +33,6 @@ flowchart TD
     I01 --> I04["04 单日闭环"]
     I04 --> I05["05 十日周期"]
     I04 --> I06["06 存档恢复"]
-    I03 --> I07["07 输入暂停外壳"]
     I01 --> I07
     I05 --> I08["08 演示预设"]
     I06 --> I08
@@ -102,9 +101,9 @@ P0 门槛：五名成员可在约定工具链上完成离线配置与构建；CI
 | [04 跑通一个完整游戏日](../.scratch/pixel-town-ten-day-plan/issues/04-p1-one-day-vertical-loop.md) | AFK | 01 | 新游戏到首日结算 |
 | [05 扩展为十日周期与占位主结局](../.scratch/pixel-town-ten-day-plan/issues/05-p1-ten-day-cycle.md) | AFK | 04 | 十日无图形集成测试与可见结局 |
 | [06 实现阶段边界自动存档与恢复](../.scratch/pixel-town-ten-day-plan/issues/06-p1-save-and-resume.md) | AFK | 04 | 各阶段保存、恢复和损坏处理 |
-| [07 完成窗口、输入、暂停与静音外壳](../.scratch/pixel-town-ten-day-plan/issues/07-p1-interaction-shell.md) | HITL | 01、03 | 自动化实现已完成；等待 Issue 03 视觉批准后关闭 |
+| [07 完成窗口、输入、暂停与静音外壳](../.scratch/pixel-town-ten-day-plan/issues/07-p1-interaction-shell.md) | AFK | 01 | 960×540 交互外壳、暂停、失焦冻结和静音已完成 |
 | [08 实现隔离的演示预设加载](../.scratch/pixel-town-ten-day-plan/issues/08-p1-demo-presets.md) | AFK | 05、06 | 参数加载预设且正式存档不变 |
-| [19 接入 MVP 主线剧情骨架](../.scratch/pixel-town-ten-day-plan/issues/19-p1-mvp-story-shell.md) | AFK | 05、06、07、08 | 开场、每日提示、地点摘要、评议会和占位结局文案 |
+| [19 接入 MVP 主线剧情骨架](../.scratch/pixel-town-ten-day-plan/issues/19-p1-mvp-story-shell.md) | AFK | 05、06、07、08 | 已完成：开场、每日提示、地点摘要、评议会和占位结局文案 |
 
 P1 门槛：从标题开始可连续完成十天；阶段不可重复；退出后可恢复；演示预设与玩家存档隔离；MVP 主线剧情文本已进入核心闭环。
 

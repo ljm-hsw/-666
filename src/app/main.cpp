@@ -360,11 +360,11 @@ int main(int argc, char* argv[]) {
     } else if (persistence_enabled) {
         const auto loaded = pixel_town::load_session(save_path);
         if (loaded.status == pixel_town::SaveStatus::ok) {
-            game_flow.has_session = true;
             game_flow.save_present = true;
-            game_flow.session = loaded.session;
-            game_flow.notice = "已恢复最近的阶段边界。";
-            persisted_snapshot = game_flow.session.snapshot();
+            game_flow.resume_available = true;
+            game_flow.resume_session = loaded.session;
+            game_flow.notice = "检测到已有存档，可继续游戏或开始新游戏。";
+            persisted_snapshot = loaded.session.snapshot();
             has_persisted_snapshot = true;
         } else if (loaded.status == pixel_town::SaveStatus::not_found) {
             game_flow.save_present = false;

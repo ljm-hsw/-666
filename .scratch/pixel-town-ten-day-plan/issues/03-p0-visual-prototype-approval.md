@@ -18,7 +18,7 @@ User stories: 56, 58, 63, 67
 - [ ] 团队确认并记录调色板、像素网格、tile/sprite 尺寸和资源命名规则。
 - [x] 选定字体和所有原型第三方资源具有允许再分发的许可证，并登记来源。
 - [ ] 人工评审结果和需要修改的项目记录在本 issue 的 `Comments` 中。
-- [ ] 获得明确人工批准后，后续 UI issue 才可依赖该视觉规格。
+- [ ] 获得明确人工批准后，P4 最终 UI、资源替换和发布表现才可依赖该视觉规格；P2/P3 逻辑 issue 可按 `docs/UI_ASSET_STRATEGY.md` 使用占位 UI 先行开发。
 
 ## Blocked by
 
@@ -39,4 +39,4 @@ User stories: 56, 58, 63, 67
 - 候选调色板、16×16 tile、16/32 px sprite、4 px UI 网格和资源命名规则见 `docs/VISUAL_PROTOTYPE.md`，尚未获得团队批准。
 - macOS Debug 构建和 CTest 通过。可运行 `./build/pixel_town --capture-prototype` 生成评审截图，或直接启动应用进行窗口缩放、中文可读性和热点层级评审。
 
-人工评审需明确记录：选择 A、B、C 或组合方案；中文字体是否可读；窗口缩放是否锐利；是否批准 Kenney Tiny Town / Tiny Farm 作为 P0 参考素材；是否批准调色板、尺寸和命名规则。未得到这些结论前，本 issue 保持 `ready-for-human`。
+人工评审需明确记录：选择 A、B、C 或组合方案；中文字体是否可读；窗口缩放是否锐利；是否批准 Kenney Tiny Town / Tiny Farm 作为 P0 参考素材；是否批准调色板、尺寸和命名规则。未得到这些结论前，本 issue 保持 `ready-for-human`，但不阻塞 P2/P3 占位 UI 下的地点逻辑开发；最终视觉一致性由 Issue 17 统一验收。

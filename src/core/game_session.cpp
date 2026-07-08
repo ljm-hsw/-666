@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <array>
 
+#include "core/story_text.hpp"
+
 namespace pixel_town {
 namespace {
 
@@ -40,19 +42,7 @@ DayContext make_day_context(int day, unsigned int seed) {
 }
 
 std::string completed_summary(Location location) {
-    switch (location) {
-        case Location::restaurant:
-            return "餐馆模拟工作完成：服务了午餐客流，获得金钱与声望。";
-        case Location::convenience_store:
-            return "便利店模拟经营完成：完成一次进货与销售结算。";
-        case Location::library:
-            return "图书馆模拟工作完成：帮助读者找书并提升知识。";
-        case Location::home:
-            return "回家休息：恢复体力并结束今天。";
-        case Location::tavern:
-            break;
-    }
-    return "行动完成。";
+    return location_result_summary(location, ActionOutcome::completed);
 }
 
 }  // namespace
@@ -185,7 +175,7 @@ ActionResult GameSession::abandon_current_location() const {
     const ActionSlot slot =
         phase_ == GamePhase::day_location ? ActionSlot::day : ActionSlot::night;
     return ActionResult{active_result_id_, slot, pending_location_, ActionOutcome::abandoned,
-                        {}, std::string{location_label(pending_location_)} + "已主动放弃：阶段已消耗，本次无收益。"};
+                        {}, location_result_summary(pending_location_, ActionOutcome::abandoned)};
 }
 
 ActionResult GameSession::home_rest_result() {
@@ -323,11 +313,8 @@ void GameSession::apply_delta(const StatDelta& delta) {
 
 void GameSession::create_placeholder_ending() {
     main_ending_ = "平凡小镇新人";
-    final_summary_ = "最终状态：金钱 " + std::to_string(player_.money) + "，体力 " +
-                     std::to_string(player_.stamina) + "，声望 " +
-                     std::to_string(player_.reputation) + "，知识 " +
-                     std::to_string(player_.knowledge) + "，心情 " +
-                     std::to_string(player_.mood) + "。成长路线摘要：均衡体验小镇生活。";
+    final_summary_ = std::string{council_opening()} + "\n" + placeholder_ending_text() +
+                     "\n成长路线摘要：均衡体验小镇生活。";
 }
 
 }  // namespace pixel_town

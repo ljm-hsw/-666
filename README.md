@@ -9,15 +9,16 @@
 项目处于 **P1 核心闭环实现阶段**：
 
 - 产品范围、领域语言和核心设计已确认。
-- P0-P4 已拆分为 18 个本地实施 issue。
+- P0-P4 已拆分为 19 个本地实施 issue。
 - C++17/CMake 应用、raylib 6.0、doctest 2.5.2 和跨平台 CI 已初始化。
 - Issue 01 的 macOS 本地配置、构建、CTest，以及 GitHub Actions 上的 Windows 2022/MSVC 与 macOS/Apple Clang 矩阵验证已通过。
 - Issue 02 已接入启动资源诊断、本地 `logs/latest.log` 和可选音频静音降级。
 - Issue 04 已跑通从标题创建新游戏、第一日地图、模拟白天工作、回家休息、每日总结到第二日开始的核心闭环。
 - Issue 05 已扩展为固定十日周期，第十日完整结算后进入占位主结局和最终状态总结。
 - Issue 06 已实现阶段边界自动存档与恢复，正式槽位位于应用目录旁 `saves/slot1.sav`。
-- Issue 07 的窗口缩放、逻辑输入、暂停/失焦冻结和静音设置外壳已实现并通过自动化测试，但仍等待 Issue 03 的人工视觉批准。
+- Issue 07 的窗口缩放、逻辑输入、暂停/失焦冻结和静音设置外壳已实现并通过自动化测试；最终视觉批准转入 Issue 03/17。
 - Issue 08 已实现显式演示预设加载，演示模式不读取也不覆盖正式自动存档。
+- Issue 19 已接入 P1 MVP 主线剧情骨架：标题开场、十天每日提示、占位地点摘要、第十天评议会和占位结局文案；P2/P3 地点逻辑由组员在占位 UI 下并行推进。
 
 当前不应把文档中的临时数值视为最终平衡承诺。
 
@@ -49,7 +50,7 @@
 | [`docs/DESIGN.md`](docs/DESIGN.md) | 核心架构、状态机、模块契约和数据流 |
 | [`docs/VISUAL_PROTOTYPE.md`](docs/VISUAL_PROTOTYPE.md) | P0 三套视觉原型、候选调色板和资源规范 |
 | [PRD](.scratch/pixel-town-ten-day-plan/PRD.md) | 产品范围、70 条用户故事和验收方向 |
-| [实施 Issues](.scratch/pixel-town-ten-day-plan/issues/) | 18 个依赖有序的本地 Markdown issue |
+| [实施 Issues](.scratch/pixel-town-ten-day-plan/issues/) | 19 个依赖有序的本地 Markdown issue |
 
 ## 技术基线
 

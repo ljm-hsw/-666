@@ -405,6 +405,6 @@ Status: ready-for-agent
 
 ### 后续规划边界
 
-本 PRD 已拆分为 P0-P4 共 18 个本地实施 issue，发布在 `issues/` 下；阶段门槛、依赖图和 issue 索引见 `docs/PROJECT_PLAN.md`。实施从 P0 的无阻塞 issue 开始；后续 issue 按各自 `Blocked by` 启动，阶段门槛用于判断该阶段能否正式完成。
+本 PRD 已拆分为 P0-P4 共 19 个本地实施 issue，发布在 `issues/` 下；阶段门槛、依赖图和 issue 索引见 `docs/PROJECT_PLAN.md`。其中 Issue 19 负责 P1 MVP 主线剧情骨架接入。实施从 P0 的无阻塞 issue 开始；后续 issue 按各自 `Blocked by` 启动，阶段门槛用于判断该阶段能否正式完成。
 
 最终截止日期和每人每周投入时间尚未给出。当前规划保持里程碑制，只保留“演示前七天冻结功能”的相对约束，不编造日历日期；日期确定后再为 issues 增加排期。

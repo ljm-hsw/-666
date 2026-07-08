@@ -2,7 +2,10 @@
 
 #include <array>
 #include <cmath>
+#include <sstream>
 #include <string>
+
+#include "core/story_text.hpp"
 
 namespace pixel_town {
 namespace {
@@ -24,10 +27,11 @@ constexpr std::array<Location, 5> map_locations{
     Location::restaurant, Location::convenience_store, Location::library, Location::tavern,
     Location::home};
 
-constexpr std::array<const char*, 48> ui_texts{
+constexpr std::array ui_texts{
     "像素小镇",
     "十日经营计划",
     "新游戏",
+    "继续游戏",
     "第 1 天",
     "第 2 天",
     "白天选择",
@@ -69,6 +73,7 @@ constexpr std::array<const char*, 48> ui_texts{
     "图书馆读者变多",
     "小镇节奏平稳",
     "已恢复最近的阶段边界",
+    "检测到已有存档，可继续游戏或开始新游戏",
     "检测到已有存档，再次点击新游戏将覆盖；Esc 取消",
     "已取消新游戏，原存档保持不变",
     "存档版本不兼容，原文件已保留",
@@ -104,6 +109,22 @@ void text(const Font& font, const char* value, float x, float y, float size, Col
 void text(const Font& font, const std::string& value, float x, float y, float size,
           Color color = ink) {
     text(font, value.c_str(), x, y, size, color);
+}
+
+void text_block(const Font& font, const char* value, float x, float y, float size,
+                float line_gap, Color color = ink) {
+    std::stringstream stream(value);
+    std::string line;
+    float offset = 0.0F;
+    while (std::getline(stream, line)) {
+        text(font, line, x, y + offset, size, color);
+        offset += line_gap;
+    }
+}
+
+void text_block(const Font& font, const std::string& value, float x, float y, float size,
+                float line_gap, Color color = ink) {
+    text_block(font, value.c_str(), x, y, size, line_gap, color);
 }
 
 void centered_text(const Font& font, const char* value, Rectangle bounds, float size,
@@ -216,7 +237,15 @@ void draw_status(const Font& font, const GameSession& session, bool audio_enable
     }
 }
 
-void draw_title(const Font& font, const Texture2D& title_background, const std::string& notice,
+Rectangle title_continue_button() {
+    return Rectangle{202, 188, 236, 40};
+}
+
+Rectangle title_new_game_button(bool resume_available) {
+    return resume_available ? Rectangle{232, 240, 176, 38} : Rectangle{232, 206, 176, 42};
+}
+
+void draw_title(const Font& font, const Texture2D& title_background, const GameAppState& state,
                 Vector2 mouse) {
     if (title_background.id != 0) {
         DrawTexturePro(
@@ -233,14 +262,21 @@ void draw_title(const Font& font, const Texture2D& title_background, const std::
                          Color{255, 224, 154, 230});
     text(font, "像素小镇", 210, 76, 36, RAYWHITE);
     text(font, "十日经营计划", 220, 124, 22, Color{255, 224, 154, 255});
-    const Rectangle start_button{232, 190, 176, 48};
-    panel(start_button, hovered(start_button, mouse) ? cream : green);
+    if (state.resume_available && !state.confirm_new_game_overwrite) {
+        const Rectangle continue_button = title_continue_button();
+        panel(continue_button, hovered(continue_button, mouse) ? cream : green);
+        centered_text(font, "继续游戏", continue_button, 18,
+                      hovered(continue_button, mouse) ? ink : RAYWHITE);
+    }
+    const Rectangle start_button = title_new_game_button(state.resume_available);
+    panel(start_button, hovered(start_button, mouse) ? cream : Color{65, 91, 89, 245});
     centered_text(font, "新游戏", start_button, 18,
                   hovered(start_button, mouse) ? ink : RAYWHITE);
-    DrawRectangleRec(scaled_rect(Rectangle{216, 254, 208, 28}), Color{37, 50, 57, 185});
-    text(font, "Enter / 点击开始", 238, 260, 18, Color{235, 241, 226, 255});
-    DrawRectangleRec(scaled_rect(Rectangle{118, 300, 404, 28}), Color{37, 50, 57, 190});
-    text(font, notice, 154, 306, 16, Color{255, 224, 154, 255});
+
+    DrawRectangleRec(scaled_rect(Rectangle{74, 282, 492, 22}), Color{37, 50, 57, 185});
+    text(font, state.notice, 92, 286, 14, Color{255, 224, 154, 255});
+    DrawRectangleRec(scaled_rect(Rectangle{74, 300, 492, 56}), Color{37, 50, 57, 200});
+    text_block(font, opening_story(), 92, 306, 13, 14, Color{235, 241, 226, 255});
 }
 
 void draw_tiled_grass(const Texture2D& tiles, Rectangle bounds) {
@@ -395,7 +431,7 @@ void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
 
     panel(Rectangle{28, 300, 584, 42}, Color{65, 91, 89, 245});
     const auto context = state.session.current_day_context();
-    text(font, std::string{"今日提示："} + context.weather + " · " + context.event, 42, 304, 18,
+    text(font, std::string{"今日提示："} + daily_prompt(context.day), 42, 304, 18,
          Color{255, 224, 154, 255});
     text(font, state.notice, 42, 324, 18, RAYWHITE);
 }
@@ -432,10 +468,11 @@ void draw_summary(const Font& font, const GameAppState& state, Vector2 mouse) {
     draw_status(font, state.session, true);
     panel(Rectangle{90, 88, 460, 188}, cream);
     text(font, "每日总结", 124, 116, 28, red);
-    text(font, state.session.last_summary(), 124, 162, 16, ink);
+    text_block(font, state.session.last_summary(), 124, 154, 14, 16, ink);
+    text(font, day_closing_summary(state.session.day()), 124, 194, 14, Color{78, 78, 72, 255});
     text(font, state.session.day() == 10 ? "确认后进入占位主结局。"
                                          : "确认后进入下一游戏日。",
-         124, 194, 16, ink);
+         124, 214, 16, ink);
     const Rectangle next_button{242, 224, 156, 34};
     panel(next_button, hovered(next_button, mouse) ? paper : green);
     centered_text(font, "继续到下一天", next_button, 16, RAYWHITE);
@@ -444,21 +481,20 @@ void draw_summary(const Font& font, const GameAppState& state, Vector2 mouse) {
 void draw_ending(const Font& font, const GameAppState& state) {
     ClearBackground(Color{37, 50, 57, 255});
     draw_status(font, state.session, true);
-    panel(Rectangle{72, 82, 496, 218}, cream);
+    panel(Rectangle{72, 82, 496, 276}, cream);
     const auto& player = state.session.player();
     text(font, "十日计划完成", 118, 112, 28, red);
     text(font, std::string{"主结局："} + state.session.main_ending(), 118, 154, 20, ink);
-    text(font, "最终状态", 118, 194, 18, Color{35, 83, 51, 255});
+    text_block(font, state.session.final_summary(), 118, 188, 13, 15, ink);
+    text(font, "最终状态", 118, 282, 18, Color{35, 83, 51, 255});
     text(font,
          std::string{"金钱 "} + std::to_string(player.money) + "  体力 " +
              std::to_string(player.stamina) + "  声望 " + std::to_string(player.reputation),
-         118, 220, 16, ink);
+         118, 306, 16, ink);
     text(font,
          std::string{"知识 "} + std::to_string(player.knowledge) + "  心情 " +
              std::to_string(player.mood) + "  成长路线：均衡体验",
-         118, 244, 16, ink);
-    text(font, "结局之后不能继续提交地点行动或推进天数。", 118, 272, 16,
-         Color{78, 78, 72, 255});
+         118, 330, 16, ink);
 }
 
 void draw_pause_overlay(const Font& font, bool audio_enabled) {
@@ -490,20 +526,36 @@ const char* game_flow_glyphs() {
             "占位主结局最终状态成长路线摘要均衡体验小镇生活十日经营计划已经结束不能继续选择地点"
             "点击地点查看原因成长路线均衡体验已暂停按P继续按M切换静音恢复声音"
             "演示参数错误预设加载失败已加载正式存档不会被读取或覆盖";
+        result += story_text_glyphs();
         return result;
     }();
     return glyphs.c_str();
 }
 
 void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
-    const Rectangle start_button{244, 190, 152, 42};
     if (!state.has_session) {
+        const Rectangle continue_button = title_continue_button();
+        const Rectangle start_button = title_new_game_button(state.resume_available);
         if (state.confirm_new_game_overwrite && IsKeyPressed(KEY_ESCAPE)) {
             state.confirm_new_game_overwrite = false;
             state.notice = "已取消新游戏，原存档保持不变。";
             return;
         }
-        if (activated(start_button, logical_mouse, KEY_ENTER)) {
+        const bool continue_requested =
+            state.resume_available && !state.confirm_new_game_overwrite &&
+            (clicked(continue_button, logical_mouse) || IsKeyPressed(KEY_ENTER));
+        if (continue_requested) {
+            state.has_session = true;
+            state.session = state.resume_session;
+            state.confirm_new_game_overwrite = false;
+            state.notice = "已恢复最近的阶段边界。";
+            return;
+        }
+        const bool new_game_requested =
+            clicked(start_button, logical_mouse) ||
+            (!state.resume_available && IsKeyPressed(KEY_ENTER)) ||
+            (state.confirm_new_game_overwrite && IsKeyPressed(KEY_ENTER));
+        if (new_game_requested) {
             if (state.save_present && !state.confirm_new_game_overwrite) {
                 state.confirm_new_game_overwrite = true;
                 state.notice = "检测到已有存档，再次点击新游戏将覆盖；Esc 取消。";
@@ -512,6 +564,7 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             state.has_session = true;
             state.session = GameSession::new_game();
             state.save_present = true;
+            state.resume_available = false;
             state.confirm_new_game_overwrite = false;
             state.notice = "第 1 天开始：请选择一个白天工作地点。";
         }
@@ -599,7 +652,7 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
                     const Texture2D& generated_buildings, const GameAppState& state,
                     bool audio_enabled, bool paused, Vector2 logical_mouse) {
     if (!state.has_session) {
-        draw_title(font, title_background, state.notice, logical_mouse);
+        draw_title(font, title_background, state, logical_mouse);
         if (paused) {
             draw_pause_overlay(font, audio_enabled);
         }
