@@ -238,8 +238,8 @@ std::string serialize_session(const GameSession& session) {
     output << "final_summary=" << escape_value(snapshot.final_summary) << "\n";
     output << "applied_result_ids=" << join_ints(snapshot.applied_result_ids) << "\n";
     output << "store_inventory=none\n";
-    output << "tavern_wins=0\n";
-    output << "tavern_losses=0\n";
+    output << "tavern_wins=" << snapshot.tavern_wins << "\n";
+    output << "tavern_losses=" << snapshot.tavern_losses << "\n";
     return output.str();
 }
 
@@ -405,7 +405,9 @@ LoadGameResult load_session(const std::filesystem::path& path) {
         !parse_bool(values, "night_action_done", snapshot.night_action_done) ||
         !parse_string(values, "last_summary", snapshot.last_summary) ||
         !parse_string(values, "main_ending", snapshot.main_ending) ||
-        !parse_string(values, "final_summary", snapshot.final_summary)) {
+        !parse_string(values, "final_summary", snapshot.final_summary) ||
+        !parse_int(values, "tavern_wins", snapshot.tavern_wins) ||
+        !parse_int(values, "tavern_losses", snapshot.tavern_losses)) {
         return {SaveStatus::corrupt, GameSession::new_game(), "save file is missing fields"};
     }
 

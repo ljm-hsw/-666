@@ -63,3 +63,6 @@ build.ninja
 *.swp
 *.tmp
 *~
+
+# Local third-party backups
+third_party_local_backup/
