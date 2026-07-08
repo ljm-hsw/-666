@@ -22,7 +22,7 @@ constexpr std::array<Location, 5> map_locations{
     Location::restaurant, Location::convenience_store, Location::library, Location::tavern,
     Location::home};
 
-constexpr std::array<const char*, 48> ui_texts{
+constexpr std::array<const char*, 62> ui_texts{
     "像素小镇",
     "十日经营计划",
     "新游戏",
@@ -71,6 +71,20 @@ constexpr std::array<const char*, 48> ui_texts{
     "已取消新游戏，原存档保持不变",
     "存档版本不兼容，原文件已保留",
     "存档损坏或缺字段，原文件已保留",
+    "五子棋",
+    "骗子骰子",
+    "低赌注",
+    "中赌注",
+    "高赌注",
+    "挑战",
+    "赌注",
+    "金币",
+    "选择挑战",
+    "选择赌注",
+    "空格开始/完成",
+    "Esc返回",
+    "已进入酒馆，选择挑战和赌注。",
+    "金钱不足，无法选择该赌注档位。",
 };
 
 void text(const Font& font, const char* value, float x, float y, float size, Color color = ink) {
@@ -345,17 +359,42 @@ void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
 void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
     ClearBackground(Color{215, 221, 194, 255});
     draw_status(font, state.session, true);
-    panel(Rectangle{96, 78, 448, 210}, cream);
     const Location location = state.session.pending_location();
-    text(font, location_label(location), 126, 106, 30, red);
-    text(font,
-         state.session.location_started() ? "地点已开始：完成模拟或主动放弃都会消耗本阶段。"
-                                          : "尚未开始：现在返回地图不会消耗本阶段。",
-         126, 154, 16, ink);
+    const bool is_tavern = state.session.phase() == GamePhase::night_location &&
+                           location == Location::tavern;
 
-    const Rectangle back_button{126, 228, 112, 34};
-    const Rectangle start_button{264, 228, 112, 34};
-    const Rectangle abandon_button{402, 228, 112, 34};
+    if (is_tavern) {
+        panel(Rectangle{64, 70, 512, 230}, cream);
+        text(font, location_label(location), 126, 90, 30, red);
+
+        const std::string challenge_text = std::string{"挑战："} +
+            challenge_type_label(state.tavern_challenge) + " / 骗子骰子";
+        const std::string bet_text = std::string{"赌注："} +
+            bet_tier_label(state.tavern_bet) + "赌注（" +
+            std::to_string(bet_amount(TavernChallengeConfig{}, state.tavern_bet)) + "金币）";
+        text(font, challenge_text, 126, 136, 18, ink);
+        text(font, bet_text, 126, 160, 18, ink);
+
+        const char* status_text = state.session.location_started()
+            ? "地点已开始：按空格完成模拟。"
+            : "尚未开始：现在返回地图不会消耗本阶段。";
+        text(font, status_text, 126, 190, 16, ink);
+
+        text(font, "[1/2] 选择挑战    [3/4/5] 选择赌注    空格开始/完成    Esc返回",
+             90, 220, 16, Color{78, 78, 72, 255});
+    } else {
+        panel(Rectangle{96, 78, 448, 210}, cream);
+        text(font, location_label(location), 126, 106, 30, red);
+        text(font,
+             state.session.location_started() ? "地点已开始：完成模拟或主动放弃都会消耗本阶段。"
+                                              : "尚未开始：现在返回地图不会消耗本阶段。",
+             126, 154, 16, ink);
+    }
+
+    const float location_btn_y = is_tavern ? 252.0F : 228.0F;
+    const Rectangle back_button{126, location_btn_y, 112, 34};
+    const Rectangle start_button{264, location_btn_y, 112, 34};
+    const Rectangle abandon_button{402, location_btn_y, 112, 34};
     if (!state.session.location_started()) {
         panel(back_button, CheckCollisionPointRec(mouse, back_button) ? paper : Color{211, 202, 174, 255});
         centered_text(font, "返回地图", back_button, 16, ink);
@@ -425,13 +464,17 @@ const char* game_flow_glyphs() {
         result +=
             "点击开始第一天不可进入尚未地点已开始完成模拟或主动放弃都会消耗本阶段现在返回地图不会"
             "消耗本阶段今天的白天行动已经完成现在是白天回家休息只能在夜晚选择酒馆夜晚开放当前"
-            "阶段不能进入今晚的行动已经完成酒馆玩法将在后续issue接入本切片先开放回家休息白天工作"
+            "阶段不能进入今晚的行动已经完成白天工作"
             "已经结束不能再进入该地点当前正在处理另一个阶段不能选择新地点餐馆模拟工作完成服务了"
             "午餐客流获得金钱与声望便利店模拟经营完成一次进货与销售结算图书馆帮助读者找书并提升"
             "知识行动完成回家休息恢复体力并结束今天主动放弃阶段已消耗本次无收益确认后进入下一游戏日"
             "占位主结局最终状态成长路线摘要均衡体验小镇生活十日经营计划已经结束不能继续选择地点"
             "点击地点查看原因成长路线均衡体验已暂停按P继续按M切换静音恢复声音"
-            "演示参数错误预设加载失败已加载正式存档不会被读取或覆盖";
+            "演示参数错误预设加载失败已加载正式存档不会被读取或覆盖"
+            "五子棋骗子骰子低赌注中赌注高赌注挑战金币选择空格开始完成Esc返回"
+            "已进入酒馆选择和赌注金钱不足无法选择该档位"
+            "赌注不足当前金钱不足以支付获胜赢得失败损失平局退还酒馆挑战"
+            "已选择按空格完成模拟！（，）";
         return result;
     }();
     return glyphs.c_str();
@@ -479,6 +522,12 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 state.notice = applied.message;
                 return;
             }
+            if (location == Location::tavern) {
+                if (state.session.enter_location(location)) {
+                    state.notice = "已进入酒馆，选择挑战和赌注。";
+                }
+                return;
+            }
             if (state.session.enter_location(location)) {
                 state.notice =
                     std::string{"已进入"} + location_label(location) + "，开始前可返回地图。";
@@ -490,9 +539,21 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
 
     if (state.session.phase() == GamePhase::day_location ||
         state.session.phase() == GamePhase::night_location) {
-        const Rectangle back_button{126, 228, 112, 34};
-        const Rectangle start_button_location{264, 228, 112, 34};
-        const Rectangle abandon_button{402, 228, 112, 34};
+        const bool is_tavern = state.session.phase() == GamePhase::night_location &&
+                               state.session.pending_location() == Location::tavern;
+
+        if (is_tavern && !state.session.location_started()) {
+            if (IsKeyPressed(KEY_ONE)) state.tavern_challenge = ChallengeType::gomoku;
+            if (IsKeyPressed(KEY_TWO)) state.tavern_challenge = ChallengeType::liars_dice;
+            if (IsKeyPressed(KEY_THREE)) state.tavern_bet = BetTier::low;
+            if (IsKeyPressed(KEY_FOUR)) state.tavern_bet = BetTier::medium;
+            if (IsKeyPressed(KEY_FIVE)) state.tavern_bet = BetTier::high;
+        }
+
+        const float btn_y = is_tavern ? 252.0F : 228.0F;
+        const Rectangle back_button{126, btn_y, 112, 34};
+        const Rectangle start_button_location{264, btn_y, 112, 34};
+        const Rectangle abandon_button{402, btn_y, 112, 34};
         if (!state.session.location_started()) {
             if (activated(back_button, logical_mouse, KEY_ESCAPE)) {
                 if (state.session.return_to_map()) {
@@ -501,16 +562,42 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 return;
             }
             if (activated(start_button_location, logical_mouse, KEY_SPACE)) {
+                if (is_tavern) {
+                    const TavernChallengeConfig config;
+                    const int bet = bet_amount(config, state.tavern_bet);
+                    if (bet > state.session.player().money) {
+                        state.notice = "金钱不足，无法选择该赌注档位。";
+                        return;
+                    }
+                }
                 if (state.session.start_location() != 0) {
-                    state.notice = "地点已开始：完成或放弃都会消耗本阶段。";
+                    if (is_tavern) {
+                        state.notice = std::string{"已选择"} +
+                                       challenge_type_label(state.tavern_challenge) + "、" +
+                                       bet_tier_label(state.tavern_bet) + "赌注：按空格完成模拟。";
+                    } else {
+                        state.notice = "地点已开始：完成或放弃都会消耗本阶段。";
+                    }
                 }
                 return;
             }
         } else {
             if (activated(start_button_location, logical_mouse, KEY_SPACE)) {
-                const auto applied =
-                    state.session.apply_action_result(state.session.simulated_success_result());
-                state.notice = applied.message;
+                if (is_tavern) {
+                    const TavernChallengeConfig config;
+                    const auto result = simulate_tavern_challenge(
+                        state.session.player(), config, state.tavern_challenge,
+                        state.tavern_bet, ChallengeOutcome::win,
+                        state.session.active_result_id());
+                    if (result.result_id != 0) {
+                        const auto applied = state.session.apply_action_result(result);
+                        state.notice = applied.message;
+                    }
+                } else {
+                    const auto applied =
+                        state.session.apply_action_result(state.session.simulated_success_result());
+                    state.notice = applied.message;
+                }
                 return;
             }
             if (clicked(abandon_button, logical_mouse)) {

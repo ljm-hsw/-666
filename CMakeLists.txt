@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(pixel_town_core
   src/core/game_session.cpp
+  src/core/tavern_rules.cpp
 )
 target_include_directories(pixel_town_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
@@ -38,6 +39,7 @@ enable_testing()
 
 add_executable(pixel_town_tests
   tests/display_config_test.cpp
+  tests/tavern_rules_test.cpp
   tests/demo_preset_test.cpp
   tests/game_session_test.cpp
   tests/interaction_runtime_test.cpp
