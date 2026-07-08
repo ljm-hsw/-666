@@ -38,7 +38,6 @@ add_executable(pixel_town
   src/app/game_flow.cpp
   src/app/main.cpp
   src/app/visual_prototype.cpp
-  src/app/windows_utils.cpp
 )
 target_link_libraries(pixel_town PRIVATE pixel_town_io pixel_town_locations raylib)
 target_compile_definitions(pixel_town PRIVATE PIXEL_TOWN_VERSION="${PROJECT_VERSION}")
