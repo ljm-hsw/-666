@@ -37,6 +37,13 @@ User stories: 56, 57, 59
 - `.tools/CMake.app/Contents/bin/ctest --test-dir build --output-on-failure` 通过，1/1 测试成功。
 - `./build/pixel_town --capture-game-flow` 通过，输出标题、地图和结局截图。
 
+2026-07-08 补充完成：
+
+- P1 game-flow 已从旧 640×360 UI + 1.5× camera 放大迁移为 960×540 逻辑画布原生绘制。
+- 鼠标输入直接使用 960×540 逻辑坐标；P0 visual prototype 仍使用独立候选缩放路径。
+- game-flow 字体按 24px 栅格加载，常用字号吸附到稳定档位，标题、地图和结局截图的中文清晰度已重新验证。
+- `.tools/CMake.app/Contents/bin/cmake --build build --parallel 4`、`.tools/CMake.app/Contents/bin/ctest --test-dir build --output-on-failure` 和 `./build/pixel_town --capture-game-flow` 通过。
+
 ### HITL pending
 
 - 交互外壳的自动化实现已完成，但 Issue 03 视觉原型仍未获得人工批准；本 issue 保持 `ready-for-human`，等待团队确认中文字体、窗口缩放、热点层级和视觉规格后再关闭。

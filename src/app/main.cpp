@@ -193,11 +193,11 @@ bool same_snapshot(const pixel_town::GameSessionSnapshot& left,
 
 int main(int argc, char* argv[]) {
     constexpr auto display = pixel_town::default_display_config();
-    constexpr float legacy_ui_scale =
+    constexpr float prototype_ui_scale =
         static_cast<float>(display.logical_width) / static_cast<float>(legacy_ui_width);
     static_assert(display.logical_width * legacy_ui_height ==
                       display.logical_height * legacy_ui_width,
-                  "legacy UI scale requires the same 16:9 aspect ratio");
+                  "prototype UI scale requires the same 16:9 aspect ratio");
     const auto demo_args = pixel_town::parse_demo_preset_args(argc, argv);
     const bool capture_prototype =
         !demo_args.requested && argc == 2 && std::string_view{argv[1]} == "--capture-prototype";
@@ -234,7 +234,7 @@ int main(int argc, char* argv[]) {
             std::string{pixel_town::visual_prototype_glyphs()} + pixel_town::game_flow_glyphs();
         int codepoint_count = 0;
         int* codepoints = LoadCodepoints(required_glyphs.c_str(), &codepoint_count);
-        const int font_pixel_size = capture_prototype ? 12 : 20;
+        const int font_pixel_size = capture_prototype ? 12 : 24;
         ui_font = LoadFontEx("assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf",
                              font_pixel_size, codepoints, codepoint_count);
         bool required_glyphs_available = ui_font.texture.id != 0;
@@ -279,6 +279,7 @@ int main(int argc, char* argv[]) {
                                      launch_note);
 
     Texture2D kenney_tiles{};
+    Texture2D title_background{};
     Texture2D generated_full_map_scene{};
     Texture2D generated_map_background{};
     Texture2D generated_buildings{};
@@ -295,6 +296,14 @@ int main(int argc, char* argv[]) {
             if (kenney_tiles.id != 0) {
                 SetTextureFilter(kenney_tiles, TEXTURE_FILTER_POINT);
                 break;
+            }
+        }
+        if (std::filesystem::is_regular_file(
+                "assets/textures/imagegen_backgrounds/title_screen_background.png")) {
+            title_background =
+                LoadTexture("assets/textures/imagegen_backgrounds/title_screen_background.png");
+            if (title_background.id != 0) {
+                SetTextureFilter(title_background, TEXTURE_FILTER_POINT);
             }
         }
         if (std::filesystem::is_regular_file(
@@ -416,8 +425,8 @@ int main(int argc, char* argv[]) {
             logical_point.has_value()
                 ? Vector2{static_cast<float>(logical_point->x), static_cast<float>(logical_point->y)}
                 : Vector2{-1.0F, -1.0F};
-        const Vector2 legacy_ui_mouse{logical_mouse.x / legacy_ui_scale,
-                                      logical_mouse.y / legacy_ui_scale};
+        const Vector2 prototype_mouse{logical_mouse.x / prototype_ui_scale,
+                                      logical_mouse.y / prototype_ui_scale};
         const auto interaction_frame = interaction_runtime.update(pixel_town::InteractionFrameInput{
             GetFrameTime(), IsKeyPressed(KEY_P), IsKeyPressed(KEY_M), IsWindowFocused(),
             IsWindowState(FLAG_WINDOW_MINIMIZED)});
@@ -432,9 +441,9 @@ int main(int argc, char* argv[]) {
         if (resources.can_start && log_written && !capture_game_flow &&
             interaction_frame.game_updates_enabled) {
             if (capture_prototype) {
-                pixel_town::update_visual_prototype(prototype, legacy_ui_mouse);
+                pixel_town::update_visual_prototype(prototype, prototype_mouse);
             } else {
-                pixel_town::update_game_flow(game_flow, legacy_ui_mouse);
+                pixel_town::update_game_flow(game_flow, logical_mouse);
                 if (persistence_enabled && game_flow.has_session &&
                     is_save_boundary(game_flow.session)) {
                     const auto current_snapshot = game_flow.session.snapshot();
@@ -455,19 +464,19 @@ int main(int argc, char* argv[]) {
         }
         BeginTextureMode(canvas);
         if (resources.can_start && log_written) {
-            const Camera2D legacy_ui_camera{Vector2{0.0F, 0.0F}, Vector2{0.0F, 0.0F}, 0.0F,
-                                            legacy_ui_scale};
-            BeginMode2D(legacy_ui_camera);
             if (capture_prototype) {
+                const Camera2D prototype_ui_camera{Vector2{0.0F, 0.0F}, Vector2{0.0F, 0.0F},
+                                                   0.0F, prototype_ui_scale};
+                BeginMode2D(prototype_ui_camera);
                 pixel_town::draw_visual_prototype(ui_font, town_marker, kenney_tiles, prototype,
-                                                  audio_enabled, legacy_ui_mouse);
+                                                  audio_enabled, prototype_mouse);
+                EndMode2D();
             } else {
-                pixel_town::draw_game_flow(ui_font, town_marker, kenney_tiles,
+                pixel_town::draw_game_flow(ui_font, title_background, town_marker, kenney_tiles,
                                            generated_full_map_scene, generated_map_background,
                                            generated_buildings, game_flow, audio_enabled,
-                                           interaction_runtime.paused(), legacy_ui_mouse);
+                                           interaction_runtime.paused(), logical_mouse);
             }
-            EndMode2D();
         } else {
             draw_resource_error(resources, log_written);
         }
@@ -527,6 +536,9 @@ int main(int argc, char* argv[]) {
     }
     if (kenney_tiles.id != 0) {
         UnloadTexture(kenney_tiles);
+    }
+    if (title_background.id != 0) {
+        UnloadTexture(title_background);
     }
     if (generated_full_map_scene.id != 0) {
         UnloadTexture(generated_full_map_scene);

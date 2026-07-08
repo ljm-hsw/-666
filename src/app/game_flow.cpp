@@ -1,6 +1,7 @@
 #include "app/game_flow.hpp"
 
 #include <array>
+#include <cmath>
 #include <string>
 
 namespace pixel_town {
@@ -17,6 +18,7 @@ constexpr Color red{183, 83, 72, 255};
 constexpr Color gold{224, 169, 74, 255};
 constexpr Color shadow{39, 48, 53, 120};
 constexpr Color slate{60, 79, 82, 255};
+constexpr float native_ui_scale = 1.5F;
 
 constexpr std::array<Location, 5> map_locations{
     Location::restaurant, Location::convenience_store, Location::library, Location::tavern,
@@ -73,8 +75,30 @@ constexpr std::array<const char*, 48> ui_texts{
     "存档损坏或缺字段，原文件已保留",
 };
 
+float scaled(float value) {
+    return std::round(value * native_ui_scale);
+}
+
+float scaled_font_size(float design_size) {
+    if (design_size <= 20.0F) {
+        return 24.0F;
+    }
+    if (design_size <= 30.0F) {
+        return 36.0F;
+    }
+    return 48.0F;
+}
+
+Vector2 scaled_point(Vector2 value) {
+    return Vector2{scaled(value.x), scaled(value.y)};
+}
+
+Rectangle scaled_rect(Rectangle value) {
+    return Rectangle{scaled(value.x), scaled(value.y), scaled(value.width), scaled(value.height)};
+}
+
 void text(const Font& font, const char* value, float x, float y, float size, Color color = ink) {
-    DrawTextEx(font, value, Vector2{x, y}, size, 1.0F, color);
+    DrawTextEx(font, value, Vector2{scaled(x), scaled(y)}, scaled_font_size(size), 1.0F, color);
 }
 
 void text(const Font& font, const std::string& value, float x, float y, float size,
@@ -84,23 +108,35 @@ void text(const Font& font, const std::string& value, float x, float y, float si
 
 void centered_text(const Font& font, const char* value, Rectangle bounds, float size,
                    Color color = ink) {
-    const Vector2 measured = MeasureTextEx(font, value, size, 1.0F);
-    text(font, value, bounds.x + (bounds.width - measured.x) / 2.0F,
-         bounds.y + (bounds.height - measured.y) / 2.0F, size, color);
+    const Rectangle scaled_bounds = scaled_rect(bounds);
+    const float font_size = scaled_font_size(size);
+    const Vector2 measured = MeasureTextEx(font, value, font_size, 1.0F);
+    DrawTextEx(font, value,
+               Vector2{scaled_bounds.x + (scaled_bounds.width - measured.x) / 2.0F,
+                       scaled_bounds.y + (scaled_bounds.height - measured.y) / 2.0F},
+               font_size, 1.0F, color);
 }
 
 void panel(Rectangle bounds, Color fill, Color border = ink) {
-    DrawRectangleRec(Rectangle{bounds.x + 3, bounds.y + 3, bounds.width, bounds.height}, shadow);
-    DrawRectangleRec(bounds, fill);
-    DrawRectangleLinesEx(bounds, 2.0F, border);
+    const Rectangle scaled_bounds = scaled_rect(bounds);
+    DrawRectangleRec(Rectangle{scaled_bounds.x + 4, scaled_bounds.y + 4, scaled_bounds.width,
+                               scaled_bounds.height},
+                     shadow);
+    DrawRectangleRec(scaled_bounds, fill);
+    DrawRectangleLinesEx(scaled_bounds, 3.0F, border);
 }
 
 bool clicked(Rectangle bounds, Vector2 mouse) {
-    return CheckCollisionPointRec(mouse, bounds) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    return CheckCollisionPointRec(mouse, scaled_rect(bounds)) &&
+           IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 }
 
 bool activated(Rectangle bounds, Vector2 mouse, KeyboardKey key) {
     return clicked(bounds, mouse) || IsKeyPressed(key);
+}
+
+bool hovered(Rectangle bounds, Vector2 mouse) {
+    return CheckCollisionPointRec(mouse, scaled_rect(bounds));
 }
 
 std::array<Rectangle, 5> location_bounds() {
@@ -153,8 +189,8 @@ void draw_tile(const Texture2D& tiles, int tile_index, Rectangle destination) {
     if (tiles.id == 0) {
         return;
     }
-    DrawTexturePro(tiles, source_tile(tile_index), destination, Vector2{0.0F, 0.0F}, 0.0F,
-                   WHITE);
+    DrawTexturePro(tiles, source_tile(tile_index), scaled_rect(destination), Vector2{0.0F, 0.0F},
+                   0.0F, WHITE);
 }
 
 Rectangle generated_building_source(std::size_t index) {
@@ -165,7 +201,7 @@ Rectangle generated_building_source(std::size_t index) {
 
 void draw_status(const Font& font, const GameSession& session, bool audio_enabled) {
     const auto& player = session.player();
-    DrawRectangle(0, 0, 640, 56, slate);
+    DrawRectangle(0, 0, 960, 84, slate);
     text(font, "像素小镇", 16, 9, 22, RAYWHITE);
     text(font, std::string{"第 "} + std::to_string(session.day()) + " 天 · " +
                    phase_label(session.phase()),
@@ -180,15 +216,30 @@ void draw_status(const Font& font, const GameSession& session, bool audio_enable
     }
 }
 
-void draw_title(const Font& font, const std::string& notice, Vector2 mouse) {
-    ClearBackground(Color{37, 50, 57, 255});
-    text(font, "像素小镇", 210, 78, 36, RAYWHITE);
-    text(font, "十日经营计划", 220, 126, 22, Color{255, 224, 154, 255});
+void draw_title(const Font& font, const Texture2D& title_background, const std::string& notice,
+                Vector2 mouse) {
+    if (title_background.id != 0) {
+        DrawTexturePro(
+            title_background,
+            Rectangle{0.0F, 0.0F, static_cast<float>(title_background.width),
+                      static_cast<float>(title_background.height)},
+            Rectangle{0.0F, 0.0F, 960.0F, 540.0F}, Vector2{0.0F, 0.0F}, 0.0F, WHITE);
+    } else {
+        ClearBackground(Color{37, 50, 57, 255});
+    }
+
+    DrawRectangleRec(scaled_rect(Rectangle{150, 54, 340, 112}), Color{37, 50, 57, 205});
+    DrawRectangleLinesEx(scaled_rect(Rectangle{150, 54, 340, 112}), 3.0F,
+                         Color{255, 224, 154, 230});
+    text(font, "像素小镇", 210, 76, 36, RAYWHITE);
+    text(font, "十日经营计划", 220, 124, 22, Color{255, 224, 154, 255});
     const Rectangle start_button{232, 190, 176, 48};
-    panel(start_button, CheckCollisionPointRec(mouse, start_button) ? cream : green);
+    panel(start_button, hovered(start_button, mouse) ? cream : green);
     centered_text(font, "新游戏", start_button, 18,
-                  CheckCollisionPointRec(mouse, start_button) ? ink : RAYWHITE);
-    text(font, "Enter / 点击开始", 238, 260, 18, Color{205, 211, 215, 255});
+                  hovered(start_button, mouse) ? ink : RAYWHITE);
+    DrawRectangleRec(scaled_rect(Rectangle{216, 254, 208, 28}), Color{37, 50, 57, 185});
+    text(font, "Enter / 点击开始", 238, 260, 18, Color{235, 241, 226, 255});
+    DrawRectangleRec(scaled_rect(Rectangle{118, 300, 404, 28}), Color{37, 50, 57, 190});
     text(font, notice, 154, 306, 16, Color{255, 224, 154, 255});
 }
 
@@ -205,7 +256,7 @@ void draw_tiled_grass(const Texture2D& tiles, Rectangle bounds) {
 }
 
 void draw_road_tiles(const Texture2D& tiles, Rectangle bounds) {
-    DrawRectangleRec(bounds, road);
+    DrawRectangleRec(scaled_rect(bounds), road);
     if (tiles.id == 0) {
         return;
     }
@@ -226,7 +277,7 @@ void draw_map_decoration(const Texture2D& marker, const Texture2D& tiles) {
         draw_tile(tiles, 4, Rectangle{static_cast<float>(x), 78.0F, 16.0F, 16.0F});
         draw_tile(tiles, 5, Rectangle{static_cast<float>(x + 16), 272.0F, 16.0F, 16.0F});
     }
-    DrawTextureEx(marker, Vector2{306, 184}, 0.0F, 2.0F, WHITE);
+    DrawTextureEx(marker, scaled_point(Vector2{306, 184}), 0.0F, 3.0F, WHITE);
 }
 
 void draw_location_building(const Font& font, const Texture2D& tiles,
@@ -235,12 +286,16 @@ void draw_location_building(const Font& font, const Texture2D& tiles,
                             int icon_tile, std::size_t index) {
     if (generated_buildings.id != 0) {
         const Rectangle sprite_destination = generated_sprite_destination(location);
-        DrawTexturePro(generated_buildings, generated_building_source(index), sprite_destination,
-                       Vector2{0.0F, 0.0F}, 0.0F, Fade(WHITE, allowed ? 1.0F : 0.45F));
+        DrawTexturePro(generated_buildings, generated_building_source(index),
+                       scaled_rect(sprite_destination), Vector2{0.0F, 0.0F}, 0.0F,
+                       Fade(WHITE, allowed ? 1.0F : 0.45F));
         const Rectangle label = generated_label_destination(location);
-        DrawRectangleRec(Rectangle{label.x + 2, label.y + 2, label.width, label.height}, shadow);
-        DrawRectangleRec(label, allowed ? Color{250, 238, 203, 235} : Color{218, 213, 194, 245});
-        DrawRectangleLinesEx(label, hovered ? 3.0F : 2.0F, hovered ? cream : ink);
+        DrawRectangleRec(scaled_rect(Rectangle{label.x + 2, label.y + 2, label.width,
+                                               label.height}),
+                         shadow);
+        DrawRectangleRec(scaled_rect(label),
+                         allowed ? Color{250, 238, 203, 240} : Color{218, 213, 194, 248});
+        DrawRectangleLinesEx(scaled_rect(label), hovered ? 4.0F : 3.0F, hovered ? cream : ink);
         centered_text(font, location_label(location), Rectangle{label.x, label.y + 1, label.width,
                                                                 16},
                       16, allowed ? ink : Color{43, 50, 48, 255});
@@ -251,9 +306,9 @@ void draw_location_building(const Font& font, const Texture2D& tiles,
     }
 
     const Color fill = allowed ? (hovered ? cream : color) : disabled;
-    DrawTriangle(Vector2{bounds.x - 6, bounds.y + 8},
-                 Vector2{bounds.x + bounds.width + 6, bounds.y + 8},
-                 Vector2{bounds.x + bounds.width / 2.0F, bounds.y - 22}, red);
+    DrawTriangle(scaled_point(Vector2{bounds.x - 6, bounds.y + 8}),
+                 scaled_point(Vector2{bounds.x + bounds.width + 6, bounds.y + 8}),
+                 scaled_point(Vector2{bounds.x + bounds.width / 2.0F, bounds.y - 22}), red);
     panel(bounds, fill);
     draw_tile(tiles, icon_tile, Rectangle{bounds.x + 10, bounds.y + 11, 32.0F, 32.0F});
     text(font, location_label(location), bounds.x + 48, bounds.y + 12, 20,
@@ -264,9 +319,11 @@ void draw_location_building(const Font& font, const Texture2D& tiles,
 
 void draw_location_label(const Font& font, Location location, bool allowed, bool hovered) {
     const Rectangle label = generated_label_destination(location);
-    DrawRectangleRec(Rectangle{label.x + 2, label.y + 2, label.width, label.height}, shadow);
-    DrawRectangleRec(label, allowed ? Color{250, 238, 203, 230} : Color{218, 213, 194, 245});
-    DrawRectangleLinesEx(label, hovered ? 3.0F : 2.0F, hovered ? cream : ink);
+    DrawRectangleRec(scaled_rect(Rectangle{label.x + 2, label.y + 2, label.width, label.height}),
+                     shadow);
+    DrawRectangleRec(scaled_rect(label),
+                     allowed ? Color{250, 238, 203, 238} : Color{218, 213, 194, 248});
+    DrawRectangleLinesEx(scaled_rect(label), hovered ? 4.0F : 3.0F, hovered ? cream : ink);
     centered_text(font, location_label(location),
                   Rectangle{label.x, label.y + 1, label.width, 16}, 16,
                   allowed ? ink : Color{43, 50, 48, 255});
@@ -276,18 +333,19 @@ void draw_location_label(const Font& font, Location location, bool allowed, bool
 }
 
 void draw_home_plot_decoration() {
-    DrawRectangle(366, 242, 58, 8, Color{117, 83, 55, 255});
-    DrawRectangle(368, 240, 54, 4, Color{166, 117, 72, 255});
-    DrawRectangle(376, 218, 8, 24, Color{102, 78, 52, 255});
-    DrawCircleV(Vector2{380, 216}, 12.0F, Color{74, 139, 78, 255});
-    DrawCircleV(Vector2{378, 214}, 7.0F, Color{107, 168, 89, 255});
-    DrawRectangle(404, 220, 6, 22, Color{102, 78, 52, 255});
-    DrawCircleV(Vector2{407, 218}, 9.0F, Color{74, 139, 78, 255});
-    DrawCircleV(Vector2{405, 216}, 5.0F, Color{107, 168, 89, 255});
-    DrawRectangle(390, 250, 22, 12, Color{151, 104, 63, 255});
-    DrawRectangleLinesEx(Rectangle{390, 250, 22, 12}, 2.0F, Color{91, 65, 45, 255});
-    DrawCircleV(Vector2{374, 260}, 3.0F, Color{255, 224, 154, 255});
-    DrawCircleV(Vector2{418, 258}, 3.0F, Color{255, 205, 214, 255});
+    DrawRectangleRec(scaled_rect(Rectangle{366, 242, 58, 8}), Color{117, 83, 55, 255});
+    DrawRectangleRec(scaled_rect(Rectangle{368, 240, 54, 4}), Color{166, 117, 72, 255});
+    DrawRectangleRec(scaled_rect(Rectangle{376, 218, 8, 24}), Color{102, 78, 52, 255});
+    DrawCircleV(scaled_point(Vector2{380, 216}), scaled(12.0F), Color{74, 139, 78, 255});
+    DrawCircleV(scaled_point(Vector2{378, 214}), scaled(7.0F), Color{107, 168, 89, 255});
+    DrawRectangleRec(scaled_rect(Rectangle{404, 220, 6, 22}), Color{102, 78, 52, 255});
+    DrawCircleV(scaled_point(Vector2{407, 218}), scaled(9.0F), Color{74, 139, 78, 255});
+    DrawCircleV(scaled_point(Vector2{405, 216}), scaled(5.0F), Color{107, 168, 89, 255});
+    DrawRectangleRec(scaled_rect(Rectangle{390, 250, 22, 12}), Color{151, 104, 63, 255});
+    DrawRectangleLinesEx(scaled_rect(Rectangle{390, 250, 22, 12}), 3.0F,
+                         Color{91, 65, 45, 255});
+    DrawCircleV(scaled_point(Vector2{374, 260}), scaled(3.0F), Color{255, 224, 154, 255});
+    DrawCircleV(scaled_point(Vector2{418, 258}), scaled(3.0F), Color{255, 205, 214, 255});
 }
 
 void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
@@ -301,13 +359,13 @@ void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
             generated_full_map_scene,
             Rectangle{0.0F, 0.0F, static_cast<float>(generated_full_map_scene.width),
                       static_cast<float>(generated_full_map_scene.height)},
-            Rectangle{0.0F, 0.0F, 640.0F, 360.0F}, Vector2{0.0F, 0.0F}, 0.0F, WHITE);
+            Rectangle{0.0F, 0.0F, 960.0F, 540.0F}, Vector2{0.0F, 0.0F}, 0.0F, WHITE);
     } else if (generated_map_background.id != 0) {
         DrawTexturePro(
             generated_map_background,
             Rectangle{0.0F, 0.0F, static_cast<float>(generated_map_background.width),
                       static_cast<float>(generated_map_background.height)},
-            Rectangle{0.0F, 0.0F, 640.0F, 360.0F}, Vector2{0.0F, 0.0F}, 0.0F, WHITE);
+            Rectangle{0.0F, 0.0F, 960.0F, 540.0F}, Vector2{0.0F, 0.0F}, 0.0F, WHITE);
     } else {
         panel(Rectangle{18, 66, 604, 224}, paper);
         draw_tiled_grass(tiles, Rectangle{28, 76, 584, 204});
@@ -326,7 +384,7 @@ void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
     for (std::size_t index = 0; index < map_locations.size(); ++index) {
         const auto permission = state.session.can_enter(map_locations[index]);
         const Rectangle button = bounds[index];
-        const bool hovered = CheckCollisionPointRec(mouse, button);
+        const bool hovered = CheckCollisionPointRec(mouse, scaled_rect(button));
         if (has_full_scene) {
             draw_location_label(font, map_locations[index], permission.allowed, hovered);
         } else {
@@ -357,14 +415,14 @@ void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
     const Rectangle start_button{264, 228, 112, 34};
     const Rectangle abandon_button{402, 228, 112, 34};
     if (!state.session.location_started()) {
-        panel(back_button, CheckCollisionPointRec(mouse, back_button) ? paper : Color{211, 202, 174, 255});
+        panel(back_button, hovered(back_button, mouse) ? paper : Color{211, 202, 174, 255});
         centered_text(font, "返回地图", back_button, 16, ink);
-        panel(start_button, CheckCollisionPointRec(mouse, start_button) ? paper : green);
+        panel(start_button, hovered(start_button, mouse) ? paper : green);
         centered_text(font, "开始模拟", start_button, 16, RAYWHITE);
     } else {
-        panel(start_button, CheckCollisionPointRec(mouse, start_button) ? paper : green);
+        panel(start_button, hovered(start_button, mouse) ? paper : green);
         centered_text(font, "完成模拟", start_button, 16, RAYWHITE);
-        panel(abandon_button, CheckCollisionPointRec(mouse, abandon_button) ? paper : red);
+        panel(abandon_button, hovered(abandon_button, mouse) ? paper : red);
         centered_text(font, "主动放弃", abandon_button, 16, RAYWHITE);
     }
 }
@@ -379,7 +437,7 @@ void draw_summary(const Font& font, const GameAppState& state, Vector2 mouse) {
                                          : "确认后进入下一游戏日。",
          124, 194, 16, ink);
     const Rectangle next_button{242, 224, 156, 34};
-    panel(next_button, CheckCollisionPointRec(mouse, next_button) ? paper : green);
+    panel(next_button, hovered(next_button, mouse) ? paper : green);
     centered_text(font, "继续到下一天", next_button, 16, RAYWHITE);
 }
 
@@ -404,7 +462,7 @@ void draw_ending(const Font& font, const GameAppState& state) {
 }
 
 void draw_pause_overlay(const Font& font, bool audio_enabled) {
-    DrawRectangle(0, 0, 640, 360, Color{20, 24, 28, 150});
+    DrawRectangle(0, 0, 960, 540, Color{20, 24, 28, 150});
     panel(Rectangle{194, 110, 252, 126}, Color{250, 238, 203, 245});
     text(font, "已暂停", 284, 132, 28, red);
     text(font, "按 P 继续", 258, 176, 18, ink);
@@ -534,13 +592,14 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
     }
 }
 
-void draw_game_flow(const Font& font, const Texture2D& town_marker,
+void draw_game_flow(const Font& font, const Texture2D& title_background,
+                    const Texture2D& town_marker,
                     const Texture2D& kenney_tiles, const Texture2D& generated_full_map_scene,
                     const Texture2D& generated_map_background,
                     const Texture2D& generated_buildings, const GameAppState& state,
                     bool audio_enabled, bool paused, Vector2 logical_mouse) {
     if (!state.has_session) {
-        draw_title(font, state.notice, logical_mouse);
+        draw_title(font, title_background, state.notice, logical_mouse);
         if (paused) {
             draw_pause_overlay(font, audio_enabled);
         }
