@@ -1,0 +1,285 @@
+// 图书馆数据文件
+// 格式:
+// CATEGORY <id>:<名称>
+// CATEGORY_DESC <描述文本>
+// QUESTION <正确类别id>:<问题文本>
+// HINT <提示文本>
+// FEEDBACK_CORRECT <正确反馈>
+// FEEDBACK_WRONG <错误反馈>
+// DIALOGUE_* <对话文本>
+// PLOT_EVENT <id>:<标题>
+// PLOT_DESC <描述文本>
+// PLOT_REQUIREMENT <访问次数>:<知识要求>
+// WELCOME <欢迎信息>
+// WORK_INTRO <工作介绍>
+
+WELCOME 欢迎来到小镇图书馆
+WORK_INTRO 读者会提出各种问题，你需要从书架上找到正确的书籍类别来回答。答对可获得知识和声望奖励，连续答对还有额外奖励。
+
+// 书籍类别
+CATEGORY history:历史
+CATEGORY_DESC 记录人类文明发展历程的书籍
+CATEGORY science:科学
+CATEGORY_DESC 探索自然规律和宇宙奥秘的知识
+CATEGORY literature:文学
+CATEGORY_DESC 人类情感与想象力的艺术表达
+CATEGORY art:艺术
+CATEGORY_DESC 视觉与听觉的美学创造
+CATEGORY technology:技术
+CATEGORY_DESC 人类智慧与工具的结合
+CATEGORY geography:地理
+CATEGORY_DESC 地球表面与人文环境的探索
+CATEGORY biology:生物
+CATEGORY_DESC 生命科学与自然生态
+
+// 读者问题
+QUESTION history:人类第一次登月是在哪一年？
+HINT 这是1969年的历史性事件
+FEEDBACK_CORRECT 回答正确！1969年阿波罗11号成功登月。
+FEEDBACK_WRONG 回答错误。人类第一次登月是1969年。
+
+QUESTION science:光速大约是多少公里每秒？
+HINT 大约每秒30万公里
+FEEDBACK_CORRECT 回答正确！光速约为每秒30万公里。
+FEEDBACK_WRONG 回答错误。光速约为每秒30万公里。
+
+QUESTION literature:《红楼梦》的作者是谁？
+HINT 清代作家曹雪芹
+FEEDBACK_CORRECT 回答正确！《红楼梦》是曹雪芹的代表作。
+FEEDBACK_WRONG 回答错误。《红楼梦》的作者是曹雪芹。
+
+QUESTION art:蒙娜丽莎是谁的作品？
+HINT 文艺复兴时期的达芬奇
+FEEDBACK_CORRECT 回答正确！蒙娜丽莎是达芬奇的杰作。
+FEEDBACK_WRONG 回答错误。蒙娜丽莎是达芬奇的作品。
+
+QUESTION technology:计算机的基本组成部分有哪些？
+HINT CPU、内存、硬盘等
+FEEDBACK_CORRECT 回答正确！计算机由CPU、内存、存储等组成。
+FEEDBACK_WRONG 回答错误。计算机的基本组成包括CPU、内存、硬盘等。
+
+QUESTION geography:世界上最大的海洋是什么？
+HINT 太平洋是最大的海洋
+FEEDBACK_CORRECT 回答正确！太平洋是世界上最大的海洋。
+FEEDBACK_WRONG 回答错误。世界上最大的海洋是太平洋。
+
+QUESTION biology:DNA的全称是什么？
+HINT 脱氧核糖核酸
+FEEDBACK_CORRECT 回答正确！DNA的全称是脱氧核糖核酸。
+FEEDBACK_WRONG 回答错误。DNA的全称是脱氧核糖核酸。
+
+QUESTION history:中国的四大发明是什么？
+HINT 造纸术、印刷术、火药、指南针
+FEEDBACK_CORRECT 回答正确！四大发明是中华文明的瑰宝。
+FEEDBACK_WRONG 回答错误。中国的四大发明是造纸术、印刷术、火药和指南针。
+
+QUESTION science:牛顿提出了哪些运动定律？
+HINT 三大运动定律
+FEEDBACK_CORRECT 回答正确！牛顿三大定律奠定了经典力学基础。
+FEEDBACK_WRONG 回答错误。牛顿提出了三大运动定律。
+
+QUESTION literature:《莎士比亚全集》包含多少部戏剧？
+HINT 大约37部
+FEEDBACK_CORRECT 回答正确！莎士比亚共创作了约37部戏剧。
+FEEDBACK_WRONG 回答错误。《莎士比亚全集》包含约37部戏剧。
+
+QUESTION art:梵高最著名的作品是什么？
+HINT 向日葵、星空等
+FEEDBACK_CORRECT 回答正确！梵高的《向日葵》和《星空》举世闻名。
+FEEDBACK_WRONG 回答错误。梵高最著名的作品包括《向日葵》和《星空》。
+
+QUESTION technology:互联网的前身叫什么名字？
+HINT ARPANET
+FEEDBACK_CORRECT 回答正确！互联网的前身是ARPANET。
+FEEDBACK_WRONG 回答错误。互联网的前身叫ARPANET。
+
+QUESTION geography:地球的赤道周长大约是多少公里？
+HINT 约4万公里
+FEEDBACK_CORRECT 回答正确！地球赤道周长约4万公里。
+FEEDBACK_WRONG 回答错误。地球的赤道周长大约是4万公里。
+
+QUESTION biology:光合作用主要发生在植物的哪个部位？
+HINT 叶绿体
+FEEDBACK_CORRECT 回答正确！光合作用主要发生在叶绿体中。
+FEEDBACK_WRONG 回答错误。光合作用主要发生在植物的叶绿体中。
+
+QUESTION history:第二次世界大战结束于哪一年？
+HINT 1945年
+FEEDBACK_CORRECT 回答正确！第二次世界大战于1945年结束。
+FEEDBACK_WRONG 回答错误。第二次世界大战结束于1945年。
+
+QUESTION history:中国古代的科举制度始于哪个朝代？
+HINT 隋朝
+FEEDBACK_CORRECT 回答正确！科举制度始于隋朝。
+FEEDBACK_WRONG 回答错误。科举制度始于隋朝。
+
+QUESTION science:水的化学式是什么？
+HINT H2O
+FEEDBACK_CORRECT 回答正确！水的化学式是H2O。
+FEEDBACK_WRONG 回答错误。水的化学式是H2O。
+
+QUESTION literature:《西游记》中的唐僧师徒共有几人？
+HINT 师徒四人
+FEEDBACK_CORRECT 回答正确！唐僧师徒共有四人。
+FEEDBACK_WRONG 回答错误。《西游记》中的唐僧师徒共有四人。
+
+QUESTION art:中国的国画四君子是指什么？
+HINT 梅兰竹菊
+FEEDBACK_CORRECT 回答正确！国画四君子是梅、兰、竹、菊。
+FEEDBACK_WRONG 回答错误。国画四君子是梅、兰、竹、菊。
+
+QUESTION technology:第一台电子计算机叫什么名字？
+HINT ENIAC
+FEEDBACK_CORRECT 回答正确！第一台电子计算机是ENIAC。
+FEEDBACK_WRONG 回答错误。第一台电子计算机叫ENIAC。
+
+QUESTION geography:世界上最长的河流是什么？
+HINT 尼罗河
+FEEDBACK_CORRECT 回答正确！尼罗河是世界上最长的河流。
+FEEDBACK_WRONG 回答错误。世界上最长的河流是尼罗河。
+
+QUESTION biology:人体最大的器官是什么？
+HINT 皮肤
+FEEDBACK_CORRECT 回答正确！人体最大的器官是皮肤。
+FEEDBACK_WRONG 回答错误。人体最大的器官是皮肤。
+
+QUESTION history:法国大革命发生在哪一年？
+HINT 1789年
+FEEDBACK_CORRECT 回答正确！法国大革命发生在1789年。
+FEEDBACK_WRONG 回答错误。法国大革命发生在1789年。
+
+QUESTION science:地球围绕太阳公转一周需要多长时间？
+HINT 一年
+FEEDBACK_CORRECT 回答正确！地球公转一周大约需要一年。
+FEEDBACK_WRONG 回答错误。地球围绕太阳公转一周需要一年。
+
+QUESTION literature:《三国演义》的作者是谁？
+HINT 罗贯中
+FEEDBACK_CORRECT 回答正确！《三国演义》是罗贯中的作品。
+FEEDBACK_WRONG 回答错误。《三国演义》的作者是罗贯中。
+
+QUESTION history:秦始皇统一六国是在哪一年？
+HINT 公元前221年
+FEEDBACK_CORRECT 回答正确！秦始皇于公元前221年统一六国。
+FEEDBACK_WRONG 回答错误。秦始皇统一六国是公元前221年。
+
+QUESTION science:原子的中心叫什么？
+HINT 原子核
+FEEDBACK_CORRECT 回答正确！原子的中心是原子核。
+FEEDBACK_WRONG 回答错误。原子的中心叫原子核。
+
+QUESTION literature:《水浒传》共有多少位好汉？
+HINT 108位
+FEEDBACK_CORRECT 回答正确！《水浒传》中有108位好汉。
+FEEDBACK_WRONG 回答错误。《水浒传》共有108位好汉。
+
+QUESTION art:《清明上河图》的作者是谁？
+HINT 张择端
+FEEDBACK_CORRECT 回答正确！《清明上河图》是张择端的作品。
+FEEDBACK_WRONG 回答错误。《清明上河图》的作者是张择端。
+
+QUESTION technology:互联网诞生于哪一年？
+HINT 1969年
+FEEDBACK_CORRECT 回答正确！互联网诞生于1969年。
+FEEDBACK_WRONG 回答错误。互联网诞生于1969年。
+
+QUESTION geography:世界上最大的沙漠是什么？
+HINT 撒哈拉沙漠
+FEEDBACK_CORRECT 回答正确！撒哈拉沙漠是世界上最大的沙漠。
+FEEDBACK_WRONG 回答错误。世界上最大的沙漠是撒哈拉沙漠。
+
+QUESTION biology:人体有多少块骨头？
+HINT 206块
+FEEDBACK_CORRECT 回答正确！成年人人体有206块骨头。
+FEEDBACK_WRONG 回答错误。人体有206块骨头。
+
+QUESTION history:长城最早修建于哪个朝代？
+HINT 春秋战国
+FEEDBACK_CORRECT 回答正确！长城最早修建于春秋战国时期。
+FEEDBACK_WRONG 回答错误。长城最早修建于春秋战国时期。
+
+QUESTION science:地球的自转周期是多长？
+HINT 一天
+FEEDBACK_CORRECT 回答正确！地球自转一周大约需要一天。
+FEEDBACK_WRONG 回答错误。地球的自转周期是一天。
+
+QUESTION literature:《聊斋志异》的作者是谁？
+HINT 蒲松龄
+FEEDBACK_CORRECT 回答正确！《聊斋志异》是蒲松龄的作品。
+FEEDBACK_WRONG 回答错误。《聊斋志异》的作者是蒲松龄。
+
+QUESTION art:达·芬奇除了绘画还擅长什么？
+HINT 科学发明
+FEEDBACK_CORRECT 回答正确！达·芬奇还是科学家和发明家。
+FEEDBACK_WRONG 回答错误。达·芬奇还擅长科学发明。
+
+QUESTION technology:智能手机是哪一年出现的？
+HINT 2007年
+FEEDBACK_CORRECT 回答正确！第一部智能手机iPhone于2007年发布。
+FEEDBACK_WRONG 回答错误。智能手机于2007年出现。
+
+QUESTION geography:世界上最高的山峰是什么？
+HINT 珠穆朗玛峰
+FEEDBACK_CORRECT 回答正确！珠穆朗玛峰是世界上最高的山峰。
+FEEDBACK_WRONG 回答错误。世界上最高的山峰是珠穆朗玛峰。
+
+QUESTION biology:人体最大的内脏器官是什么？
+HINT 肝脏
+FEEDBACK_CORRECT 回答正确！肝脏是人体最大的内脏器官。
+FEEDBACK_WRONG 回答错误。人体最大的内脏器官是肝脏。
+
+QUESTION history:孔子是哪个朝代的人？
+HINT 春秋时期
+FEEDBACK_CORRECT 回答正确！孔子生活在春秋时期。
+FEEDBACK_WRONG 回答错误。孔子是春秋时期的人。
+
+QUESTION science:水的沸点是多少摄氏度？
+HINT 100度
+FEEDBACK_CORRECT 回答正确！水的沸点是100摄氏度。
+FEEDBACK_WRONG 回答错误。水的沸点是100摄氏度。
+
+QUESTION literature:《儒林外史》的作者是谁？
+HINT 吴敬梓
+FEEDBACK_CORRECT 回答正确！《儒林外史》是吴敬梓的作品。
+FEEDBACK_WRONG 回答错误。《儒林外史》的作者是吴敬梓。
+
+QUESTION art:中国书法有哪几种主要字体？
+HINT 楷行草隶篆
+FEEDBACK_CORRECT 回答正确！中国书法主要有楷书、行书、草书、隶书、篆书。
+FEEDBACK_WRONG 回答错误。中国书法主要有楷、行、草、隶、篆五种字体。
+
+QUESTION technology:人工智能的英文缩写是什么？
+HINT AI
+FEEDBACK_CORRECT 回答正确！人工智能的英文缩写是AI。
+FEEDBACK_WRONG 回答错误。人工智能的英文缩写是AI。
+
+QUESTION geography:中国的首都是哪里？
+HINT 北京
+FEEDBACK_CORRECT 回答正确！中国的首都是北京。
+FEEDBACK_WRONG 回答错误。中国的首都是北京。
+
+QUESTION biology:植物进行光合作用需要什么？
+HINT 阳光水二氧化碳
+FEEDBACK_CORRECT 回答正确！植物光合作用需要阳光、水和二氧化碳。
+FEEDBACK_WRONG 回答错误。植物光合作用需要阳光、水和二氧化碳。
+
+// NPC对话
+DIALOGUE_GREETING 欢迎来到小镇图书馆。
+DIALOGUE_INTRO 书架按类别分的，考试的孩子常来找历史和科学类。你帮他们找找书就行。
+DIALOGUE_FAMILIAR 窗台晒着借书卡，今天适合把书页翻慢一点。你想看那本旧的吗？
+DIALOGUE_MAP 借书卡盒子有点卡。管理员敲了两下，掉出一张旧集市地图。"以前这里很热闹的。地图边缘有摊位标记，你可以先看看。"
+DIALOGUE_BORROW 借书卡盒子里多了几张新记录。管理员把旧地图收回去前，指了指边上的空白处："以后可以把今年的事也写上去。"
+DIALOGUE_CLOSE_FRIEND 管理员递给你一杯热茶。窗外的梧桐树影落在书页上，今天的图书馆格外安静。
+
+// 剧情事件
+PLOT_EVENT first_discovery:旧地图的秘密
+PLOT_DESC 借书卡盒子里藏着一张旧集市地图，地图边缘有模糊的摊位标记。管理员说这是几十年前的东西了。
+PLOT_REQUIREMENT 2:30
+
+PLOT_EVENT borrow_card:借书卡的印记
+PLOT_DESC 你帮孩子找到了考试要用的书，借书卡又多盖了一个章。管理员说以后可以把今年的事也写上去。
+PLOT_REQUIREMENT 5:50
+
+PLOT_EVENT close_friend:图书馆的守护者
+PLOT_DESC 管理员终于向你敞开了心扉。原来他守护这座图书馆已经三十年了，那些泛黄的书页里藏着小镇的记忆。
+PLOT_REQUIREMENT 8:80

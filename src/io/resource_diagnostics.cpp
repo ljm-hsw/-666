@@ -77,6 +77,7 @@ std::vector<ResourceSpec> baseline_resource_manifest() {
         {"textures/kenney_tiny_farm/Tilemap/tilemap_packed.png", ResourceKind::texture, false},
         {"textures/imagegen_buildings/p1_building_sprites.png", ResourceKind::texture, false},
         {"data/baseline.txt", ResourceKind::data, true},
+        {"data/library_data.txt", ResourceKind::data, false},
         {"audio/theme.ogg", ResourceKind::audio, false},
     };
 }

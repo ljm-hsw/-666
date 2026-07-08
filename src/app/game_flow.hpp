@@ -5,6 +5,9 @@
 #include <raylib.h>
 
 #include "core/game_session.hpp"
+#include "locations/library_data.hpp"
+#include "locations/library_rules.hpp"
+#include "locations/library_ui.hpp"
 
 namespace pixel_town {
 
@@ -14,6 +17,12 @@ struct GameAppState {
     bool save_present{false};
     bool confirm_new_game_overwrite{false};
     std::string notice{"点击“新游戏”开始第一天。"};
+
+    bool in_library{false};
+    library::LibraryData library_data;
+    library::LibraryRuleEngine* library_engine{nullptr};
+    library::ui::LibraryUIState library_ui_state;
+    int library_visits{0};
 };
 
 [[nodiscard]] const char* game_flow_glyphs();

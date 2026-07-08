@@ -9,14 +9,7 @@
 
 #include <raylib.h>
 
-#ifdef _WIN32
-#define NOMINMAX
-#include <windows.h>
-#elif defined(__APPLE__)
-#include <mach-o/dyld.h>
-#elif defined(__linux__)
-#include <unistd.h>
-#endif
+#include "app/windows_utils.hpp"
 
 #include "app/game_flow.hpp"
 #include "app/visual_prototype.hpp"
@@ -27,6 +20,7 @@
 #include "io/resource_diagnostics.hpp"
 #include "io/save_game.hpp"
 #include "io/startup_log.hpp"
+#include "locations/library_data.hpp"
 
 namespace {
 
@@ -73,42 +67,7 @@ bool complete_day_with_rest(pixel_town::GameSession& session, pixel_town::Locati
     return session.finish_day_summary();
 }
 
-std::filesystem::path system_executable_path() {
-#ifdef _WIN32
-    std::wstring buffer(260, L'\0');
-    DWORD length = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
-    while (length == buffer.size()) {
-        buffer.resize(buffer.size() * 2);
-        length = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
-    }
-    if (length == 0) {
-        return {};
-    }
-    buffer.resize(length);
-    return std::filesystem::path{buffer};
-#elif defined(__APPLE__)
-    std::uint32_t size = 0;
-    _NSGetExecutablePath(nullptr, &size);
-    if (size == 0) {
-        return {};
-    }
-    std::string buffer(size, '\0');
-    if (_NSGetExecutablePath(buffer.data(), &size) != 0) {
-        return {};
-    }
-    buffer.resize(std::strlen(buffer.c_str()));
-    return std::filesystem::path{buffer};
-#elif defined(__linux__)
-    std::array<char, 4096> buffer{};
-    const ssize_t length = readlink("/proc/self/exe", buffer.data(), buffer.size() - 1);
-    if (length <= 0) {
-        return {};
-    }
-    return std::filesystem::path{std::string{buffer.data(), static_cast<std::size_t>(length)}};
-#else
-    return {};
-#endif
-}
+
 
 std::filesystem::path directory_from_executable_path(const std::filesystem::path& executable_path) {
     std::error_code ignored;
@@ -127,7 +86,7 @@ std::filesystem::path directory_from_executable_path(const std::filesystem::path
 }
 
 std::filesystem::path application_directory_from_argv(const char* executable_path) {
-    const std::filesystem::path system_path = system_executable_path();
+    const std::filesystem::path system_path = pixel_town::system_executable_path();
     if (!system_path.empty()) {
         return directory_from_executable_path(system_path);
     }
@@ -230,10 +189,25 @@ int main(int argc, char* argv[]) {
         } else {
             SetTextureFilter(town_marker, TEXTURE_FILTER_POINT);
         }
-        const std::string required_glyphs =
+        std::string required_glyphs =
             std::string{pixel_town::visual_prototype_glyphs()} + pixel_town::game_flow_glyphs();
+        TraceLog(LOG_INFO, "FONT: Base glyphs size: %zu", required_glyphs.size());
+        
+        auto library_load_result = pixel_town::library::load_library_data("assets/data/library_data.txt");
+        if (library_load_result.success) {
+            std::string library_chars = pixel_town::library::collect_all_text_characters(library_load_result.data);
+            TraceLog(LOG_INFO, "FONT: Loaded library data, collected %zu characters from %zu questions", 
+                     library_chars.size(), library_load_result.data.questions.size());
+            required_glyphs += library_chars;
+        } else {
+            TraceLog(LOG_WARNING, "FONT: Failed to load library data: %s", library_load_result.error_message.c_str());
+        }
+        
+        TraceLog(LOG_INFO, "FONT: Total glyphs before codepoint conversion: %zu", required_glyphs.size());
+        
         int codepoint_count = 0;
         int* codepoints = LoadCodepoints(required_glyphs.c_str(), &codepoint_count);
+        TraceLog(LOG_INFO, "FONT: Total codepoints to load: %d", codepoint_count);
         const int font_pixel_size = capture_prototype ? 12 : 24;
         ui_font = LoadFontEx("assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf",
                              font_pixel_size, codepoints, codepoint_count);
