@@ -39,4 +39,6 @@ None - can start immediately.
 - [Windows 2022 / MSVC](https://github.com/ljm-hsw/-666/actions/runs/28836570723/job/85521523988) 完成 `cmake -S . -B build -G "Visual Studio 17 2022" -A x64`、`cmake --build build --config Release --parallel` 和 `ctest --test-dir build -C Release --output-on-failure`，结论为 `success`。
 - [macOS / Apple Clang](https://github.com/ljm-hsw/-666/actions/runs/28836570723/job/85521524005) 完成 Release 配置、构建和 CTest，结论为 `success`。
 
-2026-07-07 当前显示基线迁移为 960×540 逻辑画布和 960×540 默认窗口；旧 640×360 UI 坐标按 1.5× 迁移到新逻辑画布，后续 UI 和 imagegen 背景规划以新尺寸为准。
+2026-07-07 当前显示基线迁移为 960×540 逻辑画布和 960×540 默认窗口，后续 UI 和 imagegen 背景规划以新尺寸为准。
+
+2026-07-08 P1 game-flow 已从旧 640×360 UI + 1.5× camera 放大迁移为 960×540 逻辑画布原生绘制；P0 visual prototype 仍保留独立候选缩放路径用于人工评审。

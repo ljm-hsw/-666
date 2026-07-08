@@ -12,7 +12,7 @@
 - 仓库字体 SHA-256：`5b27e9eb9d9dd93cff727d8919ddd2e7a482b19314b62991cb1e7806852e8734`
 - 许可证文件：[`assets/fonts/OFL.txt`](assets/fonts/OFL.txt) 及 [`assets/fonts/LICENSES/`](assets/fonts/LICENSES/)
 
-该字体融合多个 OFL 字形来源，因此随仓库保留上游提供的完整许可证集合。它当前是 P0 视觉原型路线的必要运行时字体，用于阻止缺字或替代字形进入评审；最终 UI 字体是否沿用仍需 Issue 03 人工批准。
+该字体融合多个 OFL 字形来源，因此随仓库保留上游提供的完整许可证集合。它当前用于 P0 视觉原型和 P1 game-flow 中文 UI；运行时会从集中 UI 文案生成必需字形清单并逐字检查，用于阻止缺字或替代字形进入评审。最终 UI 字体是否沿用仍需 Issue 03 人工批准。
 
 ## Kenney Tiny Farm
 
@@ -73,6 +73,19 @@
 - 生成源已归档为仓库内候选原图；交付记录以仓库路径和 SHA-256 为准。
 
 该资源是当前 P1 地图页的优先视觉方案。五个地点建筑已经和地图背景一起生成，运行时代码只叠加交互标签与点击热区，以避免独立房屋 sprite 和地块错位。该图仍属于候选美术资产，是否进入最终交付需后续美术验收确认。
+
+## Imagegen P1 Title Screen Background
+
+- 名称：P1 title screen background
+- 生成方式：内置 imagegen，按项目 960×540 进入/标题页背景需求生成
+- 生成日期：2026-07-08
+- 候选原图：[`assets/textures/imagegen_backgrounds/title_screen_background_source.png`](assets/textures/imagegen_backgrounds/title_screen_background_source.png)
+- 候选原图 SHA-256：`6c36104f59decdf4d4faa39fd3705d2d79f9ae94b19bc2d6681af74a09afb7f6`
+- 处理后运行时背景：[`assets/textures/imagegen_backgrounds/title_screen_background.png`](assets/textures/imagegen_backgrounds/title_screen_background.png)
+- 处理后运行时背景 SHA-256：`f5d3df2f5700511c6747c7591a9b86273744ce73cd0ff84d445a2c009922c42d`
+- 生成源已归档为仓库内候选原图；交付记录以仓库路径和 SHA-256 为准。
+
+该资源是当前 P1 标题/进入页的优先视觉方案。画面采用小镇入口广场构图，中央留出标题、开始按钮和提示文本空间，运行时代码叠加中文标题、开始按钮和提示。该图仍属于候选美术资产，是否进入最终交付需 Issue 03 或后续美术验收确认。
 
 ## Imagegen P1 Building Candidates
 
