@@ -41,8 +41,8 @@ TEST_CASE("only current phase locations are legal") {
 
     CHECK(session.phase() == pixel_town::GamePhase::night_choice);
     CHECK(session.can_enter(pixel_town::Location::home).allowed);
+    CHECK(session.can_enter(pixel_town::Location::tavern).allowed);
     CHECK_FALSE(session.can_enter(pixel_town::Location::restaurant).allowed);
-    CHECK_FALSE(session.can_enter(pixel_town::Location::tavern).allowed);
 }
 
 TEST_CASE("day action result applies once and moves to night choice") {
@@ -162,6 +162,7 @@ TEST_CASE("attribute floor does not end the schedule early") {
         pixel_town::Location::restaurant,
         pixel_town::ActionOutcome::completed,
         pixel_town::StatDelta{0, -999, 0, 0, -999},
+        0, 0,
         "压力测试：属性触底但不提前结束。",
     };
     REQUIRE(session.apply_action_result(exhausting_result).accepted);
@@ -207,4 +208,129 @@ TEST_CASE("abandoning after start consumes the phase without rewards") {
     CHECK(session.player().knowledge == before.knowledge);
     CHECK(session.player().mood == before.mood);
     CHECK_FALSE(session.can_enter(pixel_town::Location::restaurant).allowed);
+}
+
+
+#include "core/tavern_rules.hpp"
+
+TEST_CASE("tavern is accessible at night_choice after day action") {
+    auto session = pixel_town::GameSession::new_game();
+    REQUIRE(session.enter_location(pixel_town::Location::library));
+    REQUIRE(session.start_location() != 0);
+    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+    CHECK(session.phase() == pixel_town::GamePhase::night_choice);
+    CHECK(session.can_enter(pixel_town::Location::tavern).allowed);
+    CHECK(session.can_enter(pixel_town::Location::home).allowed);
+}
+
+TEST_CASE("tavern apply action result transitions to day_summary and updates record") {
+    auto session = pixel_town::GameSession::new_game();
+    REQUIRE(session.enter_location(pixel_town::Location::restaurant));
+    REQUIRE(session.start_location() != 0);
+    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+
+    REQUIRE(session.enter_location(pixel_town::Location::tavern));
+    REQUIRE(session.start_location() != 0);
+
+    const int result_id = session.active_result_id();
+    const auto& player = session.player();
+    const pixel_town::TavernChallengeConfig config;
+    const auto result = pixel_town::simulate_tavern_challenge(
+        player, config, pixel_town::ChallengeType::gomoku,
+        pixel_town::BetTier::low, pixel_town::ChallengeOutcome::win, result_id);
+
+    const auto applied = session.apply_action_result(result);
+    CHECK(applied.accepted);
+    CHECK(session.phase() == pixel_town::GamePhase::day_summary);
+    CHECK(session.tavern_wins() == 1);
+    CHECK(session.tavern_losses() == 0);
+    CHECK(session.last_summary().find("\u9152\u9986\u6311\u6218") != std::string::npos);
+}
+
+TEST_CASE("tavern and home are mutually exclusive per night") {
+    auto session = pixel_town::GameSession::new_game();
+    REQUIRE(session.enter_location(pixel_town::Location::library));
+    REQUIRE(session.start_location() != 0);
+    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+
+    REQUIRE(session.enter_location(pixel_town::Location::tavern));
+    REQUIRE(session.start_location() != 0);
+    const int result_id = session.active_result_id();
+    const auto& player = session.player();
+    const pixel_town::TavernChallengeConfig config;
+    const auto tavern_result = pixel_town::simulate_tavern_challenge(
+        player, config, pixel_town::ChallengeType::gomoku,
+        pixel_town::BetTier::medium, pixel_town::ChallengeOutcome::win, result_id);
+    REQUIRE(session.apply_action_result(tavern_result).accepted);
+
+    CHECK_FALSE(session.can_enter(pixel_town::Location::home).allowed);
+    CHECK_FALSE(session.can_enter(pixel_town::Location::tavern).allowed);
+}
+
+TEST_CASE("home rest path is unchanged after tavern is added") {
+    auto session = pixel_town::GameSession::new_game();
+    const auto before = session.player();
+
+    REQUIRE(session.enter_location(pixel_town::Location::library));
+    REQUIRE(session.start_location() != 0);
+    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+
+    REQUIRE(session.apply_action_result(session.home_rest_result()).accepted);
+    CHECK(session.phase() == pixel_town::GamePhase::day_summary);
+    CHECK(session.player().stamina == before.stamina - 8 + 15);
+    CHECK(session.player().mood == before.mood + 2 + 5);
+    CHECK(session.last_summary().find("热水") != std::string::npos);
+    CHECK(session.tavern_wins() == 0);
+    CHECK(session.tavern_losses() == 0);
+
+    REQUIRE(session.finish_day_summary());
+    CHECK(session.day() == 2);
+}
+
+TEST_CASE("bet exceeding money returns abandoned at rules layer") {
+    pixel_town::PlayerState player;
+    player.money = 5;
+    const pixel_town::TavernChallengeConfig config;
+
+    const auto result = pixel_town::simulate_tavern_challenge(
+        player, config, pixel_town::ChallengeType::liars_dice,
+        pixel_town::BetTier::medium, pixel_town::ChallengeOutcome::win, 1);
+
+    CHECK(result.outcome == pixel_town::ActionOutcome::abandoned);
+    CHECK(result.delta.money == 0);
+    CHECK(result.summary.find("\u8d4c\u6ce8\u4e0d\u8db3") != std::string::npos);
+}
+
+TEST_CASE("ten days completing day work then tavern each night reaches ending") {
+    auto session = pixel_town::GameSession::new_game(20260707);
+
+    for (int expected_day = 1; expected_day <= 10; ++expected_day) {
+        CHECK(session.day() == expected_day);
+        REQUIRE(session.phase() == pixel_town::GamePhase::day_choice);
+        REQUIRE(session.enter_location(pixel_town::Location::restaurant));
+        REQUIRE(session.start_location() != 0);
+        REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+
+        REQUIRE(session.enter_location(pixel_town::Location::tavern));
+        REQUIRE(session.start_location() != 0);
+        const int result_id = session.active_result_id();
+        const auto& player = session.player();
+        const pixel_town::TavernChallengeConfig config;
+        const auto tavern_result = pixel_town::simulate_tavern_challenge(
+            player, config, pixel_town::ChallengeType::gomoku,
+            pixel_town::BetTier::low, pixel_town::ChallengeOutcome::win, result_id);
+        REQUIRE(session.apply_action_result(tavern_result).accepted);
+        REQUIRE(session.finish_day_summary());
+    }
+
+    CHECK(session.phase() == pixel_town::GamePhase::ending);
+    CHECK(session.is_ended());
+    CHECK(session.player().money >= 0);
+    CHECK(session.player().money <= 999);
+    CHECK(session.player().stamina >= 0);
+    CHECK(session.player().stamina <= 100);
+    CHECK(session.player().mood >= 0);
+    CHECK(session.player().mood <= 100);
+    CHECK(session.tavern_wins() == 10);
+    CHECK(session.tavern_losses() == 0);
 }

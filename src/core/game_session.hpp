@@ -61,6 +61,8 @@ struct ActionResult {
     Location location{Location::restaurant};
     ActionOutcome outcome{ActionOutcome::completed};
     StatDelta delta{};
+    int tavern_win_delta{0};
+    int tavern_loss_delta{0};
     std::string summary;
 };
 
@@ -90,6 +92,8 @@ struct GameSessionSnapshot {
     std::string main_ending;
     std::string final_summary;
     std::vector<int> applied_result_ids;
+    int tavern_wins{0};
+    int tavern_losses{0};
 };
 
 [[nodiscard]] const char* phase_label(GamePhase phase);
@@ -111,6 +115,8 @@ public:
     [[nodiscard]] bool location_started() const noexcept { return location_started_; }
     [[nodiscard]] Location pending_location() const noexcept;
     [[nodiscard]] int active_result_id() const noexcept { return active_result_id_; }
+    [[nodiscard]] int tavern_wins() const noexcept { return tavern_wins_; }
+    [[nodiscard]] int tavern_losses() const noexcept { return tavern_losses_; }
 
     [[nodiscard]] ActionPermission can_enter(Location location) const;
     [[nodiscard]] bool enter_location(Location location);
@@ -141,6 +147,8 @@ private:
     std::string main_ending_;
     std::string final_summary_;
     std::vector<int> applied_result_ids_;
+    int tavern_wins_{0};
+    int tavern_losses_{0};
 
     [[nodiscard]] bool result_was_applied(int result_id) const;
     void clear_pending_location();

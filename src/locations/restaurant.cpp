@@ -173,14 +173,13 @@ ActionResult compute_restaurant_result(
 
     const int total = stats.total_handled();
     if (total == 0) {
-        return ActionResult{
-            result_id,
-            ActionSlot::day,
-            Location::restaurant,
-            ActionOutcome::abandoned,
-            {},
-            "餐馆工作已放弃：未服务任何顾客。"
-        };
+        ActionResult result;
+        result.result_id = result_id;
+        result.slot = ActionSlot::day;
+        result.location = Location::restaurant;
+        result.outcome = ActionOutcome::abandoned;
+        result.summary = "餐馆工作已放弃：未服务任何顾客。";
+        return result;
     }
 
     const double acc = stats.accuracy();
@@ -211,14 +210,14 @@ ActionResult compute_restaurant_result(
         "超时 " + std::to_string(stats.timeout) + "。" +
         "正确率 " + std::to_string(static_cast<int>(acc * 100)) + "%。";
 
-    return ActionResult{
-        result_id,
-        ActionSlot::day,
-        Location::restaurant,
-        ActionOutcome::completed,
-        StatDelta{money_delta, stamina_delta, reputation_delta, 0, mood_delta},
-        summary
-    };
+    ActionResult result;
+    result.result_id = result_id;
+    result.slot = ActionSlot::day;
+    result.location = Location::restaurant;
+    result.outcome = ActionOutcome::completed;
+    result.delta = StatDelta{money_delta, stamina_delta, reputation_delta, 0, mood_delta};
+    result.summary = summary;
+    return result;
 }
 
 }  // namespace pixel_town

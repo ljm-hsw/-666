@@ -98,6 +98,40 @@ TEST_CASE("save file includes versioned future module fields") {
     CHECK(text.find("tavern_losses=") != std::string::npos);
 }
 
+TEST_CASE("legacy v1 saves without tavern record default to zero") {
+    TempSaveDir temp;
+    const auto save_path = temp.path() / "legacy-v1.sav";
+
+    write_text(save_path,
+               "format_version=1\n"
+               "seed=42\n"
+               "day=1\n"
+               "phase=night_choice\n"
+               "next_result_id=2\n"
+               "active_result_id=0\n"
+               "player_money=56\n"
+               "player_stamina=72\n"
+               "player_reputation=5\n"
+               "player_knowledge=6\n"
+               "player_mood=72\n"
+               "has_pending_location=0\n"
+               "pending_location=home\n"
+               "location_started=0\n"
+               "day_action_done=1\n"
+               "night_action_done=0\n"
+               "last_summary=legacy\n"
+               "main_ending=\n"
+               "final_summary=\n"
+               "applied_result_ids=1\n"
+               "store_inventory=none\n");
+
+    const auto loaded = pixel_town::load_session(save_path);
+
+    REQUIRE(loaded.status == pixel_town::SaveStatus::ok);
+    CHECK(loaded.session.tavern_wins() == 0);
+    CHECK(loaded.session.tavern_losses() == 0);
+}
+
 TEST_CASE("saving without overwrite confirmation preserves an existing save") {
     TempSaveDir temp;
     const auto save_path = temp.path() / "slot1.sav";

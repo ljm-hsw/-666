@@ -238,8 +238,8 @@ std::string serialize_session(const GameSession& session) {
     output << "final_summary=" << escape_value(snapshot.final_summary) << "\n";
     output << "applied_result_ids=" << join_ints(snapshot.applied_result_ids) << "\n";
     output << "store_inventory=none\n";
-    output << "tavern_wins=0\n";
-    output << "tavern_losses=0\n";
+    output << "tavern_wins=" << snapshot.tavern_wins << "\n";
+    output << "tavern_losses=" << snapshot.tavern_losses << "\n";
     return output.str();
 }
 
@@ -413,9 +413,16 @@ LoadGameResult load_session(const std::filesystem::path& path) {
     const auto pending_location = values.find("pending_location");
     const auto applied_result_ids = values.find("applied_result_ids");
     if (phase == values.end() || pending_location == values.end() ||
-        applied_result_ids == values.end() || values.find("store_inventory") == values.end() ||
-        values.find("tavern_wins") == values.end() || values.find("tavern_losses") == values.end()) {
+        applied_result_ids == values.end() || values.find("store_inventory") == values.end()) {
         return {SaveStatus::corrupt, GameSession::new_game(), "save file is missing fields"};
+    }
+    if (values.find("tavern_wins") != values.end() &&
+        !parse_int(values, "tavern_wins", snapshot.tavern_wins)) {
+        return {SaveStatus::corrupt, GameSession::new_game(), "save file has invalid values"};
+    }
+    if (values.find("tavern_losses") != values.end() &&
+        !parse_int(values, "tavern_losses", snapshot.tavern_losses)) {
+        return {SaveStatus::corrupt, GameSession::new_game(), "save file has invalid values"};
     }
     if (!parse_phase(phase->second, snapshot.phase) ||
         !parse_location(pending_location->second, snapshot.pending_location) ||
@@ -423,7 +430,8 @@ LoadGameResult load_session(const std::filesystem::path& path) {
         return {SaveStatus::corrupt, GameSession::new_game(), "save file has invalid values"};
     }
     if (snapshot.day < 1 || snapshot.day > 10 || snapshot.next_result_id < 1 ||
-        snapshot.active_result_id < 0) {
+        snapshot.active_result_id < 0 || snapshot.tavern_wins < 0 ||
+        snapshot.tavern_losses < 0) {
         return {SaveStatus::corrupt, GameSession::new_game(), "save file has invalid values"};
     }
     if (!is_valid_snapshot_combination(snapshot)) {

@@ -6,6 +6,7 @@
 #include <raylib.h>
 
 #include "core/game_session.hpp"
+#include "core/tavern_rules.hpp"
 #include "locations/restaurant.hpp"
 
 namespace pixel_town {
@@ -20,6 +21,8 @@ struct GameAppState {
     std::string notice{"点击新游戏开始第一天。"};
     std::unique_ptr<RestaurantSession> restaurant;
     float restaurant_timer{0.0F};
+    ChallengeType tavern_challenge{ChallengeType::gomoku};
+    BetTier tavern_bet{BetTier::medium};
 };
 
 [[nodiscard]] const char* game_flow_glyphs();

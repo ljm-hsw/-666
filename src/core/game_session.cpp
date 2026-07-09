@@ -117,7 +117,7 @@ ActionPermission GameSession::can_enter(Location location) const {
             return {true, ""};
         }
         if (location == Location::tavern) {
-            return {false, "酒馆玩法将在后续 issue 接入；本切片先开放回家休息。"};
+            return {true, ""};
         }
         return {false, "白天工作已经结束，夜晚不能再进入该地点。"};
     }
@@ -165,7 +165,8 @@ ActionResult GameSession::simulated_success_result() const {
     const ActionSlot slot =
         phase_ == GamePhase::day_location ? ActionSlot::day : ActionSlot::night;
     return ActionResult{active_result_id_, slot, pending_location_, ActionOutcome::completed,
-                        day_work_delta(pending_location_), completed_summary(pending_location_)};
+                        day_work_delta(pending_location_), 0, 0,
+                        completed_summary(pending_location_)};
 }
 
 ActionResult GameSession::abandon_current_location() const {
@@ -175,7 +176,8 @@ ActionResult GameSession::abandon_current_location() const {
     const ActionSlot slot =
         phase_ == GamePhase::day_location ? ActionSlot::day : ActionSlot::night;
     return ActionResult{active_result_id_, slot, pending_location_, ActionOutcome::abandoned,
-                        {}, location_result_summary(pending_location_, ActionOutcome::abandoned)};
+                        {}, 0, 0,
+                        location_result_summary(pending_location_, ActionOutcome::abandoned)};
 }
 
 ActionResult GameSession::home_rest_result() {
@@ -187,7 +189,7 @@ ActionResult GameSession::home_rest_result() {
     active_result_id_ = next_result_id_++;
     phase_ = GamePhase::night_location;
     return ActionResult{active_result_id_, ActionSlot::night, Location::home,
-                        ActionOutcome::completed, StatDelta{0, 15, 0, 0, 5},
+                        ActionOutcome::completed, StatDelta{0, 15, 0, 0, 5}, 0, 0,
                         completed_summary(Location::home)};
 }
 
@@ -213,6 +215,8 @@ ApplyResult GameSession::apply_action_result(const ActionResult& result) {
         day_action_done_ = true;
         applied_result_ids_.push_back(result.result_id);
         last_summary_ = result.summary;
+        tavern_wins_ += result.tavern_win_delta;
+        tavern_losses_ += result.tavern_loss_delta;
         clear_pending_location();
         phase_ = GamePhase::night_choice;
         return {true, "白天行动已结算。"};
@@ -226,6 +230,8 @@ ApplyResult GameSession::apply_action_result(const ActionResult& result) {
         night_action_done_ = true;
         applied_result_ids_.push_back(result.result_id);
         last_summary_ = result.summary;
+        tavern_wins_ += result.tavern_win_delta;
+        tavern_losses_ += result.tavern_loss_delta;
         clear_pending_location();
         phase_ = GamePhase::day_summary;
         return {true, "夜晚行动已结算。"};
@@ -269,7 +275,9 @@ GameSessionSnapshot GameSession::snapshot() const {
                                last_summary_,
                                main_ending_,
                                final_summary_,
-                               applied_result_ids_};
+                               applied_result_ids_,
+                               tavern_wins_,
+                               tavern_losses_};
 }
 
 GameSession GameSession::from_snapshot(const GameSessionSnapshot& snapshot) {
@@ -289,6 +297,8 @@ GameSession GameSession::from_snapshot(const GameSessionSnapshot& snapshot) {
     session.main_ending_ = snapshot.main_ending;
     session.final_summary_ = snapshot.final_summary;
     session.applied_result_ids_ = snapshot.applied_result_ids;
+    session.tavern_wins_ = snapshot.tavern_wins;
+    session.tavern_losses_ = snapshot.tavern_losses;
     return session;
 }
 
