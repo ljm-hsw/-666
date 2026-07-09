@@ -24,7 +24,6 @@ target_link_libraries(pixel_town_io PUBLIC pixel_town_core)
 add_library(pixel_town_locations
   src/locations/library_data.cpp
   src/locations/library_rules.cpp
-  src/locations/library_ui.cpp
 )
 target_include_directories(pixel_town_locations PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(pixel_town_locations PUBLIC pixel_town_core pixel_town_io)
@@ -38,6 +37,7 @@ add_executable(pixel_town
   src/app/game_flow.cpp
   src/app/main.cpp
   src/app/visual_prototype.cpp
+  src/locations/library_ui.cpp
 )
 target_link_libraries(pixel_town PRIVATE pixel_town_io pixel_town_locations raylib)
 target_compile_definitions(pixel_town PRIVATE PIXEL_TOWN_VERSION="${PROJECT_VERSION}")
