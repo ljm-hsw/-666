@@ -1,28 +1,13 @@
 #include "app/game_flow.hpp"
 
 #include <array>
-#include <cstdint>
-#include <cmath>
-#include <sstream>
 #include <string>
 
+#include "app/ui_primitives.hpp"
 #include "core/story_text.hpp"
 
 namespace pixel_town {
 namespace {
-
-constexpr Color ink{45, 52, 54, 255};
-constexpr Color paper{250, 238, 203, 255};
-constexpr Color cream{255, 248, 226, 255};
-constexpr Color green{82, 137, 92, 255};
-constexpr Color grass{144, 190, 119, 255};
-constexpr Color road{194, 170, 121, 255};
-constexpr Color disabled{145, 143, 132, 255};
-constexpr Color red{183, 83, 72, 255};
-constexpr Color gold{224, 169, 74, 255};
-constexpr Color shadow{39, 48, 53, 120};
-constexpr Color slate{60, 79, 82, 255};
-constexpr float native_ui_scale = 1.5F;
 
 constexpr std::array<Location, 5> map_locations{
     Location::restaurant, Location::convenience_store, Location::library, Location::tavern,
@@ -97,86 +82,6 @@ constexpr std::array ui_texts{
     "已进入酒馆，选择挑战和赌注。",
     "金钱不足，无法选择该赌注档位。",
 };
-
-float scaled(float value) {
-    return std::round(value * native_ui_scale);
-}
-
-float scaled_font_size(float design_size) {
-    if (design_size <= 20.0F) {
-        return 24.0F;
-    }
-    if (design_size <= 30.0F) {
-        return 36.0F;
-    }
-    return 48.0F;
-}
-
-Vector2 scaled_point(Vector2 value) {
-    return Vector2{scaled(value.x), scaled(value.y)};
-}
-
-Rectangle scaled_rect(Rectangle value) {
-    return Rectangle{scaled(value.x), scaled(value.y), scaled(value.width), scaled(value.height)};
-}
-
-void text(const Font& font, const char* value, float x, float y, float size, Color color = ink) {
-    DrawTextEx(font, value, Vector2{scaled(x), scaled(y)}, scaled_font_size(size), 1.0F, color);
-}
-
-void text(const Font& font, const std::string& value, float x, float y, float size,
-          Color color = ink) {
-    text(font, value.c_str(), x, y, size, color);
-}
-
-void text_block(const Font& font, const char* value, float x, float y, float size,
-                float line_gap, Color color = ink) {
-    std::stringstream stream(value);
-    std::string line;
-    float offset = 0.0F;
-    while (std::getline(stream, line)) {
-        text(font, line, x, y + offset, size, color);
-        offset += line_gap;
-    }
-}
-
-void text_block(const Font& font, const std::string& value, float x, float y, float size,
-                float line_gap, Color color = ink) {
-    text_block(font, value.c_str(), x, y, size, line_gap, color);
-}
-
-void centered_text(const Font& font, const char* value, Rectangle bounds, float size,
-                   Color color = ink) {
-    const Rectangle scaled_bounds = scaled_rect(bounds);
-    const float font_size = scaled_font_size(size);
-    const Vector2 measured = MeasureTextEx(font, value, font_size, 1.0F);
-    DrawTextEx(font, value,
-               Vector2{scaled_bounds.x + (scaled_bounds.width - measured.x) / 2.0F,
-                       scaled_bounds.y + (scaled_bounds.height - measured.y) / 2.0F},
-               font_size, 1.0F, color);
-}
-
-void panel(Rectangle bounds, Color fill, Color border = ink) {
-    const Rectangle scaled_bounds = scaled_rect(bounds);
-    DrawRectangleRec(Rectangle{scaled_bounds.x + 4, scaled_bounds.y + 4, scaled_bounds.width,
-                               scaled_bounds.height},
-                     shadow);
-    DrawRectangleRec(scaled_bounds, fill);
-    DrawRectangleLinesEx(scaled_bounds, 3.0F, border);
-}
-
-bool clicked(Rectangle bounds, Vector2 mouse) {
-    return CheckCollisionPointRec(mouse, scaled_rect(bounds)) &&
-           IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-}
-
-bool activated(Rectangle bounds, Vector2 mouse, KeyboardKey key) {
-    return clicked(bounds, mouse) || IsKeyPressed(key);
-}
-
-bool hovered(Rectangle bounds, Vector2 mouse) {
-    return CheckCollisionPointRec(mouse, scaled_rect(bounds));
-}
 
 std::array<Rectangle, 5> location_bounds() {
     return {Rectangle{70, 74, 160, 86}, Rectangle{388, 74, 160, 86},
@@ -457,7 +362,7 @@ void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
 void draw_restaurant_ui(const Font& font, const GameAppState& state, Vector2 mouse) {
     ClearBackground(Color{215, 221, 194, 255});
     draw_status(font, state.session, true);
-    const auto& rest = *state.restaurant;
+    const auto& rest = *state.locations.restaurant;
 
     panel(Rectangle{40, 92, 560, 230}, cream);
     text(font, "餐馆", 56, 98, 24, red);
@@ -519,7 +424,7 @@ void draw_restaurant_ui(const Font& font, const GameAppState& state, Vector2 mou
 
 
 void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
-    if (state.session.pending_location() == Location::restaurant && state.restaurant) {
+    if (state.session.pending_location() == Location::restaurant && state.locations.restaurant) {
         draw_restaurant_ui(font, state, mouse);
         return;
     }
@@ -534,10 +439,10 @@ void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
         text(font, location_label(location), 126, 90, 30, red);
 
         const std::string challenge_text = std::string{"挑战："} +
-            challenge_type_label(state.tavern_challenge) + " / 骗子骰子";
+            challenge_type_label(state.locations.tavern_challenge) + " / 骗子骰子";
         const std::string bet_text = std::string{"赌注："} +
-            bet_tier_label(state.tavern_bet) + "赌注（" +
-            std::to_string(bet_amount(TavernChallengeConfig{}, state.tavern_bet)) + "金币）";
+            bet_tier_label(state.locations.tavern_bet) + "赌注（" +
+            std::to_string(bet_amount(TavernChallengeConfig{}, state.locations.tavern_bet)) + "金币）";
         text(font, challenge_text, 126, 136, 18, ink);
         text(font, bet_text, 126, 160, 18, ink);
 
@@ -721,30 +626,7 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
         return;
     }
 
-    if (state.in_library && state.library_engine) {
-        library::ui::update_library_ui(*state.library_engine, state.library_ui_state,
-                                       state.library_scene);
-        const bool exit_library = library::ui::handle_library_input(
-            *state.library_engine, state.library_ui_state, state.library_scene, logical_mouse);
-        if (exit_library) {
-            const auto result = state.library_engine->finish_session();
-            ActionResult game_result;
-            game_result.result_id = state.session.active_result_id();
-            game_result.slot =
-                state.session.phase() == GamePhase::day_location ? ActionSlot::day : ActionSlot::night;
-            game_result.location = Location::library;
-            game_result.outcome = result.gave_up ? ActionOutcome::abandoned : ActionOutcome::completed;
-            game_result.delta.money = result.money_change;
-            game_result.delta.stamina = result.stamina_change;
-            game_result.delta.reputation = result.reputation_change;
-            game_result.delta.knowledge = result.knowledge_change;
-            game_result.delta.mood = result.mood_change;
-            game_result.summary = result.summary;
-            const auto applied = state.session.apply_action_result(game_result);
-            state.in_library = false;
-            state.library_ui_state = library::ui::LibraryUIState{};
-            state.notice = applied.accepted ? result.summary : applied.message;
-        }
+    if (update_active_library(state.session, state.locations, state.notice, logical_mouse)) {
         return;
     }
 
@@ -775,10 +657,9 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             }
             if (state.session.enter_location(location)) {
                 if (location == Location::restaurant) {
-                    state.restaurant = std::make_unique<RestaurantSession>(
-                        state.session.current_day_context().seed);
+                    prepare_restaurant_runtime(state.locations,
+                                               state.session.current_day_context().seed);
                     state.notice = "已进入餐馆";
-                    state.restaurant_timer = 0.0F;
                 } else {
                     state.notice =
                         std::string{"已进入"} + location_label(location) + "，开始前可返回地图。";
@@ -795,17 +676,11 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                                state.session.pending_location() == Location::tavern;
 
         if (is_tavern && !state.session.location_started()) {
-            if (IsKeyPressed(KEY_ONE)) state.tavern_challenge = ChallengeType::gomoku;
-            if (IsKeyPressed(KEY_TWO)) state.tavern_challenge = ChallengeType::liars_dice;
-            if (IsKeyPressed(KEY_THREE)) state.tavern_bet = BetTier::low;
-            if (IsKeyPressed(KEY_FOUR)) state.tavern_bet = BetTier::medium;
-            if (IsKeyPressed(KEY_FIVE)) state.tavern_bet = BetTier::high;
+            update_tavern_selection(state.locations);
         }
 
-        const float btn_y = is_tavern ? 252.0F : 228.0F;
-        const Rectangle back_button{126, btn_y, 112, 34};
-        const Rectangle start_button_location{264, btn_y, 112, 34};
-        const Rectangle abandon_button{402, btn_y, 112, 34};
+        const Rectangle back_button = location_back_button(is_tavern);
+        const Rectangle start_button_location = location_start_button(is_tavern);
         if (!state.session.location_started()) {
             if (activated(back_button, logical_mouse, KEY_ESCAPE)) {
                 if (state.session.return_to_map()) {
@@ -814,141 +689,12 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 return;
             }
             if (activated(start_button_location, logical_mouse, KEY_SPACE)) {
-                if (is_tavern) {
-                    const TavernChallengeConfig config;
-                    const int bet = bet_amount(config, state.tavern_bet);
-                    if (bet > state.session.player().money) {
-                        state.notice = "金钱不足，无法选择该赌注档位。";
-                        return;
-                    }
-                }
-                if (state.session.pending_location() == Location::library) {
-                    const auto load_result = library::load_library_data("assets/data/library_data.txt");
-                    if (!load_result.success) {
-                        state.notice = std::string{"图书馆数据加载失败："} + load_result.error_message;
-                        return;
-                    }
-                    if (state.session.start_location() == 0) {
-                        state.notice = "图书馆地点会话启动失败。";
-                        return;
-                    }
-                    state.library_data = std::move(load_result.data);
-                    state.library_engine = std::make_unique<library::LibraryRuleEngine>(
-                        state.library_data, library::default_library_config());
-                    ++state.library_visits;
-                    library::DailyContext context;
-                    context.day = state.session.day();
-                    context.random_seed =
-                        static_cast<std::uint64_t>(state.session.current_day_context().seed) +
-                        static_cast<std::uint64_t>(state.session.day()) * 100000ULL +
-                        static_cast<std::uint64_t>(state.library_visits) * 100ULL;
-                    context.library_visits = state.library_visits;
-                    context.current_knowledge = state.session.player().knowledge;
-                    state.library_engine->start_session(context);
-                    state.library_engine->update_npc_relationship(state.session.player().knowledge,
-                                                                   state.library_visits);
-                    state.library_ui_state = library::ui::LibraryUIState{};
-                    state.in_library = true;
-                    state.notice = "已进入图书馆，请完成读者问答。";
-                    return;
-                }
-                if (state.session.start_location() != 0) {
-                    if (is_tavern) {
-                        state.notice = std::string{"已选择"} +
-                                       challenge_type_label(state.tavern_challenge) + "、" +
-                                       bet_tier_label(state.tavern_bet) + "赌注：按空格完成模拟。";
-                    } else {
-                        state.notice = "地点已开始：完成或放弃都会消耗本阶段。";
-                    }
-                }
+                (void)start_pending_location(state.session, state.locations, state.notice);
                 return;
             }
         } else {
-            // Restaurant-specific logic
-            if (state.session.pending_location() == Location::restaurant && state.restaurant) {
-                auto& rest = *state.restaurant;
-                // X button abandon
-                const Rectangle close_btn{568, 94, 28, 28};
-                if (clicked(close_btn, logical_mouse)) {
-                    state.session.apply_action_result(state.session.abandon_current_location());
-                    state.restaurant.reset();
-                    state.notice = "已放弃餐馆工作";
-                    return;
-                }
-                // Start button -> skip instructions
-                if (rest.phase() == RestaurantPhase::showing_instructions) {
-                    const Rectangle start_btn{232, 200, 176, 30};
-                    if (activated(start_btn, logical_mouse, KEY_SPACE)) {
-                        rest.skip_instructions();
-                    }
-                    return;
-                }
-                // Dish selection
-                if (rest.phase() == RestaurantPhase::waiting_for_order) {
-                    for (int i = 0; i < dish_count(); ++i) {
-                        if (IsKeyPressed(static_cast<KeyboardKey>(KEY_ONE + i))) {
-                            rest.serve_dish(static_cast<Dish>(i));
-                            break;
-                        }
-                    }
-    // Timer tick - once per second
-                    state.restaurant_timer += GetFrameTime();
-                    while (state.restaurant_timer >= 1.0F) {
-                        state.restaurant_timer -= 1.0F;
-                        rest.advance_time();
-                    }
-                }
-                // Feedback -> next order
-                if (rest.phase() == RestaurantPhase::order_feedback) {
-                    if (IsKeyPressed(KEY_SPACE)) {
-                        rest.advance_time();
-                    }
-                }
-                // Finished -> apply result
-                if (rest.phase() == RestaurantPhase::finished) {
-                    const Rectangle done_btn{232, 210, 176, 28};
-                    if (activated(done_btn, logical_mouse, KEY_SPACE)) {
-                        const auto result = rest.build_result(state.session.active_result_id());
-                        const auto applied = state.session.apply_action_result(result);
-                        state.restaurant.reset();
-                        state.notice = applied.message;
-                        return;
-                    }
-                }
-                // Abandon
-                if (clicked(abandon_button, logical_mouse)) {
-                    state.session.apply_action_result(state.session.abandon_current_location());
-                    state.restaurant.reset();
-                    state.notice = "已放弃餐馆工作";
-                    return;
-                }
-                return;
-            }
-            // Non-restaurant: original logic
-            if (activated(start_button_location, logical_mouse, KEY_SPACE)) {
-                if (is_tavern) {
-                    const TavernChallengeConfig config;
-                    const auto result = simulate_tavern_challenge(
-                        state.session.player(), config, state.tavern_challenge,
-                        state.tavern_bet, ChallengeOutcome::win,
-                        state.session.active_result_id());
-                    if (result.result_id != 0) {
-                        const auto applied = state.session.apply_action_result(result);
-                        state.notice = applied.message;
-                    }
-                } else {
-                    const auto applied =
-                        state.session.apply_action_result(state.session.simulated_success_result());
-                    state.notice = applied.message;
-                }
-                return;
-            }
-            if (clicked(abandon_button, logical_mouse)) {
-                const auto applied =
-                    state.session.apply_action_result(state.session.abandon_current_location());
-                state.notice = applied.message;
-                return;
-            }
+            (void)update_started_location(state.session, state.locations, state.notice,
+                                          logical_mouse);
         }
         return;
     }
@@ -978,11 +724,8 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
         return;
     }
 
-    if (state.in_library && state.library_engine) {
-        library::ui::LibraryRenderConfig render_config;
-        render_config.logical_width = 640;
-        render_config.logical_height = 360;
-        library::ui::draw_library_scene(*state.library_engine, state.library_ui_state, state.library_scene, render_config, font, logical_mouse);
+    if (state.locations.in_library && state.locations.library_engine) {
+        draw_active_library(font, state.locations, logical_mouse);
         if (!audio_enabled) {
             text(font, "静音", 586, 330, 18, red);
         }

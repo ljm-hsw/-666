@@ -8,16 +8,16 @@ namespace {
 // Helper: run a full session, serving correct dishes
 ServiceStats run_perfect_session(unsigned int seed = 42) {
     RestaurantSession session(seed);
-    session.skip_instructions();
+    REQUIRE(session.skip_instructions());
 
     while (session.phase() != RestaurantPhase::finished) {
         if (session.phase() == RestaurantPhase::waiting_for_order) {
             const auto* order = session.current_order();
             if (order) {
-                session.serve_dish(order->required_dish);
+                REQUIRE(session.serve_dish(order->required_dish));
             }
         } else if (session.phase() == RestaurantPhase::order_feedback) {
-            session.advance_time();
+            REQUIRE(session.advance_time());
         } else {
             break;
         }
@@ -28,7 +28,7 @@ ServiceStats run_perfect_session(unsigned int seed = 42) {
 // Helper: run a session, always serving wrong dish
 ServiceStats run_all_wrong_session(unsigned int seed = 42) {
     RestaurantSession session(seed);
-    session.skip_instructions();
+    REQUIRE(session.skip_instructions());
 
     // Pick a dish that's definitely wrong for any order
     // (use salad as default, switch if order happens to be salad)
@@ -46,12 +46,12 @@ ServiceStats run_all_wrong_session(unsigned int seed = 42) {
                         to_serve = Dish::soup;
                     }
                 }
-                session.serve_dish(to_serve);
+                REQUIRE(session.serve_dish(to_serve));
                 // advance_time to move past feedback
-                session.advance_time();
+                REQUIRE(session.advance_time());
             }
         } else if (session.phase() == RestaurantPhase::order_feedback) {
-            session.advance_time();
+            REQUIRE(session.advance_time());
         } else {
             break;
         }
@@ -101,7 +101,7 @@ TEST_CASE("skip instructions moves to waiting_for_order") {
 
 TEST_CASE("correct serve increments correct count") {
     RestaurantSession session(42);
-    session.skip_instructions();
+    REQUIRE(session.skip_instructions());
 
     const auto* order = session.current_order();
     REQUIRE(order != nullptr);
@@ -116,7 +116,7 @@ TEST_CASE("correct serve increments correct count") {
 
 TEST_CASE("wrong serve increments wrong count") {
     RestaurantSession session(42);
-    session.skip_instructions();
+    REQUIRE(session.skip_instructions());
 
     const auto* order = session.current_order();
     REQUIRE(order != nullptr);
@@ -142,12 +142,12 @@ TEST_CASE("serve_dish fails when not in waiting_for_order phase") {
 
 TEST_CASE("advance_time decrements timer") {
     RestaurantSession session(42);
-    session.skip_instructions();
+    REQUIRE(session.skip_instructions());
 
     const int initial_time = session.time_remaining();
     CHECK(initial_time > 0);
 
-    session.advance_time();
+    REQUIRE(session.advance_time());
     CHECK(session.time_remaining() == initial_time - 1);
 }
 
@@ -159,13 +159,13 @@ TEST_CASE("timeout when timer reaches zero") {
     config.bonus_wait_turns = 0;
 
     RestaurantSession session(42, config);
-    session.skip_instructions();
+    REQUIRE(session.skip_instructions());
 
     CHECK(session.phase() == RestaurantPhase::waiting_for_order);
     CHECK(session.time_remaining() == 1);
 
     // Advance time → timer hits 0 → timeout
-    session.advance_time();
+    REQUIRE(session.advance_time());
     CHECK(session.stats().timeout == 1);
 
     // Should move to next order (or finish)
@@ -180,8 +180,8 @@ TEST_CASE("fixed seed produces reproducible order sequences") {
     RestaurantSession a(seed);
     RestaurantSession b(seed);
 
-    a.skip_instructions();
-    b.skip_instructions();
+    REQUIRE(a.skip_instructions());
+    REQUIRE(b.skip_instructions());
 
     // Both should have the same first order
     REQUIRE(a.current_order() != nullptr);
@@ -262,7 +262,7 @@ TEST_CASE("session build_result matches compute_restaurant_result") {
     const auto stats = run_perfect_session(42);
     RestaurantConfig config;
     RestaurantSession session(42);
-    session.skip_instructions();
+    REQUIRE(session.skip_instructions());
 
     // Use standalone computation
     const auto standalone = compute_restaurant_result(stats, config, 7);

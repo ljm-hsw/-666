@@ -153,6 +153,10 @@ sequenceDiagram
 
 每个地点模块必须能够在没有图形窗口的测试中运行其规则，并通过 UI 适配层接入相同流程。
 
+应用层通过窄适配器把地点模块的局部结果转换为核心 `ActionResult`。当前入口是
+`src/app/location_result_adapter.*`：它只处理结果映射、行动槽推断、图书馆每日上下文和酒馆赌注合法性，不直接绘制 UI 或写入全局状态。地点运行期的窗口输入、临时 UI 状态和开始/完成流程集中在 `src/app/location_runtime.*`，避免继续把地点流程堆入 `game_flow.cpp`。
+CMake 中 `pixel_town_locations` 只承载可无窗口测试的地点规则；需要 raylib 类型的图书馆场景/NPC 支持放在 `pixel_town_location_scene`。
+
 ### 通用生命周期
 
 1. 核心确认当前阶段与资源允许进入。
@@ -204,6 +208,19 @@ sequenceDiagram
 - 全局设置只包含静音等已确认能力，不扩展为通用设置系统。
 - P2/P3 地点 UI 可以使用程序绘制面板、占位头像框、临时色块或 Kenney 点缀素材先完成逻辑；最终 imagegen 场景、NPC 和装饰 UI 在 P4 统一替换。
 - 地点规则不得依赖最终视觉资产是否存在，图片加载失败不能阻断无窗口规则测试。
+
+### 应用层模块 Seam
+
+P2/P3 合并地点后，应用层按以下 Module 维持 Locality：
+
+- `GameSession`：核心状态机 Module，唯一负责玩家状态、阶段、天数、行动结果应用和结局推进。
+- `StoryText`：raylib-free 剧情文本 Module，负责开场、每日提示、地点摘要和结局叙事文本。
+- `location_result_adapter`：地点结果 Adapter，负责把图书馆、酒馆等地点内部结果转换为统一 `ActionResult`，调用者不重复维护字段映射。
+- `location_runtime`：地点 UI Adapter，负责餐馆、图书馆和酒馆在 app 层的临时运行状态、启动顺序、主动放弃和结果提交；地点规则仍只返回内部统计或 `ActionResult`。
+- `ui_primitives`：960×540 逻辑画布绘制 Module，集中缩放、文本、面板、点击和 hover 判断，避免各场景散落坐标转换规则。
+- `game_flow`：高层场景路由 Module，只决定当前画面应进入标题、地图、地点、总结或结局，不拥有地点规则细节。
+
+这些 Module 的 Interface 应保持小而稳定。新增地点或替换最终视觉时，优先在 Adapter 后面改变 Implementation，不把 `GameSession`、地点规则或长剧情文案拖回 `game_flow.cpp`。
 
 ## 随机性与复现
 

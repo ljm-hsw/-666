@@ -32,11 +32,24 @@ add_library(pixel_town_locations
   src/locations/restaurant.cpp
   src/locations/library_data.cpp
   src/locations/library_rules.cpp
+)
+target_include_directories(pixel_town_locations PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(pixel_town_locations PUBLIC pixel_town_core)
+
+add_library(pixel_town_location_scene
   src/locations/library_npc.cpp
   src/locations/library_scene.cpp
 )
-target_include_directories(pixel_town_locations PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
-target_link_libraries(pixel_town_locations PUBLIC pixel_town_core raylib)
+target_include_directories(pixel_town_location_scene PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(pixel_town_location_scene PUBLIC pixel_town_locations raylib)
+
+add_library(pixel_town_app_logic
+  src/app/location_result_adapter.cpp
+  src/app/location_runtime.cpp
+  src/app/ui_primitives.cpp
+)
+target_include_directories(pixel_town_app_logic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(pixel_town_app_logic PUBLIC pixel_town_core pixel_town_location_scene)
 
 add_executable(pixel_town
   src/app/game_flow.cpp
@@ -44,7 +57,7 @@ add_executable(pixel_town
   src/app/visual_prototype.cpp
   src/locations/library_ui.cpp
 )
-target_link_libraries(pixel_town PRIVATE pixel_town_io pixel_town_locations raylib)
+target_link_libraries(pixel_town PRIVATE pixel_town_io pixel_town_app_logic)
 target_compile_definitions(pixel_town PRIVATE PIXEL_TOWN_VERSION="${PROJECT_VERSION}")
 
 enable_testing()
@@ -55,6 +68,7 @@ add_executable(pixel_town_tests
   tests/demo_preset_test.cpp
   tests/game_session_test.cpp
   tests/interaction_runtime_test.cpp
+  tests/location_result_adapter_test.cpp
   tests/app_settings_test.cpp
   tests/resource_diagnostics_test.cpp
   tests/save_game_test.cpp
@@ -62,7 +76,7 @@ add_executable(pixel_town_tests
   tests/story_text_test.cpp
   tests/test_library.cpp
 )
-target_link_libraries(pixel_town_tests PRIVATE pixel_town_io pixel_town_locations)
+target_link_libraries(pixel_town_tests PRIVATE pixel_town_io pixel_town_app_logic)
 target_include_directories(pixel_town_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/doctest")
 
 add_test(NAME pixel_town_tests COMMAND pixel_town_tests)
@@ -72,10 +86,16 @@ if(MSVC)
   target_compile_options(pixel_town PRIVATE /W4 /permissive-)
   target_compile_options(pixel_town_core PRIVATE /W4 /permissive-)
   target_compile_options(pixel_town_io PRIVATE /W4 /permissive-)
+  target_compile_options(pixel_town_locations PRIVATE /W4 /permissive-)
+  target_compile_options(pixel_town_location_scene PRIVATE /W4 /permissive-)
+  target_compile_options(pixel_town_app_logic PRIVATE /W4 /permissive-)
   target_compile_options(pixel_town_tests PRIVATE /W4 /permissive-)
 else()
   target_compile_options(pixel_town PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(pixel_town_core PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(pixel_town_io PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(pixel_town_locations PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(pixel_town_location_scene PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(pixel_town_app_logic PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(pixel_town_tests PRIVATE -Wall -Wextra -Wpedantic)
 endif()

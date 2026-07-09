@@ -5,13 +5,8 @@
 
 #include <raylib.h>
 
+#include "app/location_runtime.hpp"
 #include "core/game_session.hpp"
-#include "core/tavern_rules.hpp"
-#include "locations/library_data.hpp"
-#include "locations/library_rules.hpp"
-#include "locations/library_scene.hpp"
-#include "locations/library_ui.hpp"
-#include "locations/restaurant.hpp"
 
 namespace pixel_town {
 
@@ -23,16 +18,7 @@ struct GameAppState {
     GameSession resume_session{GameSession::new_game()};
     bool confirm_new_game_overwrite{false};
     std::string notice{"点击新游戏开始第一天。"};
-    std::unique_ptr<RestaurantSession> restaurant;
-    float restaurant_timer{0.0F};
-    ChallengeType tavern_challenge{ChallengeType::gomoku};
-    BetTier tavern_bet{BetTier::medium};
-    bool in_library{false};
-    library::LibraryData library_data;
-    std::unique_ptr<library::LibraryRuleEngine> library_engine;
-    library::LibraryScene library_scene;
-    library::ui::LibraryUIState library_ui_state;
-    int library_visits{0};
+    LocationRuntimeState locations;
 };
 
 [[nodiscard]] const char* game_flow_glyphs();

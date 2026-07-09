@@ -37,19 +37,42 @@ The following baseline behavior is intentionally preserved:
   uses the active result id and passes through the unified action-result gate.
 - Restaurant result construction now uses explicit field assignment to remain stable after tavern
   fields were added to `ActionResult`.
+- Follow-up architecture pass split location runtime responsibilities out of `game_flow.cpp`:
+  `location_result_adapter` maps module-local results into core `ActionResult`, while
+  `location_runtime` owns restaurant/tavern/library start, update, and completion flow.
+- CMake now keeps `pixel_town_locations` as the headless location-rules target; raylib-backed
+  library scene/NPC support is isolated in `pixel_town_location_scene`.
+- `ui_primitives` centralizes 960×540 logical-canvas drawing helpers and hit testing so scene code
+  does not duplicate scaling, text, panel, click, and hover rules.
 
 ## Current risks and follow-up
 
-- `src/app/game_flow.cpp` now owns title, map, restaurant, tavern, and library UI flow. It should be
-  split into scene/adaptor modules before more teammate work is merged.
+- `src/app/game_flow.cpp` still owns title, map, status, summary, ending, and high-level scene
+  routing. The immediate location flow has been moved behind adapter/runtime seams; a later pass
+  should split title/map/summary scenes only when new work makes that worthwhile.
 - Restaurant and library UI are usable integration shells, not final visual style. P4 should replace
   or normalize final scene visuals.
 - Some warnings remain from teammate code:
-  - ignored `[[nodiscard]]` results in restaurant UI/tests;
   - unused parameters/constants in library UI.
 - Restaurant, library, and tavern summaries still include module-local text. They should be routed
   through `StoryText` or a location text adaptor before final content acceptance.
 - Convenience store is still not integrated; P2 is not complete until Issue 10 is merged and tested.
+
+## Architecture refactor on 2026-07-09
+
+The first post-merge architecture pass applied the `improve-codebase-architecture` deepening rule:
+move repeated ordering and mapping knowledge behind small Interfaces.
+
+- `location_result_adapter` is the Seam for translating location-specific results into unified
+  `ActionResult` values.
+- `location_runtime` is the Seam for app-layer location runtime state and input ordering. It keeps
+  restaurant, library, and tavern UI state out of the top-level `GameAppState` Interface.
+- `ui_primitives` is the Seam for logical-canvas drawing and input hit testing.
+- `game_flow.cpp` now stays closer to scene routing. Its line count dropped from about 1017 lines
+  after the team merge to about 760 lines after the first refactor.
+
+This pass did not change `GameSession`, save format, player-state semantics, or location rule
+contracts.
 
 ## Validation on integration branch
 
