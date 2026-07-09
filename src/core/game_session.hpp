@@ -110,6 +110,7 @@ public:
     [[nodiscard]] bool has_pending_location() const noexcept { return pending_location_ != none_; }
     [[nodiscard]] bool location_started() const noexcept { return location_started_; }
     [[nodiscard]] Location pending_location() const noexcept;
+    [[nodiscard]] int active_result_id() const noexcept { return active_result_id_; }
 
     [[nodiscard]] ActionPermission can_enter(Location location) const;
     [[nodiscard]] bool enter_location(Location location);

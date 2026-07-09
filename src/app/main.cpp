@@ -11,7 +11,12 @@
 
 #ifdef _WIN32
 #define NOMINMAX
-#include <windows.h>
+// Avoid <windows.h> to prevent conflicts with raylib Rectangle/DrawText/CloseWindow/ShowCursor
+extern "C" {
+__declspec(dllimport) unsigned long __stdcall GetModuleFileNameW(
+    void* hModule, wchar_t* lpFilename, unsigned long nSize);
+constexpr unsigned long MAX_PATH_W = 260;
+}
 #elif defined(__APPLE__)
 #include <mach-o/dyld.h>
 #elif defined(__linux__)
@@ -76,10 +81,10 @@ bool complete_day_with_rest(pixel_town::GameSession& session, pixel_town::Locati
 std::filesystem::path system_executable_path() {
 #ifdef _WIN32
     std::wstring buffer(260, L'\0');
-    DWORD length = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
+    unsigned long length = GetModuleFileNameW(nullptr, buffer.data(), static_cast<unsigned long>(buffer.size()));
     while (length == buffer.size()) {
         buffer.resize(buffer.size() * 2);
-        length = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
+        length = GetModuleFileNameW(nullptr, buffer.data(), static_cast<unsigned long>(buffer.size()));
     }
     if (length == 0) {
         return {};
