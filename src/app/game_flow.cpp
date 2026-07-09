@@ -1,6 +1,7 @@
 #include "app/game_flow.hpp"
 
 #include <array>
+#include <cstdint>
 #include <cmath>
 #include <sstream>
 #include <string>
@@ -622,7 +623,7 @@ const char* game_flow_glyphs() {
     static const std::string glyphs = [] {
         std::string result =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789. "
-            "·/：，。；“”+-";
+            "·/：，。；“”‘’+-！？《》【】、———（）「」『』℃°";
         for (const char* value : ui_texts) {
             result += value;
         }
@@ -641,7 +642,40 @@ const char* game_flow_glyphs() {
             "五子棋骗子骰子低赌注中赌注高赌注挑战金币选择空格开始完成Esc返回"
             "已进入酒馆选择和赌注金钱不足无法选择该档位"
             "赌注不足当前金钱不足以支付获胜赢得失败损失平局退还酒馆挑战"
-            "已选择按空格完成模拟！（，）";
+            "已选择按空格完成模拟！（，）"
+            "历史科学文学艺术技术地理生物人类登月光速红楼梦蒙娜丽莎计算机海洋DNA四大发明牛顿莎士"
+            "比亚梵高互联网赤道光合作用第二次世界大战回答正确回答错误正确答案继续答题结算声望"
+            "欢迎来到小镇图书馆读者会提出各种问题你需要从书架上找到正确的书籍类别来回答答对可获"
+            "得知识和声望奖励连续答对还有额外奖励开始工作选择书籍类别按ESC放弃工作正确答案是继续下"
+            "一题图书馆工作完成体力金钱知识声望心情按任意键继续公里每秒作者是谁作品基本组成部分最大"
+            "全称四大发明运动定律包含多少部戏剧最著名的前身叫什么名字周长大约是主要发生在部位结束于"
+            "借书卡盒子敲掉窗台晒摊位标记盖章指空白翻递街边缘旧集市地图管理员今年事写上去孩子考试"
+            "人类第一次登月是在哪一年这是1969年的历史性事件光速大约是多少公里每秒大约每秒30万公里"
+            "离开了图书馆什么也没做在图书馆工作了一天答对答错最高连续答对题获得金币表现出色表现不错"
+            "还需要继续努力帮孩子找到了考试要用的书又多盖了一个章旧地图递给你说可以先看看不急着还"
+            "书页翻动的声音很轻窗外的街也慢下来盒子里多了几张新记录收回去前指了指边上的空白处"
+            "说以后可以把今年的事也写上去递给你一杯热茶梧桐树影落在书页上今天的图书馆格外安静"
+            "管理员说点击对话像素小镇科学类历史类文学类艺术类技术类地理类生物类人类类"
+            "红楼梦的作者是谁清代作家曹雪芹蒙娜丽莎是谁的作品文艺复兴时期的达芬奇计算机的基本组成部分有哪些"
+            "CPU内存硬盘等世界上最大的海洋是什么太平洋是最大的海洋DNA的全称是什么脱氧核糖核酸中国的四大发明是什么"
+            "造纸术印刷术火药指南针牛顿提出了哪些运动定律三大运动定律莎士比亚全集包含多少部戏剧大约37部"
+            "梵高最著名的作品是什么向日葵星空等互联网的前身叫什么名字ARPANET地球的赤道周长大约是多少公里"
+            "约4万公里光合作用主要发生在植物的哪个部位叶绿体第二次世界大战结束于哪一年1945年中国古代的科举制度始于哪个朝代"
+            "隋朝水的化学式是什么H2O西游记中的唐僧师徒共有几人师徒四人中国的国画四君子是指什么梅兰竹菊"
+            "第一台电子计算机叫什么名字ENIAC世界上最长的河流是什么尼罗河人体最大的器官是什么皮肤法国大革命发生在哪一年"
+            "1789年地球围绕太阳公转一周需要多长时间一年三国演义的作者是谁罗贯中"
+            "借书卡盒子有点卡管理员敲了两下掉出一张旧集市地图先看看吧书架按类别分的考试的孩子常来找历史和科学类"
+            "你帮他们找找书就行窗台晒着借书卡今天适合把书页翻慢一点你想看那本旧的吗以前这里很热闹的地图边缘有摊位标记"
+            "你可以先看看借书卡盒子里多了几张新记录管理员把旧地图收回去前指了指边上的空白处以后可以把今年的事也写上去"
+            "你帮孩子找到了考试要用的书借书卡又多盖了一个章书页翻动的声音很轻窗外的街也慢下来"
+            "开始工作继续收下地图查看提示隐藏提示返回地图"
+            "秦始皇统一六国公元前221年原子中心原子核水浒传108位好汉清明上河图张择端"
+            "诞生撒哈拉沙漠206块骨头长城修建春秋战国自转聊斋志异蒲松龄达·芬奇"
+            "擅长科学发明智能手机2007年珠穆朗玛峰肝脏孔子春秋时期100度"
+            "儒林外史吴敬梓书法楷行草隶篆人工智能英文缩写北京阳光水二氧化碳"
+            "原子核秦始皇撒哈拉蒲松龄达·芬奇穆朗玛肝脏吴敬梓楷行草隶篆二氧化碳"
+            "读者问达·芬奇除了绘画还擅长什么回答正确达·芬奇还是科学家和发明家"
+            "回答错误达·芬奇还擅长科学发明";
         result += story_text_glyphs();
         return result;
     }();
@@ -683,6 +717,33 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             state.resume_available = false;
             state.confirm_new_game_overwrite = false;
             state.notice = "第 1 天开始：请选择一个白天工作地点。";
+        }
+        return;
+    }
+
+    if (state.in_library && state.library_engine) {
+        library::ui::update_library_ui(*state.library_engine, state.library_ui_state,
+                                       state.library_scene);
+        const bool exit_library = library::ui::handle_library_input(
+            *state.library_engine, state.library_ui_state, state.library_scene, logical_mouse);
+        if (exit_library) {
+            const auto result = state.library_engine->finish_session();
+            ActionResult game_result;
+            game_result.result_id = state.session.active_result_id();
+            game_result.slot =
+                state.session.phase() == GamePhase::day_location ? ActionSlot::day : ActionSlot::night;
+            game_result.location = Location::library;
+            game_result.outcome = result.gave_up ? ActionOutcome::abandoned : ActionOutcome::completed;
+            game_result.delta.money = result.money_change;
+            game_result.delta.stamina = result.stamina_change;
+            game_result.delta.reputation = result.reputation_change;
+            game_result.delta.knowledge = result.knowledge_change;
+            game_result.delta.mood = result.mood_change;
+            game_result.summary = result.summary;
+            const auto applied = state.session.apply_action_result(game_result);
+            state.in_library = false;
+            state.library_ui_state = library::ui::LibraryUIState{};
+            state.notice = applied.accepted ? result.summary : applied.message;
         }
         return;
     }
@@ -760,6 +821,36 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                         state.notice = "金钱不足，无法选择该赌注档位。";
                         return;
                     }
+                }
+                if (state.session.pending_location() == Location::library) {
+                    const auto load_result = library::load_library_data("assets/data/library_data.txt");
+                    if (!load_result.success) {
+                        state.notice = std::string{"图书馆数据加载失败："} + load_result.error_message;
+                        return;
+                    }
+                    if (state.session.start_location() == 0) {
+                        state.notice = "图书馆地点会话启动失败。";
+                        return;
+                    }
+                    state.library_data = std::move(load_result.data);
+                    state.library_engine = std::make_unique<library::LibraryRuleEngine>(
+                        state.library_data, library::default_library_config());
+                    ++state.library_visits;
+                    library::DailyContext context;
+                    context.day = state.session.day();
+                    context.random_seed =
+                        static_cast<std::uint64_t>(state.session.current_day_context().seed) +
+                        static_cast<std::uint64_t>(state.session.day()) * 100000ULL +
+                        static_cast<std::uint64_t>(state.library_visits) * 100ULL;
+                    context.library_visits = state.library_visits;
+                    context.current_knowledge = state.session.player().knowledge;
+                    state.library_engine->start_session(context);
+                    state.library_engine->update_npc_relationship(state.session.player().knowledge,
+                                                                   state.library_visits);
+                    state.library_ui_state = library::ui::LibraryUIState{};
+                    state.in_library = true;
+                    state.notice = "已进入图书馆，请完成读者问答。";
+                    return;
                 }
                 if (state.session.start_location() != 0) {
                     if (is_tavern) {
@@ -881,6 +972,20 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
                     bool audio_enabled, bool paused, Vector2 logical_mouse) {
     if (!state.has_session) {
         draw_title(font, title_background, state, logical_mouse);
+        if (paused) {
+            draw_pause_overlay(font, audio_enabled);
+        }
+        return;
+    }
+
+    if (state.in_library && state.library_engine) {
+        library::ui::LibraryRenderConfig render_config;
+        render_config.logical_width = 640;
+        render_config.logical_height = 360;
+        library::ui::draw_library_scene(*state.library_engine, state.library_ui_state, state.library_scene, render_config, font, logical_mouse);
+        if (!audio_enabled) {
+            text(font, "静音", 586, 330, 18, red);
+        }
         if (paused) {
             draw_pause_overlay(font, audio_enabled);
         }

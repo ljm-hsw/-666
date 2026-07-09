@@ -23,21 +23,26 @@ add_library(pixel_town_io
 target_include_directories(pixel_town_io PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(pixel_town_io PUBLIC pixel_town_core)
 
-add_library(pixel_town_locations
-  src/locations/restaurant.cpp
-)
-target_include_directories(pixel_town_locations PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
-target_link_libraries(pixel_town_locations PUBLIC pixel_town_core)
-
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(USE_EXTERNAL_GLFW OFF CACHE STRING "" FORCE)
 add_subdirectory(third_party/raylib EXCLUDE_FROM_ALL)
 
+add_library(pixel_town_locations
+  src/locations/restaurant.cpp
+  src/locations/library_data.cpp
+  src/locations/library_rules.cpp
+  src/locations/library_npc.cpp
+  src/locations/library_scene.cpp
+)
+target_include_directories(pixel_town_locations PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(pixel_town_locations PUBLIC pixel_town_core raylib)
+
 add_executable(pixel_town
   src/app/game_flow.cpp
   src/app/main.cpp
   src/app/visual_prototype.cpp
+  src/locations/library_ui.cpp
 )
 target_link_libraries(pixel_town PRIVATE pixel_town_io pixel_town_locations raylib)
 target_compile_definitions(pixel_town PRIVATE PIXEL_TOWN_VERSION="${PROJECT_VERSION}")
@@ -55,6 +60,7 @@ add_executable(pixel_town_tests
   tests/save_game_test.cpp
   tests/restaurant_test.cpp
   tests/story_text_test.cpp
+  tests/test_library.cpp
 )
 target_link_libraries(pixel_town_tests PRIVATE pixel_town_io pixel_town_locations)
 target_include_directories(pixel_town_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/doctest")
