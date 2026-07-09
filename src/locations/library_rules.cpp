@@ -1,6 +1,7 @@
 #include "locations/library_rules.hpp"
 
 #include <algorithm>
+#include <cinttypes>
 #include <sstream>
 #include <string>
 
