@@ -34,6 +34,7 @@ struct LocationRuntimeState {
 [[nodiscard]] Rectangle location_back_button(bool is_tavern);
 [[nodiscard]] Rectangle location_start_button(bool is_tavern);
 [[nodiscard]] Rectangle location_abandon_button(bool is_tavern);
+[[nodiscard]] Rectangle restaurant_abandon_button();
 [[nodiscard]] Rectangle restaurant_dish_button(int dish_index);
 
 void prepare_restaurant_runtime(LocationRuntimeState& runtime, unsigned int seed);

@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <raylib.h>
 
@@ -365,17 +367,17 @@ void draw_intro_screen(const LibraryRuleEngine& engine, const LibraryRenderConfi
     DrawRectangle(scaled(295), scaled(175), scaled(50), scaled(10), Color{100, 60, 30, 255});
     DrawCircle(scaled(320), scaled(115), scaled(12), Color{255, 220, 180, 255});
 
-    panel(Rectangle{50, 230, 540, 110}, paper);
+    panel(Rectangle{50, 202, 540, 104}, paper);
     
     const std::string& welcome = engine.get_data().welcome_message.empty() ? engine.get_dialogue().greeting : engine.get_data().welcome_message;
-    text(font, welcome, 70, 245, 20, ink);
+    text(font, welcome, 70, 216, 20, ink);
     
     const std::string& intro = engine.get_data().work_intro.empty() ? "读者会提出各种问题，你需要从书架上找到正确的书籍类别来回答" : engine.get_data().work_intro;
-    draw_text_wrapped(font, intro, 70, 272, scaled(500), 22, 14, ink);
+    draw_text_wrapped(font, intro, 70, 244, scaled(500), 20, 14, ink);
 
-    const int btn_y = 320;
+    const int btn_y = 314;
     const int btn_w = 200;
-    const int btn_h = 40;
+    const int btn_h = 34;
     const int btn_x = config.logical_width / 2 - btn_w / 2;
 
     bool hovered = CheckCollisionPointRec(logical_mouse,
@@ -406,13 +408,13 @@ void draw_npc_talk_screen(const LibraryRuleEngine& engine, const LibraryRenderCo
     const auto& interaction = engine.get_npc_interaction();
     const std::string& dialogue = interaction.current_dialogue.empty() ? engine.get_dialogue().introduction : interaction.current_dialogue;
 
-    panel(Rectangle{50, 200, 540, 120}, paper);
-    text(font, "管理员说：", 70, 215, 18, ink);
-    draw_text_wrapped(font, dialogue, 70, 240, scaled(500), 22, 14, ink);
+    panel(Rectangle{50, 184, 540, 108}, paper);
+    text(font, "管理员说：", 70, 199, 18, ink);
+    draw_text_wrapped(font, dialogue, 70, 224, scaled(500), 20, 14, ink);
 
-    const int btn_y = 330;
+    const int btn_y = 312;
     const int btn_w = 200;
-    const int btn_h = 40;
+    const int btn_h = 34;
     const int btn_x = config.logical_width / 2 - btn_w / 2;
 
     bool hovered = CheckCollisionPointRec(logical_mouse,
@@ -444,9 +446,9 @@ void draw_plot_event_screen(const LibraryRuleEngine& engine, const LibraryRender
     panel(Rectangle{70, 170, 500, 80}, paper);
     draw_text_wrapped(font, interaction.current_plot_description, 90, 185, scaled(460), 24, 16, ink);
 
-    const int btn_y = 340;
+    const int btn_y = 312;
     const int btn_w = 200;
-    const int btn_h = 40;
+    const int btn_h = 34;
     const int btn_x = config.logical_width / 2 - btn_w / 2;
 
     bool hovered = CheckCollisionPointRec(logical_mouse,
@@ -490,12 +492,12 @@ void draw_map_reveal_screen(const LibraryRuleEngine& engine, const LibraryRender
     text(font, "旧地图", 270, 85, 24, Color{100, 60, 30, 255});
 
     const auto& dialogue = engine.get_dialogue().old_map_reveal;
-    panel(Rectangle{50, 275, 540, 65}, paper);
-    draw_text_wrapped(font, dialogue, 70, 290, scaled(500), 22, 14, ink);
+    panel(Rectangle{50, 254, 540, 50}, paper);
+    draw_text_wrapped(font, dialogue, 70, 266, scaled(500), 18, 14, ink);
 
-    const int btn_y = 340;
+    const int btn_y = 314;
     const int btn_w = 200;
-    const int btn_h = 40;
+    const int btn_h = 34;
     const int btn_x = config.logical_width / 2 - btn_w / 2;
 
     bool hovered = CheckCollisionPointRec(logical_mouse,
@@ -529,16 +531,16 @@ void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState
 
     const ReaderQuestion& question = engine.get_current_question();
 
-    panel(Rectangle{50, 100, 540, 60}, paper);
+    panel(Rectangle{50, 100, 540, 70}, paper);
     text(font, "读者问：", 70, 110, 18, ink);
-    draw_text_wrapped(font, question.question, 70, 135, scaled(500), 22, 14, ink);
+    draw_text_wrapped(font, question.question, 70, 135, scaled(500), 20, 14, ink);
 
     if (ui_state.show_hint && !question.hint.empty()) {
-        panel(Rectangle{50, 155, 540, 35}, Color{245, 240, 220, 255});
-        text(font, "提示：" + question.hint, 70, 165, 14, faded_ink);
+        panel(Rectangle{50, 175, 540, 34}, Color{245, 240, 220, 255});
+        text(font, "提示：" + question.hint, 70, 184, 14, faded_ink);
     }
 
-    const int btn_y = 185;
+    const int btn_y = 180;
     const int btn_w = 100;
     const int btn_h = 30;
     const int btn_x = config.logical_width / 2 - btn_w / 2;
@@ -553,7 +555,7 @@ void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState
     panel(Rectangle{static_cast<float>(btn_x), static_cast<float>(btn_y), static_cast<float>(btn_w), static_cast<float>(btn_h)}, hint_fill, ink);
     centered_text(font, ui_state.show_hint ? "隐藏提示" : "查看提示", Rectangle{static_cast<float>(btn_x), static_cast<float>(btn_y), static_cast<float>(btn_w), static_cast<float>(btn_h)}, 14, ink);
 
-    panel(Rectangle{50, 215, 540, 80}, paper);
+    panel(Rectangle{50, 218, 540, 100}, paper);
     text(font, "选择书籍类别：", 70, 230, 18, ink);
 
     const std::vector<BookCategory>& categories = engine.get_categories();
@@ -562,7 +564,7 @@ void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState
     const int cat_btn_h = 36;
     const int gap = 15;
     const int start_x = (config.logical_width - (cols * cat_btn_w + (cols - 1) * gap)) / 2;
-    const int start_y = 250;
+    const int start_y = 252;
 
     for (size_t i = 0; i < categories.size(); ++i) {
         const int row = static_cast<int>(i / cols);
@@ -632,41 +634,29 @@ void draw_summary_screen(const ActionResult& result, const LibraryRenderConfig& 
 
     draw_text_wrapped(font, result.summary, 70, 130, scaled(500), 24, 16, ink);
 
-    int y = 170;
+    std::vector<std::pair<std::string, Color>> delta_lines;
+    auto add_delta = [&delta_lines](const char* label, int value, Color gain_color) {
+        if (value == 0) {
+            return;
+        }
+        char line[64];
+        snprintf(line, sizeof(line), "%s: %+d", label, value);
+        delta_lines.emplace_back(line, value < 0 ? wrong_color : gain_color);
+    };
+    add_delta("体力", result.stamina_change, correct_color);
+    add_delta("金钱", result.money_change, gold);
+    add_delta("知识", result.knowledge_change, correct_color);
+    add_delta("声望", result.reputation_change, gold);
+    add_delta("心情", result.mood_change, correct_color);
 
-    if (result.stamina_change != 0) {
-        char stamina[64];
-        snprintf(stamina, sizeof(stamina), "体力: %+d", result.stamina_change);
-        text(font, stamina, 70, y, 18, result.stamina_change < 0 ? wrong_color : correct_color);
-        y += 28;
+    int y = 188;
+    for (std::size_t index = 0; index < delta_lines.size(); ++index) {
+        const int x = index % 2 == 0 ? 70 : 320;
+        const int line_y = y + static_cast<int>(index / 2) * 26;
+        text(font, delta_lines[index].first, x, line_y, 18, delta_lines[index].second);
     }
-
-    if (result.money_change != 0) {
-        char money[64];
-        snprintf(money, sizeof(money), "金钱: %+d", result.money_change);
-        text(font, money, 70, y, 18, result.money_change < 0 ? wrong_color : gold);
-        y += 28;
-    }
-
-    if (result.knowledge_change != 0) {
-        char knowledge[64];
-        snprintf(knowledge, sizeof(knowledge), "知识: %+d", result.knowledge_change);
-        text(font, knowledge, 70, y, 18, result.knowledge_change < 0 ? wrong_color : correct_color);
-        y += 28;
-    }
-
-    if (result.reputation_change != 0) {
-        char reputation[64];
-        snprintf(reputation, sizeof(reputation), "声望: %+d", result.reputation_change);
-        text(font, reputation, 70, y, 18, result.reputation_change < 0 ? wrong_color : gold);
-        y += 28;
-    }
-
-    if (result.mood_change != 0) {
-        char mood[64];
-        snprintf(mood, sizeof(mood), "心情: %+d", result.mood_change);
-        text(font, mood, 70, y, 18, result.mood_change < 0 ? wrong_color : correct_color);
-        y += 28;
+    if (!delta_lines.empty()) {
+        y += static_cast<int>((delta_lines.size() + 1) / 2) * 26 + 4;
     }
 
     if (result.plot_triggered) {
@@ -674,11 +664,12 @@ void draw_summary_screen(const ActionResult& result, const LibraryRenderConfig& 
         text(font, "【剧情触发】", 70, y + 15, 16, gold);
         text(font, result.plot_title.c_str(), 170, y + 15, 16, ink);
         draw_text_wrapped(font, result.plot_description, 70, y + 35, scaled(500), 22, 14, faded_ink);
+        y += 80;
     }
 
     if (!result.narrative_echo.empty()) {
-        panel(Rectangle{50.0F, static_cast<float>(y) + 5.0F, 540.0F, 50.0F}, Color{245, 240, 220, 255});
-        draw_text_wrapped(font, result.narrative_echo, 70, y + 15, scaled(500), 22, 14, faded_ink);
+        panel(Rectangle{50.0F, static_cast<float>(y) + 5.0F, 540.0F, 42.0F}, Color{245, 240, 220, 255});
+        draw_text_wrapped(font, result.narrative_echo, 70, y + 15, scaled(500), 18, 14, faded_ink);
         y += 60;
     }
 

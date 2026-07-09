@@ -43,6 +43,8 @@ TEST_CASE("win produces expected net gain, mood boost, and win record") {
     const std::string& summary = result.summary;
     CHECK(summary.find("获胜") != std::string::npos);
     CHECK(summary.find("赢得") != std::string::npos);
+    CHECK(summary.find("棋盘") != std::string::npos);
+    CHECK(summary.find("常客") != std::string::npos);
 }
 
 TEST_CASE("loss deducts bet and lowers mood") {
@@ -62,6 +64,7 @@ TEST_CASE("loss deducts bet and lowers mood") {
     const std::string& summary = result.summary;
     CHECK(summary.find("失败") != std::string::npos);
     CHECK(summary.find("损失") != std::string::npos);
+    CHECK(summary.find("骰盅") != std::string::npos);
 }
 
 TEST_CASE("draw refunds bet with small mood gain") {

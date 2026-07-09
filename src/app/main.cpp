@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -153,6 +154,66 @@ void advance_to_placeholder_ending(pixel_town::GameAppState& state) {
     state.notice = "十日计划完成。";
 }
 
+void setup_restaurant_diagnostic(pixel_town::GameAppState& state, bool started) {
+    state = pixel_town::GameAppState{};
+    state.has_session = true;
+    state.session = pixel_town::GameSession::new_game();
+    (void)state.session.enter_location(pixel_town::Location::restaurant);
+    pixel_town::prepare_restaurant_runtime(state.locations, state.session.current_day_context().seed);
+    if (started) {
+        (void)state.session.start_location();
+        if (state.locations.restaurant) {
+            (void)state.locations.restaurant->skip_instructions();
+        }
+    }
+    state.notice = started ? "诊断：餐馆订单页。" : "诊断：餐馆说明页。";
+}
+
+void setup_library_diagnostic(pixel_town::GameAppState& state,
+                              pixel_town::library::ui::LibrarySceneState scene_state) {
+    state = pixel_town::GameAppState{};
+    state.has_session = true;
+    state.session = pixel_town::GameSession::new_game();
+    (void)state.session.enter_location(pixel_town::Location::library);
+    (void)state.session.start_location();
+    const auto load_result = pixel_town::library::load_library_data("assets/data/library_data.txt");
+    if (!load_result.success) {
+        state.notice = "诊断：图书馆数据加载失败。";
+        return;
+    }
+    state.locations.library_data = load_result.data;
+    state.locations.library_engine = std::make_unique<pixel_town::library::LibraryRuleEngine>(
+        state.locations.library_data, pixel_town::library::default_library_config());
+    pixel_town::library::DailyContext context;
+    context.day = state.session.day();
+    context.random_seed = state.session.current_day_context().seed;
+    context.library_visits = 1;
+    context.current_knowledge = state.session.player().knowledge;
+    state.locations.library_engine->start_session(context);
+    state.locations.library_engine->update_npc_relationship(state.session.player().knowledge, 1);
+    state.locations.library_ui_state = pixel_town::library::ui::LibraryUIState{};
+    state.locations.library_ui_state.scene_state = scene_state;
+    state.locations.in_library = true;
+    state.notice = "诊断：图书馆页面。";
+}
+
+void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t capture_index) {
+    switch (capture_index) {
+        case 0:
+            setup_restaurant_diagnostic(state, false);
+            break;
+        case 1:
+            setup_restaurant_diagnostic(state, true);
+            break;
+        case 2:
+            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::intro);
+            break;
+        default:
+            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::npc_talk);
+            break;
+    }
+}
+
 bool export_canvas_capture(RenderTexture2D canvas, const char* capture_path, int output_width,
                            int output_height) {
     Image image = LoadImageFromTexture(canvas.texture);
@@ -208,6 +269,9 @@ int main(int argc, char* argv[]) {
         !demo_args.requested && argc == 2 && std::string_view{argv[1]} == "--capture-prototype";
     const bool capture_game_flow =
         !demo_args.requested && argc == 2 && std::string_view{argv[1]} == "--capture-game-flow";
+    const bool capture_ui_diagnostics =
+        !demo_args.requested && argc == 2 &&
+        std::string_view{argv[1]} == "--capture-ui-diagnostics";
     auto resources = pixel_town::validate_resources("assets", pixel_town::baseline_resource_manifest());
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -339,7 +403,8 @@ int main(int argc, char* argv[]) {
 
     pixel_town::VisualPrototypeState prototype;
     pixel_town::GameAppState game_flow;
-    const bool persistence_enabled = !capture_prototype && !capture_game_flow && !demo_args.requested;
+    const bool persistence_enabled = !capture_prototype && !capture_game_flow &&
+                                     !capture_ui_diagnostics && !demo_args.requested;
     const std::filesystem::path application_directory = application_directory_from_argv(argv[0]);
     const std::filesystem::path save_path = pixel_town::default_save_path(application_directory);
     const std::filesystem::path settings_path =
@@ -380,12 +445,17 @@ int main(int argc, char* argv[]) {
                                    : "存档损坏或缺字段，原文件已保留。";
         }
     }
-    bool capture_ready = capture_prototype || capture_game_flow;
+    if (capture_ui_diagnostics) {
+        setup_ui_diagnostic_capture(game_flow, 0);
+    }
+    bool capture_ready = capture_prototype || capture_game_flow || capture_ui_diagnostics;
     if (capture_ready) {
         prototype.modal_open = false;
         std::error_code capture_error;
         const std::filesystem::path capture_directory =
-            capture_prototype ? "prototype-captures" : "game-flow-captures";
+            capture_prototype ? "prototype-captures"
+                              : (capture_ui_diagnostics ? "ui-diagnostics-captures"
+                                                        : "game-flow-captures");
         std::filesystem::create_directories(capture_directory, capture_error);
         capture_ready =
             !capture_error && std::filesystem::is_directory(capture_directory, capture_error);
@@ -404,6 +474,61 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
+    const std::array<const char*, 4> ui_diagnostic_capture_paths{
+        "ui-diagnostics-captures/restaurant-instructions.png",
+        "ui-diagnostics-captures/restaurant-order.png",
+        "ui-diagnostics-captures/library-intro.png",
+        "ui-diagnostics-captures/library-dialog.png",
+    };
+    auto unload_resources = [&]() {
+        if (town_marker.id != 0) {
+            UnloadTexture(town_marker);
+        }
+        if (ui_font.texture.id != 0) {
+            UnloadFont(ui_font);
+        }
+        if (kenney_tiles.id != 0) {
+            UnloadTexture(kenney_tiles);
+        }
+        if (title_background.id != 0) {
+            UnloadTexture(title_background);
+        }
+        if (generated_full_map_scene.id != 0) {
+            UnloadTexture(generated_full_map_scene);
+        }
+        if (generated_map_background.id != 0) {
+            UnloadTexture(generated_map_background);
+        }
+        if (generated_buildings.id != 0) {
+            UnloadTexture(generated_buildings);
+        }
+        if (canvas_loaded) {
+            UnloadRenderTexture(canvas);
+        }
+        CloseWindow();
+    };
+    if (capture_ui_diagnostics) {
+        bool exported_all = capture_ready && canvas_loaded && resources.can_start && log_written;
+        if (exported_all) {
+            for (std::size_t index = 0; index < ui_diagnostic_capture_paths.size(); ++index) {
+                setup_ui_diagnostic_capture(game_flow, index);
+                BeginTextureMode(canvas);
+                pixel_town::draw_game_flow(ui_font, title_background, town_marker, kenney_tiles,
+                                           generated_full_map_scene, generated_map_background,
+                                           generated_buildings, game_flow,
+                                           resources.audio_enabled && !interaction_runtime.muted(),
+                                           false, Vector2{-1.0F, -1.0F});
+                EndTextureMode();
+                exported_all =
+                    export_canvas_capture(canvas, ui_diagnostic_capture_paths[index],
+                                          display.window_width, display.window_height) &&
+                    std::filesystem::is_regular_file(ui_diagnostic_capture_paths[index]) &&
+                    exported_all;
+            }
+        }
+        unload_resources();
+        return exported_all ? 0 : 1;
+    }
     std::size_t capture_index = 0;
     int capture_delay = 0;
     while (!WindowShouldClose()) {
@@ -443,7 +568,7 @@ int main(int argc, char* argv[]) {
         }
         const bool audio_enabled = resources.audio_enabled && !interaction_runtime.muted();
 
-        if (resources.can_start && log_written && !capture_game_flow &&
+        if (resources.can_start && log_written && !capture_game_flow && !capture_ui_diagnostics &&
             interaction_frame.game_updates_enabled) {
             if (capture_prototype) {
                 pixel_town::update_visual_prototype(prototype, prototype_mouse);
@@ -497,12 +622,15 @@ int main(int argc, char* argv[]) {
             Vector2{0.0F, 0.0F}, 0.0F, WHITE);
         EndDrawing();
 
-        if ((capture_prototype || capture_game_flow) && !capture_ready) {
+        if ((capture_prototype || capture_game_flow || capture_ui_diagnostics) && !capture_ready) {
             break;
         }
         if (capture_ready && ++capture_delay >= 3) {
-            const char* capture_path = capture_prototype ? prototype_capture_paths[capture_index]
-                                                         : game_flow_capture_paths[capture_index];
+            const char* capture_path =
+                capture_prototype
+                    ? prototype_capture_paths[capture_index]
+                    : (capture_ui_diagnostics ? ui_diagnostic_capture_paths[capture_index]
+                                              : game_flow_capture_paths[capture_index]);
             if (!export_canvas_capture(canvas, capture_path, display.window_width,
                                        display.window_height) ||
                 !std::filesystem::is_regular_file(capture_path)) {
@@ -525,38 +653,20 @@ int main(int argc, char* argv[]) {
             } else if (capture_game_flow && capture_index == 2) {
                 advance_to_placeholder_ending(game_flow);
             }
+            if (capture_ui_diagnostics && capture_index < ui_diagnostic_capture_paths.size()) {
+                setup_ui_diagnostic_capture(game_flow, capture_index);
+            }
             const std::size_t capture_count =
-                capture_prototype ? prototype_capture_paths.size() : game_flow_capture_paths.size();
+                capture_prototype
+                    ? prototype_capture_paths.size()
+                    : (capture_ui_diagnostics ? ui_diagnostic_capture_paths.size()
+                                              : game_flow_capture_paths.size());
             if (capture_index == capture_count) {
                 break;
             }
         }
     }
 
-    if (town_marker.id != 0) {
-        UnloadTexture(town_marker);
-    }
-    if (ui_font.texture.id != 0) {
-        UnloadFont(ui_font);
-    }
-    if (kenney_tiles.id != 0) {
-        UnloadTexture(kenney_tiles);
-    }
-    if (title_background.id != 0) {
-        UnloadTexture(title_background);
-    }
-    if (generated_full_map_scene.id != 0) {
-        UnloadTexture(generated_full_map_scene);
-    }
-    if (generated_map_background.id != 0) {
-        UnloadTexture(generated_map_background);
-    }
-    if (generated_buildings.id != 0) {
-        UnloadTexture(generated_buildings);
-    }
-    if (canvas_loaded) {
-        UnloadRenderTexture(canvas);
-    }
-    CloseWindow();
+    unload_resources();
     return 0;
 }

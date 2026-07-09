@@ -63,6 +63,10 @@ Rectangle location_abandon_button(bool is_tavern) {
     return Rectangle{402, is_tavern ? 252.0F : 228.0F, 112, 34};
 }
 
+Rectangle restaurant_abandon_button() {
+    return Rectangle{438.0F, 214.0F, 118.0F, 30.0F};
+}
+
 Rectangle restaurant_dish_button(int dish_index) {
     return Rectangle{58.0F + static_cast<float>(dish_index) * 116.0F, 274.0F, 102.0F, 50.0F};
 }
@@ -204,6 +208,10 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
         }
 
         if (restaurant.phase() == RestaurantPhase::waiting_for_order) {
+            if (IsKeyPressed(KEY_I)) {
+                (void)restaurant.view_instructions();
+                return true;
+            }
             for (int i = 0; i < dish_count(); ++i) {
                 if (IsKeyPressed(static_cast<KeyboardKey>(KEY_ONE + i)) ||
                     clicked(restaurant_dish_button(i), logical_mouse)) {
@@ -223,7 +231,7 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
         }
 
         if (restaurant.phase() == RestaurantPhase::finished) {
-            const Rectangle done_button{232, 210, 176, 28};
+            const Rectangle done_button{232, 300, 176, 28};
             if (activated(done_button, logical_mouse, KEY_SPACE)) {
                 const auto result = restaurant.build_result(session.active_result_id());
                 const auto applied = session.apply_action_result(result);
@@ -233,7 +241,7 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
             }
         }
 
-        if (clicked(location_abandon_button(false), logical_mouse)) {
+        if (clicked(restaurant_abandon_button(), logical_mouse)) {
             const auto applied = session.apply_action_result(session.abandon_current_location());
             runtime.restaurant.reset();
             notice = applied.accepted ? "已放弃餐馆工作" : applied.message;

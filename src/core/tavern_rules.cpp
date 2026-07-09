@@ -101,8 +101,12 @@ ActionResult simulate_tavern_challenge(
             break;
     }
 
+    const std::string echo =
+        challenge == ChallengeType::gomoku
+            ? "棋盘收起来时，旁边的常客笑着敲了敲桌边，说下一局别急着走。"
+            : "骰盅停下后，常客把棋子往旁边一推，说今晚这里不算太孤单。";
     const std::string summary = std::string{"酒馆挑战（"} + type_str + "/" + tier_str +
-                                "赌注）：" + result_text;
+                                "赌注）：" + result_text + echo;
 
     ActionResult result;
     result.result_id = result_id;

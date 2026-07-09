@@ -99,6 +99,18 @@ TEST_CASE("skip instructions moves to waiting_for_order") {
     CHECK_FALSE(session.skip_instructions());
 }
 
+TEST_CASE("instructions can be reviewed before restaurant session finishes") {
+    RestaurantSession session(42);
+    REQUIRE(session.skip_instructions());
+    REQUIRE(session.phase() == RestaurantPhase::waiting_for_order);
+
+    CHECK(session.view_instructions());
+    CHECK(session.phase() == RestaurantPhase::showing_instructions);
+
+    CHECK(session.skip_instructions());
+    CHECK(session.phase() == RestaurantPhase::waiting_for_order);
+}
+
 TEST_CASE("correct serve increments correct count") {
     RestaurantSession session(42);
     REQUIRE(session.skip_instructions());
@@ -232,6 +244,8 @@ TEST_CASE("compute_restaurant_result produces valid ActionResult") {
     CHECK(result.summary.find("正确 4") != std::string::npos);
     CHECK(result.summary.find("错单 1") != std::string::npos);
     CHECK(result.summary.find("超时 1") != std::string::npos);
+    CHECK(result.summary.find("围裙") != std::string::npos);
+    CHECK(result.summary.find("汤") != std::string::npos);
 }
 
 TEST_CASE("perfect result gets mood bonus") {

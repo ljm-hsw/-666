@@ -116,6 +116,14 @@ std::array<Rectangle, 5> location_bounds() {
             Rectangle{250, 186, 96, 88}};
 }
 
+Rectangle restaurant_prepare_back_button() {
+    return Rectangle{118, 310, 132, 32};
+}
+
+Rectangle restaurant_prepare_start_button() {
+    return Rectangle{390, 310, 132, 32};
+}
+
 Rectangle generated_sprite_destination(Location location) {
     switch (location) {
         case Location::restaurant:
@@ -462,14 +470,14 @@ void draw_restaurant_ui(const Font& font, const GameAppState& state, Vector2 mou
     if (!state.session.location_started()) {
         text(font, "餐馆工作准备", 56, 132, 20, ink);
         const auto lines = restaurant_tutorial_lines();
-        float y = 160.0F;
+        float y = 154.0F;
         for (const auto& line : lines) {
             text(font, line, 62, y, 14, ink);
-            y += 24.0F;
+            y += 21.0F;
         }
         text(font, "现在返回地图不会消耗白天行动。", 62, 286, 14, Color{78, 78, 72, 255});
-        const Rectangle back_btn = location_back_button(false);
-        const Rectangle start_btn = location_start_button(false);
+        const Rectangle back_btn = restaurant_prepare_back_button();
+        const Rectangle start_btn = restaurant_prepare_start_button();
         panel(back_btn, hovered(back_btn, mouse) ? paper : Color{211, 202, 174, 255});
         centered_text(font, "返回地图", back_btn, 16, ink);
         panel(start_btn, hovered(start_btn, mouse) ? paper : green);
@@ -480,12 +488,12 @@ void draw_restaurant_ui(const Font& font, const GameAppState& state, Vector2 mou
     if (rest.phase() == RestaurantPhase::showing_instructions) {
         text(font, "开始接待顾客前，再确认一次规则", 56, 132, 20, ink);
         const auto lines = restaurant_tutorial_lines();
-        float y = 160.0F;
+        float y = 154.0F;
         for (const auto& line : lines) {
             text(font, line, 62, y, 14, ink);
-            y += 24.0F;
+            y += 21.0F;
         }
-        const Rectangle start_btn{232, 300, 176, 30};
+        const Rectangle start_btn{232, 314, 176, 28};
         panel(start_btn, CheckCollisionPointRec(mouse, scaled_rect(start_btn)) ? paper : green);
         centered_text(font, "开始接待", start_btn, 18, RAYWHITE);
 
@@ -513,7 +521,7 @@ void draw_restaurant_ui(const Font& font, const GameAppState& state, Vector2 mou
             }
         }
         if (rest.phase() == RestaurantPhase::waiting_for_order) {
-            text(font, "菜品选择：按 1-5 或点击", 58, 248, 16, ink);
+            text(font, "菜品选择：按 1-5 或点击；按 I 重看说明", 58, 248, 16, ink);
             for (int i = 0; i < dish_count(); ++i) {
                 const Rectangle btn = restaurant_dish_button(i);
                 panel(btn, CheckCollisionPointRec(mouse, scaled_rect(btn)) ? cream
@@ -544,10 +552,9 @@ void draw_restaurant_ui(const Font& font, const GameAppState& state, Vector2 mou
     }
 
     if (rest.phase() != RestaurantPhase::finished) {
-        const Rectangle abandon_btn = location_abandon_button(false);
+        const Rectangle abandon_btn = restaurant_abandon_button();
         panel(abandon_btn, hovered(abandon_btn, mouse) ? paper : red);
         centered_text(font, "主动放弃", abandon_btn, 15, RAYWHITE);
-        text(font, "会消耗白天且无收益", 408, 266, 13, Color{78, 78, 72, 255});
     }
 }
 
@@ -841,8 +848,11 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             update_store_selection(state.locations);
         }
 
-        const Rectangle back_button = location_back_button(is_tavern);
-        const Rectangle start_button_location = location_start_button(is_tavern);
+        const bool is_restaurant = state.session.pending_location() == Location::restaurant;
+        const Rectangle back_button =
+            is_restaurant ? restaurant_prepare_back_button() : location_back_button(is_tavern);
+        const Rectangle start_button_location =
+            is_restaurant ? restaurant_prepare_start_button() : location_start_button(is_tavern);
         if (!state.session.location_started()) {
             if (activated(back_button, logical_mouse, KEY_ESCAPE)) {
                 if (state.session.return_to_map()) {

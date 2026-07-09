@@ -212,7 +212,8 @@ ActionResult compute_restaurant_result(
         "正确 " + std::to_string(stats.correct) + "，" +
         "错单 " + std::to_string(stats.wrong) + "，" +
         "超时 " + std::to_string(stats.timeout) + "。" +
-        "正确率 " + std::to_string(static_cast<int>(acc * 100)) + "%。";
+        "正确率 " + std::to_string(static_cast<int>(acc * 100)) + "%。" +
+        "午饭刚过，老板把围裙往柜台上一搭，汤锅还冒着一点热气。";
 
     ActionResult result;
     result.result_id = result_id;
