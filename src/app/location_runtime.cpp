@@ -1,5 +1,7 @@
 #include "app/location_runtime.hpp"
 
+#include <algorithm>
+
 #include "app/location_result_adapter.hpp"
 #include "app/ui_primitives.hpp"
 #include "locations/convenience_store.hpp"
@@ -17,30 +19,93 @@ store::StoreInventory to_store_inventory(const std::vector<StoreInventoryItem>& 
     return inventory;
 }
 
-store::PurchasePlan runtime_store_purchase_plan(const store::StoreConfig& config,
-                                                int available_money, int units_per_product) {
-    store::PurchasePlan plan;
-    int remaining_money = available_money;
-    for (const auto& product : config.products) {
-        int units = 0;
-        while (units < units_per_product && remaining_money >= product.unit_cost) {
-            ++units;
-            remaining_money -= product.unit_cost;
-        }
-        if (units > 0) {
-            plan.quantities[product.id] = units;
+int inventory_quantity(const GameSession& session, const std::string& item_id) {
+    for (const auto& item : session.store_inventory()) {
+        if (item.item_id == item_id) {
+            return item.quantity;
         }
     }
-    return plan;
+    return 0;
 }
 
-store::PricePlan runtime_store_price_plan(const store::StoreConfig& config,
-                                          store::PriceTier tier) {
-    store::PricePlan plan;
+int planned_quantity(const store::PurchasePlan& plan, const std::string& item_id) {
+    const auto found = plan.quantities.find(item_id);
+    return found == plan.quantities.end() ? 0 : found->second;
+}
+
+void ensure_store_runtime_plan(LocationRuntimeState& runtime, const store::StoreConfig& config) {
     for (const auto& product : config.products) {
-        plan.tiers[product.id] = tier;
+        if (runtime.store_purchase_plan.quantities.find(product.id) ==
+            runtime.store_purchase_plan.quantities.end()) {
+            runtime.store_purchase_plan.quantities[product.id] = 0;
+        }
+        if (runtime.store_price_plan.tiers.find(product.id) ==
+            runtime.store_price_plan.tiers.end()) {
+            runtime.store_price_plan.tiers[product.id] = store::PriceTier::standard;
+        }
     }
-    return plan;
+    if (runtime.store_selected_product_index < 0 ||
+        runtime.store_selected_product_index >= static_cast<int>(config.products.size())) {
+        runtime.store_selected_product_index = 0;
+    }
+}
+
+const store::ProductConfig& selected_store_product(LocationRuntimeState& runtime,
+                                                   const store::StoreConfig& config) {
+    ensure_store_runtime_plan(runtime, config);
+    return config.products[static_cast<std::size_t>(runtime.store_selected_product_index)];
+}
+
+void adjust_selected_store_purchase(LocationRuntimeState& runtime,
+                                    const store::StoreConfig& config,
+                                    const GameSession& session,
+                                    int delta) {
+    const auto& product = selected_store_product(runtime, config);
+    int& quantity = runtime.store_purchase_plan.quantities[product.id];
+    const int max_add =
+        std::max(0, config.max_stock_per_product - inventory_quantity(session, product.id));
+    quantity = std::max(0, std::min(max_add, quantity + delta));
+}
+
+int planned_store_purchase_cost(const store::StoreConfig& config,
+                                const store::PurchasePlan& plan) {
+    int cost = 0;
+    for (const auto& product : config.products) {
+        cost += product.unit_cost * planned_quantity(plan, product.id);
+    }
+    return cost;
+}
+
+void clamp_store_purchase_to_inventory(LocationRuntimeState& runtime,
+                                       const store::StoreConfig& config,
+                                       const GameSession& session) {
+    ensure_store_runtime_plan(runtime, config);
+    for (const auto& product : config.products) {
+        int& quantity = runtime.store_purchase_plan.quantities[product.id];
+        const int max_add =
+            std::max(0, config.max_stock_per_product - inventory_quantity(session, product.id));
+        quantity = std::max(0, std::min(max_add, quantity));
+    }
+}
+
+void reduce_store_purchase_to_budget(LocationRuntimeState& runtime,
+                                     const store::StoreConfig& config,
+                                     int available_money) {
+    while (planned_store_purchase_cost(config, runtime.store_purchase_plan) > available_money) {
+        bool reduced = false;
+        for (auto iterator = config.products.rbegin(); iterator != config.products.rend();
+             ++iterator) {
+            int& quantity = runtime.store_purchase_plan.quantities[iterator->id];
+            if (quantity > 0) {
+                --quantity;
+                reduced = true;
+                break;
+            }
+        }
+        if (!reduced) {
+            break;
+        }
+    }
 }
 
 store::DailyStoreContext make_store_context(const GameSession& session) {
@@ -71,9 +136,29 @@ Rectangle restaurant_dish_button(int dish_index) {
     return Rectangle{58.0F + static_cast<float>(dish_index) * 116.0F, 274.0F, 102.0F, 50.0F};
 }
 
+Rectangle store_back_button() {
+    return Rectangle{126.0F, 314.0F, 112.0F, 34.0F};
+}
+
+Rectangle store_start_button() {
+    return Rectangle{264.0F, 314.0F, 112.0F, 34.0F};
+}
+
+Rectangle store_abandon_button() {
+    return Rectangle{402.0F, 314.0F, 112.0F, 34.0F};
+}
+
 void prepare_restaurant_runtime(LocationRuntimeState& runtime, unsigned int seed) {
     runtime.restaurant = std::make_unique<RestaurantSession>(seed);
     runtime.restaurant_timer = 0.0F;
+}
+
+void prepare_store_runtime(LocationRuntimeState& runtime) {
+    const auto config = store::default_store_config();
+    runtime.store_purchase_plan = store::PurchasePlan{};
+    runtime.store_price_plan = store::default_price_plan(config);
+    runtime.store_selected_product_index = 0;
+    ensure_store_runtime_plan(runtime, config);
 }
 
 void update_tavern_selection(LocationRuntimeState& runtime) {
@@ -94,21 +179,39 @@ void update_tavern_selection(LocationRuntimeState& runtime) {
     }
 }
 
-void update_store_selection(LocationRuntimeState& runtime) {
+void update_store_selection(LocationRuntimeState& runtime, const GameSession& session) {
+    const auto config = store::default_store_config();
+    ensure_store_runtime_plan(runtime, config);
+
     if (IsKeyPressed(KEY_ONE)) {
-        runtime.store_price_tier = store::PriceTier::low;
+        runtime.store_selected_product_index = 0;
     }
-    if (IsKeyPressed(KEY_TWO)) {
-        runtime.store_price_tier = store::PriceTier::standard;
+    if (IsKeyPressed(KEY_TWO) && config.products.size() > 1) {
+        runtime.store_selected_product_index = 1;
     }
-    if (IsKeyPressed(KEY_THREE)) {
-        runtime.store_price_tier = store::PriceTier::high;
+    if (IsKeyPressed(KEY_THREE) && config.products.size() > 2) {
+        runtime.store_selected_product_index = 2;
     }
-    if (IsKeyPressed(KEY_FOUR) && runtime.store_purchase_units > 0) {
-        --runtime.store_purchase_units;
+    if (IsKeyPressed(KEY_FOUR) && config.products.size() > 3) {
+        runtime.store_selected_product_index = 3;
     }
-    if (IsKeyPressed(KEY_FIVE) && runtime.store_purchase_units < 5) {
-        ++runtime.store_purchase_units;
+    if (IsKeyPressed(KEY_Q)) {
+        const auto& product = selected_store_product(runtime, config);
+        runtime.store_price_plan.tiers[product.id] = store::PriceTier::low;
+    }
+    if (IsKeyPressed(KEY_W)) {
+        const auto& product = selected_store_product(runtime, config);
+        runtime.store_price_plan.tiers[product.id] = store::PriceTier::standard;
+    }
+    if (IsKeyPressed(KEY_E)) {
+        const auto& product = selected_store_product(runtime, config);
+        runtime.store_price_plan.tiers[product.id] = store::PriceTier::high;
+    }
+    if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) {
+        adjust_selected_store_purchase(runtime, config, session, -1);
+    }
+    if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) {
+        adjust_selected_store_purchase(runtime, config, session, 1);
     }
 }
 
@@ -146,6 +249,13 @@ bool start_pending_location(GameSession& session, LocationRuntimeState& runtime,
         runtime.in_library = true;
         notice = "已进入图书馆，请完成读者问答。";
         return true;
+    }
+
+    if (session.pending_location() == Location::convenience_store) {
+        ensure_store_runtime_plan(runtime, store::default_store_config());
+        clamp_store_purchase_to_inventory(runtime, store::default_store_config(), session);
+        reduce_store_purchase_to_budget(runtime, store::default_store_config(),
+                                        session.player().money);
     }
 
     if (session.start_location() == 0) {
@@ -250,7 +360,10 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
         return true;
     }
 
-    if (activated(location_start_button(is_tavern), logical_mouse, KEY_SPACE)) {
+    const Rectangle finish_button = session.pending_location() == Location::convenience_store
+                                        ? store_start_button()
+                                        : location_start_button(is_tavern);
+    if (activated(finish_button, logical_mouse, KEY_SPACE)) {
         if (is_tavern) {
             const TavernChallengeConfig config;
             const auto result = tavern_action_result(session, runtime.tavern_challenge,
@@ -262,13 +375,13 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
             }
         } else if (session.pending_location() == Location::convenience_store) {
             const auto config = store::default_store_config();
+            ensure_store_runtime_plan(runtime, config);
+            clamp_store_purchase_to_inventory(runtime, config, session);
+            reduce_store_purchase_to_budget(runtime, config, session.player().money);
             const auto settlement = store::simulate_sales(
                 config, to_store_inventory(session.store_inventory()),
-                runtime_store_purchase_plan(config, session.player().money,
-                                            runtime.store_purchase_units),
-                runtime_store_price_plan(config, runtime.store_price_tier),
-                make_store_context(session),
-                session.player().money);
+                runtime.store_purchase_plan, runtime.store_price_plan,
+                make_store_context(session), session.player().money);
             if (!settlement.accepted) {
                 notice = settlement.message;
                 return true;
@@ -283,7 +396,10 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
         return true;
     }
 
-    if (clicked(location_abandon_button(is_tavern), logical_mouse)) {
+    const Rectangle abandon_button = session.pending_location() == Location::convenience_store
+                                         ? store_abandon_button()
+                                         : location_abandon_button(is_tavern);
+    if (clicked(abandon_button, logical_mouse)) {
         const auto applied = session.apply_action_result(session.abandon_current_location());
         notice = applied.message;
         return true;

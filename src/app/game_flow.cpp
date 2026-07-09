@@ -77,13 +77,19 @@ constexpr std::array ui_texts{
     "赌注",
     "价格档",
     "进货数量",
+    "商品",
+    "库存",
+    "进货",
+    "售价",
+    "选中",
     "低价",
     "标准价",
     "高价",
     "今日提示",
     "当前库存",
     "每种商品",
-    "按1/2/3选择价格  按4/5调整进货",
+    "按1-4选商品  A/D调进货  Q/W/E调价格",
+    "咖啡",
     "金币",
     "选择挑战",
     "选择赌注",
@@ -108,6 +114,25 @@ const char* store_price_tier_label(store::PriceTier tier) {
             return "高价";
     }
     return "标准价";
+}
+
+int store_plan_quantity(const store::PurchasePlan& plan, const std::string& item_id) {
+    const auto found = plan.quantities.find(item_id);
+    return found == plan.quantities.end() ? 0 : found->second;
+}
+
+store::PriceTier store_plan_tier(const store::PricePlan& plan, const std::string& item_id) {
+    const auto found = plan.tiers.find(item_id);
+    return found == plan.tiers.end() ? store::PriceTier::standard : found->second;
+}
+
+int store_inventory_quantity(const GameSession& session, const std::string& item_id) {
+    for (const auto& item : session.store_inventory()) {
+        if (item.item_id == item_id) {
+            return item.quantity;
+        }
+    }
+    return 0;
 }
 
 std::array<Rectangle, 5> location_bounds() {
@@ -590,32 +615,48 @@ void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
         text(font, "[1/2] 选择挑战    [3/4/5] 选择赌注    空格开始/完成    Esc返回",
              90, 220, 16, Color{78, 78, 72, 255});
     } else if (location == Location::convenience_store) {
-        panel(Rectangle{96, 72, 448, 236}, cream);
-        text(font, location_label(location), 126, 96, 30, red);
+        panel(Rectangle{72, 70, 496, 232}, cream);
+        text(font, location_label(location), 96, 82, 28, red);
         const auto context = state.session.current_day_context();
         text(font, std::string{"今日提示："} + context.weather + " / " + context.event,
-             126, 136, 16, ink);
-        text(font,
-             std::string{"价格档："} + store_price_tier_label(state.locations.store_price_tier) +
-                 "    每种商品进货：" +
-                 std::to_string(state.locations.store_purchase_units),
-             126, 162, 16, ink);
+             96, 116, 15, ink);
 
-        std::string inventory = "当前库存：";
-        if (state.session.store_inventory().empty()) {
-            inventory += "无";
-        } else {
-            for (const auto& item : state.session.store_inventory()) {
-                inventory += " " + item.item_id + ":" + std::to_string(item.quantity);
+        text(font, "商品", 96, 142, 14, Color{78, 78, 72, 255});
+        text(font, "库存", 202, 142, 14, Color{78, 78, 72, 255});
+        text(font, "进货", 260, 142, 14, Color{78, 78, 72, 255});
+        text(font, "价格档", 324, 142, 14, Color{78, 78, 72, 255});
+        text(font, "售价", 410, 142, 14, Color{78, 78, 72, 255});
+
+        const auto config = store::default_store_config();
+        int total_cost = 0;
+        for (std::size_t index = 0; index < config.products.size(); ++index) {
+            const auto& product = config.products[index];
+            const float y = 164.0F + static_cast<float>(index) * 22.0F;
+            const bool selected =
+                static_cast<int>(index) == state.locations.store_selected_product_index;
+            if (selected) {
+                DrawRectangleRec(scaled_rect(Rectangle{88, y - 3.0F, 410, 20}),
+                                 Color{255, 224, 154, 110});
             }
+            const int purchase = store_plan_quantity(state.locations.store_purchase_plan,
+                                                     product.id);
+            const auto tier = store_plan_tier(state.locations.store_price_plan, product.id);
+            total_cost += product.unit_cost * purchase;
+            text(font, selected ? ">" : "", 88, y, 14, red);
+            text(font, product.name, 104, y, 14, ink);
+            text(font, std::to_string(store_inventory_quantity(state.session, product.id)),
+                 210, y, 14, ink);
+            text(font, std::to_string(purchase), 272, y, 14, ink);
+            text(font, store_price_tier_label(tier), 326, y, 14, ink);
+            text(font, std::to_string(store::price_for_tier(product, tier)), 418, y, 14, ink);
         }
-        text(font, inventory, 126, 188, 15, Color{78, 78, 72, 255});
-        text(font, "按1/2/3选择价格  按4/5调整进货  空格开始/完成",
-             126, 216, 15, Color{78, 78, 72, 255});
-        text(font,
-             state.session.location_started() ? "地点已开始：再次按空格结算销售。"
-                                              : "尚未开始：会按当前决策进货并模拟销售。",
-             126, 242, 15, ink);
+
+        const int balance_after = state.session.player().money - total_cost;
+        text(font, std::string{"进货成本 "} + std::to_string(total_cost) +
+                       " / 剩余金钱 " + std::to_string(balance_after),
+             96, 258, 14, balance_after >= 0 ? Color{35, 83, 51, 255} : red);
+        text(font, "按1-4选商品  A/D调进货  Q/W/E调价格  空格开始/完成",
+             96, 278, 13, Color{78, 78, 72, 255});
     } else {
         panel(Rectangle{96, 78, 448, 210}, cream);
         text(font, location_label(location), 126, 106, 30, red);
@@ -625,10 +666,13 @@ void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
              126, 154, 16, ink);
     }
 
-    const float location_btn_y = is_tavern ? 252.0F : 228.0F;
-    const Rectangle back_button{126, location_btn_y, 112, 34};
-    const Rectangle start_button{264, location_btn_y, 112, 34};
-    const Rectangle abandon_button{402, location_btn_y, 112, 34};
+    const bool is_store = location == Location::convenience_store;
+    const Rectangle back_button = is_store ? store_back_button()
+                                           : Rectangle{126, is_tavern ? 252.0F : 228.0F, 112, 34};
+    const Rectangle start_button = is_store ? store_start_button()
+                                            : Rectangle{264, is_tavern ? 252.0F : 228.0F, 112, 34};
+    const Rectangle abandon_button = is_store ? store_abandon_button()
+                                              : Rectangle{402, is_tavern ? 252.0F : 228.0F, 112, 34};
     if (!state.session.location_started()) {
         panel(back_button, hovered(back_button, mouse) ? paper : Color{211, 202, 174, 255});
         centered_text(font, "返回地图", back_button, 16, ink);
@@ -825,6 +869,9 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                     prepare_restaurant_runtime(state.locations,
                                                state.session.current_day_context().seed);
                     state.notice = "已进入餐馆";
+                } else if (location == Location::convenience_store) {
+                    prepare_store_runtime(state.locations);
+                    state.notice = "已进入便利店，选择每种商品的进货数量和价格档。";
                 } else {
                     state.notice =
                         std::string{"已进入"} + location_label(location) + "，开始前可返回地图。";
@@ -845,14 +892,17 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
         }
         if (state.session.pending_location() == Location::convenience_store &&
             !state.session.location_started()) {
-            update_store_selection(state.locations);
+            update_store_selection(state.locations, state.session);
         }
 
         const bool is_restaurant = state.session.pending_location() == Location::restaurant;
+        const bool is_store = state.session.pending_location() == Location::convenience_store;
         const Rectangle back_button =
-            is_restaurant ? restaurant_prepare_back_button() : location_back_button(is_tavern);
+            is_restaurant ? restaurant_prepare_back_button()
+                          : (is_store ? store_back_button() : location_back_button(is_tavern));
         const Rectangle start_button_location =
-            is_restaurant ? restaurant_prepare_start_button() : location_start_button(is_tavern);
+            is_restaurant ? restaurant_prepare_start_button()
+                          : (is_store ? store_start_button() : location_start_button(is_tavern));
         if (!state.session.location_started()) {
             if (activated(back_button, logical_mouse, KEY_ESCAPE)) {
                 if (state.session.return_to_map()) {

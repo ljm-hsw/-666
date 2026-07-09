@@ -54,9 +54,9 @@ The following baseline behavior is intentionally preserved:
   style. P4 should replace or normalize final scene visuals.
 - Restaurant and tavern summaries still include module-local text. They should be routed through
   `StoryText` or a location text adaptor before final content acceptance.
-- Convenience store is integrated with P2 placeholder UI: rule tests, default app runtime decisions,
-  inventory updates, and save/load round-trip are covered. Product-specific controls and final
-  convenience-store visuals remain polish work.
+- Convenience store is integrated with P2 placeholder UI: rule tests, product-specific keyboard
+  purchase/price decisions, inventory updates, and save/load round-trip are covered. Mouse-first
+  convenience-store controls and final convenience-store visuals remain polish work.
 
 ## Architecture refactor on 2026-07-09
 

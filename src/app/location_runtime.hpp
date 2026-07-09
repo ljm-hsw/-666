@@ -21,8 +21,9 @@ struct LocationRuntimeState {
     float restaurant_timer{0.0F};
     ChallengeType tavern_challenge{ChallengeType::gomoku};
     BetTier tavern_bet{BetTier::medium};
-    store::PriceTier store_price_tier{store::PriceTier::standard};
-    int store_purchase_units{1};
+    store::PurchasePlan store_purchase_plan;
+    store::PricePlan store_price_plan;
+    int store_selected_product_index{0};
     bool in_library{false};
     library::LibraryData library_data;
     std::unique_ptr<library::LibraryRuleEngine> library_engine;
@@ -36,10 +37,14 @@ struct LocationRuntimeState {
 [[nodiscard]] Rectangle location_abandon_button(bool is_tavern);
 [[nodiscard]] Rectangle restaurant_abandon_button();
 [[nodiscard]] Rectangle restaurant_dish_button(int dish_index);
+[[nodiscard]] Rectangle store_back_button();
+[[nodiscard]] Rectangle store_start_button();
+[[nodiscard]] Rectangle store_abandon_button();
 
 void prepare_restaurant_runtime(LocationRuntimeState& runtime, unsigned int seed);
+void prepare_store_runtime(LocationRuntimeState& runtime);
 void update_tavern_selection(LocationRuntimeState& runtime);
-void update_store_selection(LocationRuntimeState& runtime);
+void update_store_selection(LocationRuntimeState& runtime, const GameSession& session);
 [[nodiscard]] bool start_pending_location(GameSession& session,
                                            LocationRuntimeState& runtime,
                                            std::string& notice);

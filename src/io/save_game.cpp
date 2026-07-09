@@ -310,8 +310,31 @@ bool is_valid_player_state(const PlayerState& player) {
            player.mood <= 100;
 }
 
+bool is_known_store_item_id(const std::string& item_id) {
+    return item_id == "umbrella" || item_id == "soda" || item_id == "bento" ||
+           item_id == "coffee";
+}
+
+bool is_valid_store_inventory(const std::vector<StoreInventoryItem>& inventory) {
+    for (std::size_t index = 0; index < inventory.size(); ++index) {
+        if (!is_known_store_item_id(inventory[index].item_id) || inventory[index].quantity < 0 ||
+            inventory[index].quantity > 10) {
+            return false;
+        }
+        for (std::size_t previous = 0; previous < index; ++previous) {
+            if (inventory[previous].item_id == inventory[index].item_id) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 bool is_valid_snapshot_combination(const GameSessionSnapshot& snapshot) {
     if (!is_valid_player_state(snapshot.player)) {
+        return false;
+    }
+    if (!is_valid_store_inventory(snapshot.store_inventory)) {
         return false;
     }
     for (std::size_t index = 0; index < snapshot.applied_result_ids.size(); ++index) {

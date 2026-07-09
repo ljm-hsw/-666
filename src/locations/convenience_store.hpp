@@ -32,6 +32,7 @@ struct StoreConfig {
     int base_reputation{1};
     int profit_reputation_step{20};
     int base_mood_change{-1};
+    int max_stock_per_product{10};
 };
 
 using StoreInventory = std::map<std::string, int>;

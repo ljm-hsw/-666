@@ -169,6 +169,23 @@ void setup_restaurant_diagnostic(pixel_town::GameAppState& state, bool started) 
     state.notice = started ? "诊断：餐馆订单页。" : "诊断：餐馆说明页。";
 }
 
+void setup_store_diagnostic(pixel_town::GameAppState& state, bool started) {
+    state = pixel_town::GameAppState{};
+    state.has_session = true;
+    state.session = pixel_town::GameSession::new_game();
+    (void)state.session.enter_location(pixel_town::Location::convenience_store);
+    pixel_town::prepare_store_runtime(state.locations);
+    state.locations.store_purchase_plan.quantities["umbrella"] = 2;
+    state.locations.store_purchase_plan.quantities["soda"] = 1;
+    state.locations.store_price_plan.tiers["umbrella"] = pixel_town::store::PriceTier::high;
+    state.locations.store_price_plan.tiers["soda"] = pixel_town::store::PriceTier::low;
+    state.locations.store_selected_product_index = 1;
+    if (started) {
+        (void)state.session.start_location();
+    }
+    state.notice = started ? "诊断：便利店已开始。" : "诊断：便利店准备页。";
+}
+
 void setup_library_diagnostic(pixel_town::GameAppState& state,
                               pixel_town::library::ui::LibrarySceneState scene_state,
                               bool show_hint = false) {
@@ -208,12 +225,18 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
             setup_restaurant_diagnostic(state, true);
             break;
         case 2:
-            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::intro);
+            setup_store_diagnostic(state, false);
             break;
         case 3:
-            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::npc_talk);
+            setup_store_diagnostic(state, true);
             break;
         case 4:
+            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::intro);
+            break;
+        case 5:
+            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::npc_talk);
+            break;
+        case 6:
             setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::answering);
             break;
         default:
@@ -483,9 +506,11 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 6> ui_diagnostic_capture_paths{
+    const std::array<const char*, 8> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
+        "ui-diagnostics-captures/store-prepare.png",
+        "ui-diagnostics-captures/store-started.png",
         "ui-diagnostics-captures/library-intro.png",
         "ui-diagnostics-captures/library-dialog.png",
         "ui-diagnostics-captures/library-answering.png",
