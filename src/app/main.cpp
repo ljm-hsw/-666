@@ -10,8 +10,20 @@
 #include <raylib.h>
 
 #ifdef _WIN32
-#define NOMINMAX
-#include <windows.h>
+// Cancel windows.h macros that collide with raylib function names.
+#ifdef CloseWindow
+#undef CloseWindow
+#endif
+#ifdef ShowCursor
+#undef ShowCursor
+#endif
+#ifdef DrawText
+#undef DrawText
+#endif
+// Forward-declare kernel32 to avoid including windows.h.
+extern "C" __declspec(dllimport) unsigned long __stdcall GetModuleFileNameW(
+    void* hModule, wchar_t* lpFilename, unsigned long nSize);
+using DWORD = unsigned long;
 #elif defined(__APPLE__)
 #include <mach-o/dyld.h>
 #elif defined(__linux__)

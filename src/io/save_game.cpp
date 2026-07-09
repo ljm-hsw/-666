@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "locations/store/store.hpp"
+
 #ifdef _WIN32
 #define NOMINMAX
 #include <windows.h>
@@ -237,7 +239,12 @@ std::string serialize_session(const GameSession& session) {
     output << "main_ending=" << escape_value(snapshot.main_ending) << "\n";
     output << "final_summary=" << escape_value(snapshot.final_summary) << "\n";
     output << "applied_result_ids=" << join_ints(snapshot.applied_result_ids) << "\n";
-    output << "store_inventory=none\n";
+    const auto& inv = session.store_inventory();
+    for (std::size_t i = 0; i < inv.stocks.size(); ++i) {
+        output << "store_stock_" << i << "_id=" << inv.stocks[i].product_id << "\n";
+        output << "store_stock_" << i << "_qty=" << inv.stocks[i].quantity << "\n";
+        output << "store_stock_" << i << "_tier=" << static_cast<int>(inv.stocks[i].tier) << "\n";
+    }
     output << "tavern_wins=0\n";
     output << "tavern_losses=0\n";
     return output.str();
@@ -413,7 +420,7 @@ LoadGameResult load_session(const std::filesystem::path& path) {
     const auto pending_location = values.find("pending_location");
     const auto applied_result_ids = values.find("applied_result_ids");
     if (phase == values.end() || pending_location == values.end() ||
-        applied_result_ids == values.end() || values.find("store_inventory") == values.end() ||
+        applied_result_ids == values.end() ||
         values.find("tavern_wins") == values.end() || values.find("tavern_losses") == values.end()) {
         return {SaveStatus::corrupt, GameSession::new_game(), "save file is missing fields"};
     }
@@ -431,7 +438,22 @@ LoadGameResult load_session(const std::filesystem::path& path) {
                 "save file has an unreachable phase state"};
     }
 
-    return {SaveStatus::ok, GameSession::from_snapshot(snapshot), ""};
+    auto session = GameSession::from_snapshot(snapshot);
+    StoreInventory loaded_inv = default_store_inventory();
+    for (std::size_t i = 0; i < loaded_inv.stocks.size(); ++i) {
+        int product_id = 0;
+        int quantity = 0;
+        int tier_int = 1;
+        parse_int(values, ("store_stock_" + std::to_string(i) + "_id").c_str(), product_id);
+        parse_int(values, ("store_stock_" + std::to_string(i) + "_qty").c_str(), quantity);
+        parse_int(values, ("store_stock_" + std::to_string(i) + "_tier").c_str(), tier_int);
+        loaded_inv.stocks[i].product_id = product_id;
+        loaded_inv.stocks[i].quantity = quantity;
+        loaded_inv.stocks[i].tier = static_cast<PriceTier>(tier_int);
+    }
+    session.set_store_inventory(loaded_inv);
+
+    return {SaveStatus::ok, session, ""};
 }
 
 }  // namespace pixel_town

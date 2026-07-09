@@ -93,7 +93,7 @@ TEST_CASE("save file includes versioned future module fields") {
     CHECK(text.find("day=1\n") != std::string::npos);
     CHECK(text.find("phase=night_choice\n") != std::string::npos);
     CHECK(text.find("player_money=") != std::string::npos);
-    CHECK(text.find("store_inventory=") != std::string::npos);
+    CHECK(text.find("store_stock_0_id=") != std::string::npos);
     CHECK(text.find("tavern_wins=") != std::string::npos);
     CHECK(text.find("tavern_losses=") != std::string::npos);
 }

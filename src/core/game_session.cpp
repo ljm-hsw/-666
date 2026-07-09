@@ -168,12 +168,29 @@ int GameSession::start_location() {
     return active_result_id_;
 }
 
-ActionResult GameSession::simulated_success_result() const {
+ActionResult GameSession::simulated_success_result() {
     if (!has_pending_location() || !location_started_) {
         return {};
     }
     const ActionSlot slot =
         phase_ == GamePhase::day_location ? ActionSlot::day : ActionSlot::night;
+
+    if (pending_location_ == Location::convenience_store) {
+        const auto context = make_day_context(day_, seed_);
+        const DayPrompt prompt{context.weather, context.event};
+        const auto settlement = simulate_store_day(
+            store_inventory_, store_decision_, prompt, player_.money, seed_);
+        for (std::size_t i = 0; i < store_inventory_.stocks.size(); ++i) {
+            store_inventory_.stocks[i].quantity = settlement.product_results[i].remaining;
+            store_inventory_.stocks[i].tier = store_decision_.products[i].tier;
+        }
+        last_store_settlement_ = settlement;
+        return ActionResult{active_result_id_, slot, pending_location_, ActionOutcome::completed,
+                            StatDelta{settlement.profit, -settlement.stamina_cost,
+                                      settlement.reputation_gain, 0, settlement.mood_change},
+                            settlement.summary};
+    }
+
     return ActionResult{active_result_id_, slot, pending_location_, ActionOutcome::completed,
                         day_work_delta(pending_location_), completed_summary(pending_location_)};
 }
@@ -279,7 +296,8 @@ GameSessionSnapshot GameSession::snapshot() const {
                                last_summary_,
                                main_ending_,
                                final_summary_,
-                               applied_result_ids_};
+                               applied_result_ids_,
+                               store_inventory_};
 }
 
 GameSession GameSession::from_snapshot(const GameSessionSnapshot& snapshot) {
@@ -299,6 +317,7 @@ GameSession GameSession::from_snapshot(const GameSessionSnapshot& snapshot) {
     session.main_ending_ = snapshot.main_ending;
     session.final_summary_ = snapshot.final_summary;
     session.applied_result_ids_ = snapshot.applied_result_ids;
+    session.store_inventory_ = snapshot.store_inventory;
     return session;
 }
 

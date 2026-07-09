@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "locations/store/store.hpp"
+
 namespace pixel_town {
 
 enum class GamePhase {
@@ -90,6 +92,7 @@ struct GameSessionSnapshot {
     std::string main_ending;
     std::string final_summary;
     std::vector<int> applied_result_ids;
+    StoreInventory store_inventory{default_store_inventory()};
 };
 
 [[nodiscard]] const char* phase_label(GamePhase phase);
@@ -115,13 +118,23 @@ public:
     [[nodiscard]] bool enter_location(Location location);
     [[nodiscard]] bool return_to_map();
     [[nodiscard]] int start_location();
-    [[nodiscard]] ActionResult simulated_success_result() const;
+    [[nodiscard]] ActionResult simulated_success_result();
     [[nodiscard]] ActionResult abandon_current_location() const;
     [[nodiscard]] ActionResult home_rest_result();
     [[nodiscard]] ApplyResult apply_action_result(const ActionResult& result);
     [[nodiscard]] bool finish_day_summary();
     [[nodiscard]] GameSessionSnapshot snapshot() const;
     [[nodiscard]] static GameSession from_snapshot(const GameSessionSnapshot& snapshot);
+
+    [[nodiscard]] const StoreInventory& store_inventory() const noexcept { return store_inventory_; }
+    void set_store_inventory(const StoreInventory& inventory) { store_inventory_ = inventory; }
+
+    [[nodiscard]] const StoreDailyDecision& store_decision() const noexcept { return store_decision_; }
+    void set_store_decision(const StoreDailyDecision& decision) { store_decision_ = decision; }
+
+    [[nodiscard]] const StoreSettlement& last_store_settlement() const noexcept {
+        return last_store_settlement_;
+    }
 
 private:
     static constexpr Location none_{static_cast<Location>(-1)};
@@ -140,6 +153,9 @@ private:
     std::string main_ending_;
     std::string final_summary_;
     std::vector<int> applied_result_ids_;
+    StoreInventory store_inventory_{default_store_inventory()};
+    StoreDailyDecision store_decision_{default_store_decision()};
+    StoreSettlement last_store_settlement_{};
 
     [[nodiscard]] bool result_was_applied(int result_id) const;
     void clear_pending_location();

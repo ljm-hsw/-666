@@ -8,12 +8,26 @@
 
 namespace pixel_town {
 
+enum class StoreUIPhase {
+    none,
+    prepare,
+    purchase,
+    price,
+    settlement,
+};
+
 struct GameAppState {
     bool has_session{false};
     GameSession session{GameSession::new_game()};
     bool save_present{false};
     bool confirm_new_game_overwrite{false};
-    std::string notice{"点击“新游戏”开始第一天。"};
+    std::string notice{"点击新游戏开始第一天。"};
+
+    StoreUIPhase store_ui_phase{StoreUIPhase::none};
+    StoreDailyDecision store_decision{};
+    StoreSettlement last_settlement{};
+    ActionResult cached_store_action_result{};
+    int store_ui_selected_product{0};
 };
 
 [[nodiscard]] const char* game_flow_glyphs();

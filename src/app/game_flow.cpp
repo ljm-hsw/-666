@@ -4,6 +4,8 @@
 #include <cmath>
 #include <string>
 
+#include "locations/store/store.hpp"
+
 namespace pixel_town {
 namespace {
 
@@ -199,7 +201,8 @@ Rectangle generated_building_source(std::size_t index) {
     return Rectangle{static_cast<float>(index) * cell_width, 0.0F, cell_width, cell_height};
 }
 
-void draw_status(const Font& font, const GameSession& session, bool audio_enabled) {
+void draw_status(const Font& font, const GameSession& session, bool audio_enabled,
+                 bool show_mute = true) {
     const auto& player = session.player();
     DrawRectangle(0, 0, 960, 84, slate);
     text(font, "像素小镇", 16, 9, 22, RAYWHITE);
@@ -211,7 +214,7 @@ void draw_status(const Font& font, const GameSession& session, bool audio_enable
     text(font, std::string{"声望 "} + std::to_string(player.reputation), 504, 6, 18, RAYWHITE);
     text(font, std::string{"知识 "} + std::to_string(player.knowledge), 316, 30, 18, RAYWHITE);
     text(font, std::string{"心情 "} + std::to_string(player.mood), 410, 30, 18, RAYWHITE);
-    if (!audio_enabled) {
+    if (show_mute && !audio_enabled) {
         text(font, "静音", 548, 30, 18, Color{255, 208, 166, 255});
     }
 }
@@ -461,6 +464,391 @@ void draw_ending(const Font& font, const GameAppState& state) {
          Color{78, 78, 72, 255});
 }
 
+// 便利店室内纹理懒加载
+const Texture2D& store_indoor_texture() {
+    static Texture2D texture{};
+    if (texture.id == 0) {
+        texture = LoadTexture(
+            "assets/textures/kenney_roguelike_indoor/roguelikeIndoor_transparent.png");
+        if (texture.id != 0) {
+            SetTextureFilter(texture, TEXTURE_FILTER_POINT);
+        }
+    }
+    return texture;
+}
+
+Rectangle indoor_source_tile(int tile_index) {
+    constexpr int columns = 49;
+    constexpr int tile_size = 16;
+    return Rectangle{static_cast<float>((tile_index % columns) * tile_size),
+                     static_cast<float>((tile_index / columns) * tile_size),
+                     tile_size, tile_size};
+}
+
+void draw_indoor_tile(int tile_index, Rectangle destination) {
+    const Texture2D& texture = store_indoor_texture();
+    if (texture.id == 0) {
+        return;
+    }
+    DrawTexturePro(texture, indoor_source_tile(tile_index), scaled_rect(destination),
+                   Vector2{0.0F, 0.0F}, 0.0F, WHITE);
+}
+
+const char* tier_label(PriceTier tier) {
+    switch (tier) {
+        case PriceTier::low:
+            return "低价";
+        case PriceTier::standard:
+            return "标准价";
+        case PriceTier::high:
+            return "高价";
+    }
+    return "标准价";
+}
+
+Color tier_color(PriceTier tier) {
+    switch (tier) {
+        case PriceTier::low:
+            return Color{82, 137, 92, 255};
+        case PriceTier::standard:
+            return Color{224, 169, 74, 255};
+        case PriceTier::high:
+            return Color{183, 83, 72, 255};
+    }
+    return gold;
+}
+
+void draw_store_background() {
+    ClearBackground(Color{215, 221, 194, 255});
+    for (int row = 0; row < 12; ++row) {
+        for (int col = 0; col < 20; ++col) {
+            draw_indoor_tile(14, Rectangle{static_cast<float>(col * 32),
+                                           static_cast<float>(56 + row * 26), 32.0F, 26.0F});
+        }
+    }
+    for (int row = 0; row < 5; ++row) {
+        draw_indoor_tile(245,
+                         Rectangle{8.0F, static_cast<float>(72 + row * 42), 32.0F, 32.0F});
+        draw_indoor_tile(246,
+                         Rectangle{600.0F, static_cast<float>(72 + row * 42), 32.0F, 32.0F});
+    }
+}
+
+void small_button(const Font& font, const char* label, Rectangle bounds, bool is_hovered,
+                  bool is_active, Color active_color) {
+    const Color fill = is_active ? active_color : (is_hovered ? paper : cream);
+    const Color border_col = is_active ? ink : (is_hovered ? ink : disabled);
+    panel(bounds, fill, border_col);
+    centered_text(font, label, bounds, 14, ink);
+}
+
+void draw_store_prepare(const Font& font, const GameAppState& state, Vector2 mouse) {
+    draw_store_background();
+    draw_status(font, state.session, true, false);
+
+    panel(Rectangle{12, 62, 616, 260}, cream);
+    text(font, "便利店 - 营业准备", 24, 70, 20, red);
+
+    const auto context = state.session.current_day_context();
+    text(font, std::string{"今日天气："} + context.weather + " · " + context.event, 24, 98, 14,
+         ink);
+
+    text(font, "当前库存", 24, 118, 16, ink);
+    const auto& inventory = state.session.store_inventory();
+    for (std::size_t i = 0; i < store_products.size(); ++i) {
+        const float y = 140.0F + static_cast<float>(i) * 22.0F;
+        text(font, store_products[i].display_name, 32, y, 14, ink);
+        text(font, std::to_string(inventory.stocks[i].quantity) + " 件", 120, y, 14,
+             Color{78, 78, 72, 255});
+    }
+
+    text(font, std::string{"余额："} + std::to_string(state.session.player().money) + " 金钱",
+         24, 276, 14, Color{35, 83, 51, 255});
+
+    const Rectangle back_button{16, 322, 96, 28};
+    const Rectangle next_button{530, 322, 96, 28};
+    panel(back_button, hovered(back_button, mouse) ? paper : Color{211, 202, 174, 255});
+    centered_text(font, "返回地图", back_button, 14, ink);
+    panel(next_button, hovered(next_button, mouse) ? cream : green);
+    centered_text(font, "开始进货", next_button, 14, RAYWHITE);
+}
+
+void draw_store_purchase(const Font& font, const GameAppState& state, Vector2 mouse) {
+    draw_store_background();
+    draw_status(font, state.session, true, false);
+
+    panel(Rectangle{12, 62, 616, 260}, cream);
+    text(font, "便利店 - 进货", 24, 70, 20, red);
+
+    text(font, "商品", 24, 96, 13, Color{78, 78, 72, 255});
+    text(font, "库存", 100, 96, 13, Color{78, 78, 72, 255});
+    text(font, "进货", 164, 96, 13, Color{78, 78, 72, 255});
+    text(font, "单价", 300, 96, 13, Color{78, 78, 72, 255});
+
+    int total_cost = 0;
+    for (std::size_t i = 0; i < store_products.size(); ++i) {
+        const float y = 112.0F + static_cast<float>(i) * 24.0F;
+        const auto& product = store_products[i];
+        const int current_qty = state.session.store_inventory().stocks[i].quantity;
+        const int purchase = state.store_decision.products[i].purchase_quantity;
+        const int total_after = current_qty + purchase;
+        total_cost += product.base_cost * purchase;
+
+        text(font, product.display_name, 24, y, 14, ink);
+        const bool over_limit = total_after > max_stock_per_product;
+        text(font, std::to_string(current_qty), 104, y, 14,
+             over_limit ? red : Color{78, 78, 72, 255});
+
+        const Rectangle minus_btn{150, y - 2, 24, 20};
+        const Rectangle plus_btn{216, y - 2, 24, 20};
+        panel(minus_btn, hovered(minus_btn, mouse) ? paper : cream);
+        centered_text(font, "-", minus_btn, 14, ink);
+        text(font, std::to_string(purchase), 184, y, 14, over_limit ? red : ink);
+        panel(plus_btn, hovered(plus_btn, mouse) ? paper : cream);
+        centered_text(font, "+", plus_btn, 14, ink);
+
+        text(font, std::to_string(product.base_cost) + " 金钱", 296, y, 13,
+             Color{78, 78, 72, 255});
+    }
+
+    const int money = state.session.player().money;
+    text(font, std::string{"成本："} + std::to_string(total_cost) + "  余额：" +
+             std::to_string(money - total_cost) + " 金钱",
+         24, 268, 14, (money >= total_cost) ? Color{35, 83, 51, 255} : red);
+
+    const Rectangle back_button{16, 322, 72, 28};
+    const Rectangle next_button{530, 322, 96, 28};
+    panel(back_button, hovered(back_button, mouse) ? paper : Color{211, 202, 174, 255});
+    centered_text(font, "返回", back_button, 14, ink);
+    const bool can_proceed = money >= total_cost;
+    panel(next_button,
+          hovered(next_button, mouse) ? cream : (can_proceed ? green : disabled));
+    centered_text(font, "下一步：定价", next_button, 14, can_proceed ? RAYWHITE : Color{145, 143, 132, 255});
+}
+
+void draw_store_price(const Font& font, const GameAppState& state, Vector2 mouse) {
+    draw_store_background();
+    draw_status(font, state.session, true, false);
+
+    panel(Rectangle{12, 62, 616, 260}, cream);
+    text(font, "便利店 - 定价", 24, 70, 20, red);
+
+    text(font, "商品", 24, 96, 13, Color{78, 78, 72, 255});
+    text(font, "库存", 100, 96, 13, Color{78, 78, 72, 255});
+    text(font, "选择档位", 180, 96, 13, Color{78, 78, 72, 255});
+    text(font, "售价", 400, 96, 13, Color{78, 78, 72, 255});
+
+    for (std::size_t i = 0; i < store_products.size(); ++i) {
+        const float y = 112.0F + static_cast<float>(i) * 24.0F;
+        const auto& product = store_products[i];
+        const int total_qty = state.session.store_inventory().stocks[i].quantity +
+                              state.store_decision.products[i].purchase_quantity;
+        const PriceTier tier = state.store_decision.products[i].tier;
+
+        text(font, product.display_name, 24, y, 14, ink);
+        text(font, std::to_string(total_qty), 104, y, 14, Color{78, 78, 72, 255});
+
+        const Rectangle low_btn{160, y - 2, 36, 20};
+        const Rectangle std_btn{200, y - 2, 48, 20};
+        const Rectangle high_btn{252, y - 2, 36, 20};
+
+        small_button(font, "低", low_btn, hovered(low_btn, mouse), tier == PriceTier::low,
+                     Color{82, 137, 92, 255});
+        small_button(font, "标准", std_btn, hovered(std_btn, mouse), tier == PriceTier::standard,
+                     gold);
+        small_button(font, "高", high_btn, hovered(high_btn, mouse), tier == PriceTier::high,
+                     Color{183, 83, 72, 255});
+
+        const int price = selling_price(product, tier);
+        text(font, std::to_string(price) + " 金钱", 396, y, 14, ink);
+    }
+
+    text(font, "点击低/标准/高为每种商品定价", 24, 268, 13, Color{78, 78, 72, 255});
+
+    const Rectangle back_button{16, 322, 72, 28};
+    const Rectangle next_button{530, 322, 96, 28};
+    panel(back_button, hovered(back_button, mouse) ? paper : Color{211, 202, 174, 255});
+    centered_text(font, "返回", back_button, 14, ink);
+    panel(next_button, hovered(next_button, mouse) ? cream : green);
+    centered_text(font, "开始营业", next_button, 14, RAYWHITE);
+}
+
+void draw_store_settlement(const Font& font, const GameAppState& state, Vector2 mouse) {
+    draw_store_background();
+    draw_status(font, state.session, true, false);
+
+    panel(Rectangle{12, 62, 616, 260}, cream);
+    text(font, "便利店 - 营业总结", 24, 70, 20, red);
+
+    const auto& settlement = state.last_settlement;
+
+    text(font, "商品", 24, 96, 12, Color{78, 78, 72, 255});
+    text(font, "已售", 90, 96, 12, Color{78, 78, 72, 255});
+    text(font, "营收", 140, 96, 12, Color{78, 78, 72, 255});
+    text(font, "剩余", 200, 96, 12, Color{78, 78, 72, 255});
+
+    for (std::size_t i = 0; i < store_products.size(); ++i) {
+        const float y = 112.0F + static_cast<float>(i) * 22.0F;
+        const auto& result = settlement.product_results[i];
+        text(font, store_products[i].display_name, 24, y, 13, ink);
+        text(font, std::to_string(result.quantity_sold), 92, y, 13, ink);
+        text(font, std::to_string(result.revenue), 138, y, 13, ink);
+        text(font, std::to_string(result.remaining), 200, y, 13, Color{78, 78, 72, 255});
+    }
+
+    const float info_y = 246.0F;
+    text(font, "总营收", 24, info_y, 14, ink);
+    text(font, std::to_string(settlement.total_revenue), 80, info_y, 14, ink);
+    text(font, "  成本", 120, info_y, 14, ink);
+    text(font, std::to_string(settlement.total_cost), 170, info_y, 14, ink);
+    const bool is_profit = settlement.profit >= 0;
+    text(font, is_profit ? "盈利" : "亏损", 24, info_y + 18, 14,
+         is_profit ? Color{35, 83, 51, 255} : red);
+    text(font, std::to_string(settlement.profit), 70, info_y + 18, 14,
+         is_profit ? Color{35, 83, 51, 255} : red);
+
+    const Rectangle finish_button{530, 322, 96, 28};
+    panel(finish_button, hovered(finish_button, mouse) ? cream : green);
+    centered_text(font, "返回地图", finish_button, 14, RAYWHITE);
+}
+
+void draw_convenience_store(const Font& font, const GameAppState& state, Vector2 mouse) {
+    switch (state.store_ui_phase) {
+        case StoreUIPhase::prepare:
+            draw_store_prepare(font, state, mouse);
+            break;
+        case StoreUIPhase::purchase:
+            draw_store_purchase(font, state, mouse);
+            break;
+        case StoreUIPhase::price:
+            draw_store_price(font, state, mouse);
+            break;
+        case StoreUIPhase::settlement:
+            draw_store_settlement(font, state, mouse);
+            break;
+        default:
+            draw_store_prepare(font, state, mouse);
+            break;
+    }
+}
+
+void update_convenience_store(GameAppState& state, Vector2 logical_mouse) {
+    if (state.store_ui_phase == StoreUIPhase::none) {
+        state.store_ui_phase = StoreUIPhase::prepare;
+        state.store_decision = default_store_decision();
+        return;
+    }
+
+    if (state.store_ui_phase == StoreUIPhase::prepare) {
+        const Rectangle back_button{16, 322, 96, 28};
+        const Rectangle next_button{530, 322, 96, 28};
+        if (activated(back_button, logical_mouse, KEY_ESCAPE)) {
+            if (!state.session.location_started()) {
+                if (state.session.return_to_map()) {
+                    state.store_ui_phase = StoreUIPhase::none;
+                    state.notice = "已返回地图：阶段未消耗。";
+                }
+            }
+            return;
+        }
+        if (clicked(next_button, logical_mouse)) {
+            state.store_ui_phase = StoreUIPhase::purchase;
+            return;
+        }
+        return;
+    }
+
+    if (state.store_ui_phase == StoreUIPhase::purchase) {
+        const Rectangle back_button{16, 322, 72, 28};
+        const Rectangle next_button{530, 322, 96, 28};
+        if (activated(back_button, logical_mouse, KEY_ESCAPE)) {
+            state.store_ui_phase = StoreUIPhase::prepare;
+            return;
+        }
+
+        for (std::size_t i = 0; i < store_products.size(); ++i) {
+            const float y = 112.0F + static_cast<float>(i) * 24.0F;
+            const Rectangle minus_btn{150, y - 2, 24, 20};
+            const Rectangle plus_btn{216, y - 2, 24, 20};
+            if (clicked(minus_btn, logical_mouse)) {
+                if (state.store_decision.products[i].purchase_quantity > 0) {
+                    --state.store_decision.products[i].purchase_quantity;
+                }
+                return;
+            }
+            if (clicked(plus_btn, logical_mouse)) {
+                const int max_add = max_stock_per_product -
+                                    state.session.store_inventory().stocks[i].quantity;
+                if (state.store_decision.products[i].purchase_quantity < max_add) {
+                    ++state.store_decision.products[i].purchase_quantity;
+                }
+                return;
+            }
+        }
+
+        if (clicked(next_button, logical_mouse)) {
+            const int cost = total_purchase_cost(state.store_decision);
+            if (state.session.player().money >= cost) {
+                state.store_ui_phase = StoreUIPhase::price;
+            }
+            return;
+        }
+        return;
+    }
+
+    if (state.store_ui_phase == StoreUIPhase::price) {
+        const Rectangle back_button{16, 322, 72, 28};
+        const Rectangle next_button{530, 322, 96, 28};
+        if (activated(back_button, logical_mouse, KEY_ESCAPE)) {
+            state.store_ui_phase = StoreUIPhase::purchase;
+            return;
+        }
+
+        for (std::size_t i = 0; i < store_products.size(); ++i) {
+            const float y = 112.0F + static_cast<float>(i) * 24.0F;
+            const Rectangle low_btn{160, y - 2, 36, 20};
+            const Rectangle std_btn{200, y - 2, 48, 20};
+            const Rectangle high_btn{252, y - 2, 36, 20};
+            if (clicked(low_btn, logical_mouse)) {
+                state.store_decision.products[i].tier = PriceTier::low;
+                return;
+            }
+            if (clicked(std_btn, logical_mouse)) {
+                state.store_decision.products[i].tier = PriceTier::standard;
+                return;
+            }
+            if (clicked(high_btn, logical_mouse)) {
+                state.store_decision.products[i].tier = PriceTier::high;
+                return;
+            }
+        }
+
+        if (clicked(next_button, logical_mouse)) {
+            if (!state.session.location_started()) {
+                (void)state.session.start_location();
+            }
+            state.session.set_store_decision(state.store_decision);
+            state.cached_store_action_result = state.session.simulated_success_result();
+            state.last_settlement = state.session.last_store_settlement();
+            state.store_ui_phase = StoreUIPhase::settlement;
+            return;
+        }
+        return;
+    }
+
+    if (state.store_ui_phase == StoreUIPhase::settlement) {
+        const Rectangle finish_button{530, 322, 96, 28};
+        if (activated(finish_button, logical_mouse, KEY_ENTER)) {
+            const auto applied =
+                state.session.apply_action_result(state.cached_store_action_result);
+            state.store_ui_phase = StoreUIPhase::none;
+            state.notice = applied.message;
+            return;
+        }
+        return;
+    }
+}
+
 void draw_pause_overlay(const Font& font, bool audio_enabled) {
     DrawRectangle(0, 0, 960, 540, Color{20, 24, 28, 150});
     panel(Rectangle{194, 110, 252, 126}, Color{250, 238, 203, 245});
@@ -489,7 +877,10 @@ const char* game_flow_glyphs() {
             "知识行动完成回家休息恢复体力并结束今天主动放弃阶段已消耗本次无收益确认后进入下一游戏日"
             "占位主结局最终状态成长路线摘要均衡体验小镇生活十日经营计划已经结束不能继续选择地点"
             "点击地点查看原因成长路线均衡体验已暂停按P继续按M切换静音恢复声音"
-            "演示参数错误预设加载失败已加载正式存档不会被读取或覆盖";
+            "演示参数错误预设加载失败已加载正式存档不会被读取或覆盖"
+            "营业准备进货定价总结冷饮热饮便当雨具杂志今日天气当前库存余额进货成本"
+            "低价标准价高价已售营收剩余利润盈利亏损开始下一步商品数量售价体力声望心情"
+            "每件成本合计总计元件天加减号调整选择档位营业结束状态变化金钱点击低标准高为每种商品定价";
         return result;
     }();
     return glyphs.c_str();
@@ -548,6 +939,11 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
 
     if (state.session.phase() == GamePhase::day_location ||
         state.session.phase() == GamePhase::night_location) {
+        if (state.session.pending_location() == Location::convenience_store) {
+            update_convenience_store(state, logical_mouse);
+            return;
+        }
+
         const Rectangle back_button{126, 228, 112, 34};
         const Rectangle start_button_location{264, 228, 112, 34};
         const Rectangle abandon_button{402, 228, 112, 34};
@@ -613,7 +1009,11 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
                  logical_mouse);
     } else if (state.session.phase() == GamePhase::day_location ||
                state.session.phase() == GamePhase::night_location) {
-        draw_location(font, state, logical_mouse);
+        if (state.session.pending_location() == Location::convenience_store) {
+            draw_convenience_store(font, state, logical_mouse);
+        } else {
+            draw_location(font, state, logical_mouse);
+        }
     } else if (state.session.phase() == GamePhase::day_summary) {
         draw_summary(font, state, logical_mouse);
     } else {
