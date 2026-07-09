@@ -288,26 +288,26 @@ bool LibraryRuleEngine::has_pending_plot_event() const {
 }
 
 LibraryConfig default_library_config() {
-    return LibraryConfig{
-        .questions_per_session = 5,
-        .correct_knowledge_reward = 10,
-        .correct_reputation_reward = 3,
-        .wrong_knowledge_penalty = 0,
-        .wrong_reputation_penalty = 0,
-        .stamina_cost = 15,
-        .base_mood_change = 5,
-        .correct_mood_bonus = 5,
-        .wrong_mood_penalty = -3,
-        .combo_reputation_bonus = 2,
-        .money_per_correct = 5,
-        .money_bonus_for_combo = 3,
-        .knowledge_threshold_for_map = 30,
-        .visits_threshold_for_map = 2,
-        .knowledge_threshold_for_borrow_card = 50,
-        .visits_threshold_for_borrow_card = 5,
-        .knowledge_threshold_for_close_friend = 80,
-        .visits_threshold_for_close_friend = 8,
-    };
+    LibraryConfig config;
+    config.questions_per_session = 5;
+    config.correct_knowledge_reward = 10;
+    config.correct_reputation_reward = 3;
+    config.wrong_knowledge_penalty = 0;
+    config.wrong_reputation_penalty = 0;
+    config.stamina_cost = 15;
+    config.base_mood_change = 5;
+    config.correct_mood_bonus = 5;
+    config.wrong_mood_penalty = -3;
+    config.combo_reputation_bonus = 2;
+    config.money_per_correct = 5;
+    config.money_bonus_for_combo = 3;
+    config.knowledge_threshold_for_map = 30;
+    config.visits_threshold_for_map = 2;
+    config.knowledge_threshold_for_borrow_card = 50;
+    config.visits_threshold_for_borrow_card = 5;
+    config.knowledge_threshold_for_close_friend = 80;
+    config.visits_threshold_for_close_friend = 8;
+    return config;
 }
 
 }  // namespace pixel_town::library
