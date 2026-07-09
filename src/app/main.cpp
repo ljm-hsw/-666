@@ -170,7 +170,8 @@ void setup_restaurant_diagnostic(pixel_town::GameAppState& state, bool started) 
 }
 
 void setup_library_diagnostic(pixel_town::GameAppState& state,
-                              pixel_town::library::ui::LibrarySceneState scene_state) {
+                              pixel_town::library::ui::LibrarySceneState scene_state,
+                              bool show_hint = false) {
     state = pixel_town::GameAppState{};
     state.has_session = true;
     state.session = pixel_town::GameSession::new_game();
@@ -193,6 +194,7 @@ void setup_library_diagnostic(pixel_town::GameAppState& state,
     state.locations.library_engine->update_npc_relationship(state.session.player().knowledge, 1);
     state.locations.library_ui_state = pixel_town::library::ui::LibraryUIState{};
     state.locations.library_ui_state.scene_state = scene_state;
+    state.locations.library_ui_state.show_hint = show_hint;
     state.locations.in_library = true;
     state.notice = "诊断：图书馆页面。";
 }
@@ -208,8 +210,15 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
         case 2:
             setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::intro);
             break;
-        default:
+        case 3:
             setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::npc_talk);
+            break;
+        case 4:
+            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::answering);
+            break;
+        default:
+            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::answering,
+                                     true);
             break;
     }
 }
@@ -474,11 +483,13 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 4> ui_diagnostic_capture_paths{
+    const std::array<const char*, 6> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/library-intro.png",
         "ui-diagnostics-captures/library-dialog.png",
+        "ui-diagnostics-captures/library-answering.png",
+        "ui-diagnostics-captures/library-answering-hint.png",
     };
     auto unload_resources = [&]() {
         if (town_marker.id != 0) {

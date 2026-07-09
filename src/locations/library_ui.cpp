@@ -540,10 +540,10 @@ void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState
         text(font, "提示：" + question.hint, 70, 184, 14, faded_ink);
     }
 
-    const int btn_y = 180;
     const int btn_w = 100;
-    const int btn_h = 30;
-    const int btn_x = config.logical_width / 2 - btn_w / 2;
+    const int btn_h = ui_state.show_hint ? 28 : 30;
+    const int btn_x = ui_state.show_hint ? 470 : config.logical_width / 2 - btn_w / 2;
+    const int btn_y = ui_state.show_hint ? 178 : 180;
 
     bool hint_hovered = CheckCollisionPointRec(logical_mouse,
                                                Rectangle{static_cast<float>(btn_x),
@@ -555,14 +555,14 @@ void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState
     panel(Rectangle{static_cast<float>(btn_x), static_cast<float>(btn_y), static_cast<float>(btn_w), static_cast<float>(btn_h)}, hint_fill, ink);
     centered_text(font, ui_state.show_hint ? "隐藏提示" : "查看提示", Rectangle{static_cast<float>(btn_x), static_cast<float>(btn_y), static_cast<float>(btn_w), static_cast<float>(btn_h)}, 14, ink);
 
-    panel(Rectangle{50, 218, 540, 100}, paper);
+    panel(Rectangle{50, 218, 540, 112}, paper);
     text(font, "选择书籍类别：", 70, 230, 18, ink);
 
     const std::vector<BookCategory>& categories = engine.get_categories();
     const int cols = 4;
     const int cat_btn_w = 120;
-    const int cat_btn_h = 36;
-    const int gap = 15;
+    const int cat_btn_h = 30;
+    const int gap = 10;
     const int start_x = (config.logical_width - (cols * cat_btn_w + (cols - 1) * gap)) / 2;
     const int start_y = 252;
 
@@ -842,10 +842,10 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
             return false;
         }
 
-        const int hint_btn_y = 185;
         const int hint_btn_w = 100;
-        const int hint_btn_h = 30;
-        const int hint_btn_x = 640 / 2 - hint_btn_w / 2;
+        const int hint_btn_h = ui_state.show_hint ? 28 : 30;
+        const int hint_btn_x = ui_state.show_hint ? 470 : 640 / 2 - hint_btn_w / 2;
+        const int hint_btn_y = ui_state.show_hint ? 178 : 180;
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             if (CheckCollisionPointRec(
@@ -859,11 +859,11 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
             const std::vector<BookCategory>& categories = engine.get_categories();
             const int cols = 4;
             const int btn_w = 120;
-            const int btn_h = 36;
-            const int gap = 15;
+            const int btn_h = 30;
+            const int gap = 10;
             const int start_x =
                 (640 - (cols * btn_w + (cols - 1) * gap)) / 2;
-            const int start_y = 250;
+            const int start_y = 252;
 
             for (size_t i = 0; i < categories.size(); ++i) {
                 const int row = static_cast<int>(i / cols);
