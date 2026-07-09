@@ -22,6 +22,10 @@ Rectangle location_abandon_button(bool is_tavern) {
     return Rectangle{402, is_tavern ? 252.0F : 228.0F, 112, 34};
 }
 
+Rectangle restaurant_dish_button(int dish_index) {
+    return Rectangle{58.0F + static_cast<float>(dish_index) * 116.0F, 274.0F, 102.0F, 50.0F};
+}
+
 void prepare_restaurant_runtime(LocationRuntimeState& runtime, unsigned int seed) {
     runtime.restaurant = std::make_unique<RestaurantSession>(seed);
     runtime.restaurant_timer = 0.0F;
@@ -133,7 +137,7 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
         }
 
         if (restaurant.phase() == RestaurantPhase::showing_instructions) {
-            const Rectangle start_button{232, 200, 176, 30};
+            const Rectangle start_button{232, 300, 176, 30};
             if (activated(start_button, logical_mouse, KEY_SPACE)) {
                 (void)restaurant.skip_instructions();
             }
@@ -142,7 +146,8 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
 
         if (restaurant.phase() == RestaurantPhase::waiting_for_order) {
             for (int i = 0; i < dish_count(); ++i) {
-                if (IsKeyPressed(static_cast<KeyboardKey>(KEY_ONE + i))) {
+                if (IsKeyPressed(static_cast<KeyboardKey>(KEY_ONE + i)) ||
+                    clicked(restaurant_dish_button(i), logical_mouse)) {
                     (void)restaurant.serve_dish(static_cast<Dish>(i));
                     break;
                 }

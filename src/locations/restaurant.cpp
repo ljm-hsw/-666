@@ -107,10 +107,12 @@ bool RestaurantSession::serve_dish(Dish dish) {
         // Correct!
         ++stats_.correct;
         last_serve_correct_ = true;
+        last_feedback_ = RestaurantFeedback::correct;
     } else {
         // Wrong dish - counts as an error, time penalty
         ++stats_.wrong;
         last_serve_correct_ = false;
+        last_feedback_ = RestaurantFeedback::wrong;
     }
 
     phase_ = RestaurantPhase::order_feedback;
@@ -131,7 +133,8 @@ bool RestaurantSession::advance_time() {
             // Customer timed out
             ++stats_.timeout;
             last_serve_correct_ = false;
-            advance_to_next_order_or_finish();
+            last_feedback_ = RestaurantFeedback::timeout;
+            phase_ = RestaurantPhase::order_feedback;
         }
         return true;
     }
@@ -156,6 +159,7 @@ void RestaurantSession::advance_to_next_order_or_finish() {
         phase_ = RestaurantPhase::finished;
     } else {
         time_remaining_ = orders_[static_cast<std::size_t>(current_order_index_)].wait_turns;
+        last_feedback_ = RestaurantFeedback::none;
         phase_ = RestaurantPhase::waiting_for_order;
     }
 }

@@ -61,6 +61,13 @@ enum class RestaurantPhase {
     finished,
 };
 
+enum class RestaurantFeedback {
+    none,
+    correct,
+    wrong,
+    timeout,
+};
+
 class RestaurantSession {
 public:
     explicit RestaurantSession(unsigned int seed,
@@ -74,6 +81,7 @@ public:
     [[nodiscard]] int orders_remaining() const noexcept;
     [[nodiscard]] int time_remaining() const noexcept { return time_remaining_; }
     [[nodiscard]] bool last_serve_correct() const noexcept { return last_serve_correct_; }
+    [[nodiscard]] RestaurantFeedback last_feedback() const noexcept { return last_feedback_; }
     [[nodiscard]] unsigned int seed() const noexcept { return seed_; }
 
     // Actions (all return false if invalid in current phase)
@@ -95,6 +103,7 @@ private:
     int time_remaining_{0};
     ServiceStats stats_;
     bool last_serve_correct_{false};
+    RestaurantFeedback last_feedback_{RestaurantFeedback::none};
 
     void generate_orders();
     void advance_to_next_order_or_finish();

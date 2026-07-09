@@ -46,6 +46,7 @@ target_link_libraries(pixel_town_location_scene PUBLIC pixel_town_locations rayl
 add_library(pixel_town_app_logic
   src/app/location_result_adapter.cpp
   src/app/location_runtime.cpp
+  src/app/restaurant_ui_model.cpp
   src/app/ui_primitives.cpp
 )
 target_include_directories(pixel_town_app_logic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -69,6 +70,7 @@ add_executable(pixel_town_tests
   tests/game_session_test.cpp
   tests/interaction_runtime_test.cpp
   tests/location_result_adapter_test.cpp
+  tests/restaurant_ui_model_test.cpp
   tests/app_settings_test.cpp
   tests/resource_diagnostics_test.cpp
   tests/save_game_test.cpp

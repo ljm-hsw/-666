@@ -68,7 +68,7 @@ P2/P3 的地点 issue 不以最终 imagegen 素材为完成前提。地点负责
 - 说明：首次进入说明卡要解释目标、快捷键、鼠标点击、错单、超时、放弃和结算。
 - 反馈：正确、错单、超时和完成结算需要独立视觉状态，便于截图验收和课堂演示。
 
-餐馆视觉资源的规划 issue 为 `.scratch/pixel-town-ten-day-plan/issues/21-p2-restaurant-visual-assets-and-layout.md`；实际 UI 反馈收口 issue 为 `.scratch/pixel-town-ten-day-plan/issues/20-p2-restaurant-ui-feedback.md`。
+餐馆视觉资源的规划 issue 为 `.scratch/pixel-town-ten-day-plan/issues/21-p2-restaurant-visual-assets-and-layout.md`；实际 UI 反馈收口 issue 为 `.scratch/pixel-town-ten-day-plan/issues/20-p2-restaurant-ui-feedback.md`。详细坐标、槽位、fallback 和资产记录要求见 [`RESTAURANT_VISUAL_SPEC.md`](RESTAURANT_VISUAL_SPEC.md)。
 
 ## Prompt 模板
 
@@ -83,6 +83,31 @@ Composition: 16:9, 960x540, leave clear empty UI-safe areas for program-rendered
 Text policy: no text, no labels, no watermark, no signs with readable letters.
 Kenney compatibility: compatible with simple 16x16 tile accents, but original imagegen background is the main style.
 Avoid: soft shadows, gradients that look non-pixel, tiny unreadable details, realistic perspective.
+```
+
+### 餐馆室内背景
+
+```text
+Use case: stylized-concept
+Asset type: 960x540 pixel-art restaurant interior background for a desktop game page
+Primary request: Generate a warm cozy pixel-art small-town restaurant interior for Pixel Town: Ten-Day Plan.
+Scene content: wooden counter, serving window, simple dining tables, kitchen hints, warm wall decor, readable silhouettes.
+Composition: 16:9, 960x540, leave the top 84px clear for program UI, leave a left-center safe area for an order panel.
+Text policy: no text, no menu labels, no signs with readable letters, no watermark.
+Style: crisp 2D pixel art, limited warm palette, hard pixel edges, no photorealism, no painterly blur.
+Avoid: realistic perspective, high-frequency clutter behind UI panels, baked-in buttons, baked-in Chinese text.
+```
+
+### 餐馆食物图标
+
+```text
+Use case: stylized-concept
+Asset type: transparent pixel-art food icon sprite sheet for game UI
+Primary request: Generate five readable food icons: fried rice, noodles, soup, dumplings, salad.
+Layout: one row, equal cells, 48x48 or 64x64 each, generous padding, transparent or chroma-key background.
+Style: chunky readable pixel art, strong outline, flat colors, clear silhouettes at small size.
+Text policy: no text, no numbers, no labels, no watermark.
+Runtime target: icons will be drawn inside restaurant dish buttons on a 960x540 logical canvas.
 ```
 
 ### 独立建筑 / UI sprite
