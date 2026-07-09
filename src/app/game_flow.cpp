@@ -75,6 +75,15 @@ constexpr std::array ui_texts{
     "高赌注",
     "挑战",
     "赌注",
+    "价格档",
+    "进货数量",
+    "低价",
+    "标准价",
+    "高价",
+    "今日提示",
+    "当前库存",
+    "每种商品",
+    "按1/2/3选择价格  按4/5调整进货",
     "金币",
     "选择挑战",
     "选择赌注",
@@ -88,6 +97,18 @@ constexpr std::array ui_texts{
     "风险：等待归零会超时，错单和超时会降低表现。",
     "结束：服务完全部顾客后点击结算；主动放弃会消耗白天且无收益。",
 };
+
+const char* store_price_tier_label(store::PriceTier tier) {
+    switch (tier) {
+        case store::PriceTier::low:
+            return "低价";
+        case store::PriceTier::standard:
+            return "标准价";
+        case store::PriceTier::high:
+            return "高价";
+    }
+    return "标准价";
+}
 
 std::array<Rectangle, 5> location_bounds() {
     return {Rectangle{70, 74, 160, 86}, Rectangle{388, 74, 160, 86},
@@ -561,6 +582,33 @@ void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
 
         text(font, "[1/2] 选择挑战    [3/4/5] 选择赌注    空格开始/完成    Esc返回",
              90, 220, 16, Color{78, 78, 72, 255});
+    } else if (location == Location::convenience_store) {
+        panel(Rectangle{96, 72, 448, 236}, cream);
+        text(font, location_label(location), 126, 96, 30, red);
+        const auto context = state.session.current_day_context();
+        text(font, std::string{"今日提示："} + context.weather + " / " + context.event,
+             126, 136, 16, ink);
+        text(font,
+             std::string{"价格档："} + store_price_tier_label(state.locations.store_price_tier) +
+                 "    每种商品进货：" +
+                 std::to_string(state.locations.store_purchase_units),
+             126, 162, 16, ink);
+
+        std::string inventory = "当前库存：";
+        if (state.session.store_inventory().empty()) {
+            inventory += "无";
+        } else {
+            for (const auto& item : state.session.store_inventory()) {
+                inventory += " " + item.item_id + ":" + std::to_string(item.quantity);
+            }
+        }
+        text(font, inventory, 126, 188, 15, Color{78, 78, 72, 255});
+        text(font, "按1/2/3选择价格  按4/5调整进货  空格开始/完成",
+             126, 216, 15, Color{78, 78, 72, 255});
+        text(font,
+             state.session.location_started() ? "地点已开始：再次按空格结算销售。"
+                                              : "尚未开始：会按当前决策进货并模拟销售。",
+             126, 242, 15, ink);
     } else {
         panel(Rectangle{96, 78, 448, 210}, cream);
         text(font, location_label(location), 126, 106, 30, red);
@@ -646,6 +694,8 @@ const char* game_flow_glyphs() {
             "阶段不能进入今晚的行动已经完成白天工作"
             "已经结束不能再进入该地点当前正在处理另一个阶段不能选择新地点餐馆模拟工作完成服务了"
             "午餐客流获得金钱与声望便利店模拟经营完成一次进货与销售结算图书馆帮助读者找书并提升"
+            "便利店经营完成进货成本销售收入利润雨伞汽水便当数量都记进了账本店主在账本边角画了个"
+            "小勾明天还能再调价格今日提示价格档低价标准价高价当前库存每种商品按选择调整无"
             "知识行动完成回家休息恢复体力并结束今天主动放弃阶段已消耗本次无收益确认后进入下一游戏日"
             "占位主结局最终状态成长路线摘要均衡体验小镇生活十日经营计划已经结束不能继续选择地点"
             "点击地点查看原因成长路线均衡体验已暂停按P继续按M切换静音恢复声音"
@@ -785,6 +835,10 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
 
         if (is_tavern && !state.session.location_started()) {
             update_tavern_selection(state.locations);
+        }
+        if (state.session.pending_location() == Location::convenience_store &&
+            !state.session.location_started()) {
+            update_store_selection(state.locations);
         }
 
         const Rectangle back_button = location_back_button(is_tavern);

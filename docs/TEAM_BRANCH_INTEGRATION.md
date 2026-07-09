@@ -50,13 +50,13 @@ The following baseline behavior is intentionally preserved:
 - `src/app/game_flow.cpp` still owns title, map, status, summary, ending, and high-level scene
   routing. The immediate location flow has been moved behind adapter/runtime seams; a later pass
   should split title/map/summary scenes only when new work makes that worthwhile.
-- Restaurant and library UI are usable integration shells, not final visual style. P4 should replace
-  or normalize final scene visuals.
-- Some warnings remain from teammate code:
-  - unused parameters/constants in library UI.
-- Restaurant, library, and tavern summaries still include module-local text. They should be routed
-  through `StoryText` or a location text adaptor before final content acceptance.
-- Convenience store is still not integrated; P2 is not complete until Issue 10 is merged and tested.
+- Restaurant, convenience store, and library UI are usable integration shells, not final visual
+  style. P4 should replace or normalize final scene visuals.
+- Restaurant and tavern summaries still include module-local text. They should be routed through
+  `StoryText` or a location text adaptor before final content acceptance.
+- Convenience store is integrated with P2 placeholder UI: rule tests, default app runtime decisions,
+  inventory updates, and save/load round-trip are covered. Product-specific controls and final
+  convenience-store visuals remain polish work.
 
 ## Architecture refactor on 2026-07-09
 

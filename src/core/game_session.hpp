@@ -55,6 +55,16 @@ struct StatDelta {
     int mood{0};
 };
 
+struct StoreInventoryItem {
+    std::string item_id;
+    int quantity{0};
+};
+
+[[nodiscard]] inline bool operator==(const StoreInventoryItem& left,
+                                     const StoreInventoryItem& right) {
+    return left.item_id == right.item_id && left.quantity == right.quantity;
+}
+
 struct ActionResult {
     int result_id{0};
     ActionSlot slot{ActionSlot::day};
@@ -64,6 +74,8 @@ struct ActionResult {
     int tavern_win_delta{0};
     int tavern_loss_delta{0};
     std::string summary;
+    bool has_store_inventory_update{false};
+    std::vector<StoreInventoryItem> store_inventory_after;
 };
 
 struct ActionPermission {
@@ -92,6 +104,7 @@ struct GameSessionSnapshot {
     std::string main_ending;
     std::string final_summary;
     std::vector<int> applied_result_ids;
+    std::vector<StoreInventoryItem> store_inventory;
     int tavern_wins{0};
     int tavern_losses{0};
 };
@@ -117,6 +130,9 @@ public:
     [[nodiscard]] int active_result_id() const noexcept { return active_result_id_; }
     [[nodiscard]] int tavern_wins() const noexcept { return tavern_wins_; }
     [[nodiscard]] int tavern_losses() const noexcept { return tavern_losses_; }
+    [[nodiscard]] const std::vector<StoreInventoryItem>& store_inventory() const noexcept {
+        return store_inventory_;
+    }
 
     [[nodiscard]] ActionPermission can_enter(Location location) const;
     [[nodiscard]] bool enter_location(Location location);
@@ -147,6 +163,7 @@ private:
     std::string main_ending_;
     std::string final_summary_;
     std::vector<int> applied_result_ids_;
+    std::vector<StoreInventoryItem> store_inventory_;
     int tavern_wins_{0};
     int tavern_losses_{0};
 

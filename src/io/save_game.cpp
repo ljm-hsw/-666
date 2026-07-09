@@ -148,6 +148,22 @@ std::string join_ints(const std::vector<int>& values) {
     return joined;
 }
 
+std::string serialize_store_inventory(const std::vector<StoreInventoryItem>& inventory) {
+    if (inventory.empty()) {
+        return "none";
+    }
+    std::string serialized;
+    for (std::size_t index = 0; index < inventory.size(); ++index) {
+        if (index != 0) {
+            serialized += ",";
+        }
+        serialized += inventory[index].item_id;
+        serialized += ":";
+        serialized += std::to_string(inventory[index].quantity);
+    }
+    return serialized;
+}
+
 bool parse_int(const std::unordered_map<std::string, std::string>& values, const char* key,
                int& parsed) {
     const auto found = values.find(key);
@@ -214,6 +230,35 @@ bool parse_applied_results(const std::string& raw, std::vector<int>& result_ids)
     return true;
 }
 
+bool parse_store_inventory(const std::string& raw, std::vector<StoreInventoryItem>& inventory) {
+    inventory.clear();
+    if (raw == "none" || raw.empty()) {
+        return true;
+    }
+    std::stringstream stream(raw);
+    std::string token;
+    while (std::getline(stream, token, ',')) {
+        const std::size_t separator = token.find(':');
+        if (separator == std::string::npos || separator == 0 ||
+            separator + 1 >= token.size()) {
+            return false;
+        }
+        StoreInventoryItem item;
+        item.item_id = token.substr(0, separator);
+        try {
+            std::size_t consumed = 0;
+            item.quantity = std::stoi(token.substr(separator + 1), &consumed);
+            if (consumed != token.size() - separator - 1 || item.quantity < 0) {
+                return false;
+            }
+        } catch (...) {
+            return false;
+        }
+        inventory.push_back(item);
+    }
+    return true;
+}
+
 std::string serialize_session(const GameSession& session) {
     const GameSessionSnapshot snapshot = session.snapshot();
     std::ostringstream output;
@@ -237,7 +282,7 @@ std::string serialize_session(const GameSession& session) {
     output << "main_ending=" << escape_value(snapshot.main_ending) << "\n";
     output << "final_summary=" << escape_value(snapshot.final_summary) << "\n";
     output << "applied_result_ids=" << join_ints(snapshot.applied_result_ids) << "\n";
-    output << "store_inventory=none\n";
+    output << "store_inventory=" << serialize_store_inventory(snapshot.store_inventory) << "\n";
     output << "tavern_wins=" << snapshot.tavern_wins << "\n";
     output << "tavern_losses=" << snapshot.tavern_losses << "\n";
     return output.str();
@@ -424,9 +469,11 @@ LoadGameResult load_session(const std::filesystem::path& path) {
         !parse_int(values, "tavern_losses", snapshot.tavern_losses)) {
         return {SaveStatus::corrupt, GameSession::new_game(), "save file has invalid values"};
     }
+    const auto store_inventory = values.find("store_inventory");
     if (!parse_phase(phase->second, snapshot.phase) ||
         !parse_location(pending_location->second, snapshot.pending_location) ||
-        !parse_applied_results(applied_result_ids->second, snapshot.applied_result_ids)) {
+        !parse_applied_results(applied_result_ids->second, snapshot.applied_result_ids) ||
+        !parse_store_inventory(store_inventory->second, snapshot.store_inventory)) {
         return {SaveStatus::corrupt, GameSession::new_game(), "save file has invalid values"};
     }
     if (snapshot.day < 1 || snapshot.day > 10 || snapshot.next_result_id < 1 ||

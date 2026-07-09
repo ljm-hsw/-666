@@ -8,6 +8,7 @@
 
 #include "core/game_session.hpp"
 #include "io/save_game.hpp"
+#include "locations/convenience_store.hpp"
 
 namespace {
 
@@ -130,6 +131,42 @@ TEST_CASE("legacy v1 saves without tavern record default to zero") {
     REQUIRE(loaded.status == pixel_town::SaveStatus::ok);
     CHECK(loaded.session.tavern_wins() == 0);
     CHECK(loaded.session.tavern_losses() == 0);
+}
+
+TEST_CASE("store inventory round trips through save file") {
+    TempSaveDir temp;
+    const auto save_path = temp.path() / "slot1.sav";
+    auto session = pixel_town::GameSession::new_game(42);
+    REQUIRE(session.enter_location(pixel_town::Location::convenience_store));
+    const int result_id = session.start_location();
+    REQUIRE(result_id != 0);
+
+    const auto config = pixel_town::store::default_store_config();
+    pixel_town::store::StoreInventory inventory = {{"umbrella", 1}};
+    pixel_town::store::PurchasePlan purchase;
+    purchase.quantities = {{"umbrella", 2}, {"soda", 3}};
+    const auto prices = pixel_town::store::default_price_plan(config);
+    pixel_town::store::DailyStoreContext context;
+    context.seed = 42;
+    context.weather = "小雨";
+    context.event = "便利店零食更受欢迎";
+
+    const auto settlement =
+        pixel_town::store::simulate_sales(config, inventory, purchase, prices, context, 50);
+    REQUIRE(settlement.accepted);
+    REQUIRE(session.apply_action_result(
+                pixel_town::store::build_store_action_result(settlement, result_id))
+                .accepted);
+
+    REQUIRE(pixel_town::save_session_atomic(save_path, session).status ==
+            pixel_town::SaveStatus::ok);
+    const std::string text = read_text(save_path);
+    CHECK(text.find("store_inventory=none\n") == std::string::npos);
+    CHECK(text.find("umbrella:") != std::string::npos);
+
+    const auto loaded = pixel_town::load_session(save_path);
+    REQUIRE(loaded.status == pixel_town::SaveStatus::ok);
+    CHECK(loaded.session.store_inventory() == session.store_inventory());
 }
 
 TEST_CASE("saving without overwrite confirmation preserves an existing save") {

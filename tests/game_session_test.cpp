@@ -156,15 +156,13 @@ TEST_CASE("attribute floor does not end the schedule early") {
     const int result_id = session.start_location();
     REQUIRE(result_id != 0);
 
-    const pixel_town::ActionResult exhausting_result{
-        result_id,
-        pixel_town::ActionSlot::day,
-        pixel_town::Location::restaurant,
-        pixel_town::ActionOutcome::completed,
-        pixel_town::StatDelta{0, -999, 0, 0, -999},
-        0, 0,
-        "压力测试：属性触底但不提前结束。",
-    };
+    pixel_town::ActionResult exhausting_result;
+    exhausting_result.result_id = result_id;
+    exhausting_result.slot = pixel_town::ActionSlot::day;
+    exhausting_result.location = pixel_town::Location::restaurant;
+    exhausting_result.outcome = pixel_town::ActionOutcome::completed;
+    exhausting_result.delta = pixel_town::StatDelta{0, -999, 0, 0, -999};
+    exhausting_result.summary = "压力测试：属性触底但不提前结束。";
     REQUIRE(session.apply_action_result(exhausting_result).accepted);
 
     CHECK(session.player().stamina == 0);

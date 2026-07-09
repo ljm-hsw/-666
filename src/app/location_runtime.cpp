@@ -2,11 +2,52 @@
 
 #include "app/location_result_adapter.hpp"
 #include "app/ui_primitives.hpp"
+#include "locations/convenience_store.hpp"
 
 namespace pixel_town {
 namespace {
 
 constexpr const char* library_data_path = "assets/data/library_data.txt";
+
+store::StoreInventory to_store_inventory(const std::vector<StoreInventoryItem>& items) {
+    store::StoreInventory inventory;
+    for (const auto& item : items) {
+        inventory[item.item_id] = item.quantity;
+    }
+    return inventory;
+}
+
+store::PurchasePlan runtime_store_purchase_plan(const store::StoreConfig& config,
+                                                int available_money, int units_per_product) {
+    store::PurchasePlan plan;
+    int remaining_money = available_money;
+    for (const auto& product : config.products) {
+        int units = 0;
+        while (units < units_per_product && remaining_money >= product.unit_cost) {
+            ++units;
+            remaining_money -= product.unit_cost;
+        }
+        if (units > 0) {
+            plan.quantities[product.id] = units;
+        }
+    }
+    return plan;
+}
+
+store::PricePlan runtime_store_price_plan(const store::StoreConfig& config,
+                                          store::PriceTier tier) {
+    store::PricePlan plan;
+    for (const auto& product : config.products) {
+        plan.tiers[product.id] = tier;
+    }
+    return plan;
+}
+
+store::DailyStoreContext make_store_context(const GameSession& session) {
+    const auto day_context = session.current_day_context();
+    return store::DailyStoreContext{session.day(), day_context.seed, day_context.weather,
+                                    day_context.event};
+}
 
 }  // namespace
 
@@ -46,6 +87,24 @@ void update_tavern_selection(LocationRuntimeState& runtime) {
     }
     if (IsKeyPressed(KEY_FIVE)) {
         runtime.tavern_bet = BetTier::high;
+    }
+}
+
+void update_store_selection(LocationRuntimeState& runtime) {
+    if (IsKeyPressed(KEY_ONE)) {
+        runtime.store_price_tier = store::PriceTier::low;
+    }
+    if (IsKeyPressed(KEY_TWO)) {
+        runtime.store_price_tier = store::PriceTier::standard;
+    }
+    if (IsKeyPressed(KEY_THREE)) {
+        runtime.store_price_tier = store::PriceTier::high;
+    }
+    if (IsKeyPressed(KEY_FOUR) && runtime.store_purchase_units > 0) {
+        --runtime.store_purchase_units;
+    }
+    if (IsKeyPressed(KEY_FIVE) && runtime.store_purchase_units < 5) {
+        ++runtime.store_purchase_units;
     }
 }
 
@@ -193,6 +252,22 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
                 const auto applied = session.apply_action_result(result);
                 notice = applied.message;
             }
+        } else if (session.pending_location() == Location::convenience_store) {
+            const auto config = store::default_store_config();
+            const auto settlement = store::simulate_sales(
+                config, to_store_inventory(session.store_inventory()),
+                runtime_store_purchase_plan(config, session.player().money,
+                                            runtime.store_purchase_units),
+                runtime_store_price_plan(config, runtime.store_price_tier),
+                make_store_context(session),
+                session.player().money);
+            if (!settlement.accepted) {
+                notice = settlement.message;
+                return true;
+            }
+            const auto applied = session.apply_action_result(
+                store::build_store_action_result(settlement, session.active_result_id()));
+            notice = applied.accepted ? settlement.summary : applied.message;
         } else {
             const auto applied = session.apply_action_result(session.simulated_success_result());
             notice = applied.message;

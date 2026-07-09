@@ -60,14 +60,15 @@ ActionResult simulate_tavern_challenge(
     const int bet = bet_amount(config, bet_tier);
 
     if (bet > player.money) {
-        return {result_id,
-                ActionSlot::night,
-                Location::tavern,
-                ActionOutcome::abandoned,
-                {}, 0, 0,
-                std::string{"赌注不足，当前金钱"} + std::to_string(player.money) +
-                    "不足以支付" + bet_tier_label(bet_tier) + "赌注（" +
-                    std::to_string(bet) + "金币）。"};
+        ActionResult abandoned;
+        abandoned.result_id = result_id;
+        abandoned.slot = ActionSlot::night;
+        abandoned.location = Location::tavern;
+        abandoned.outcome = ActionOutcome::abandoned;
+        abandoned.summary = std::string{"赌注不足，当前金钱"} + std::to_string(player.money) +
+                            "不足以支付" + bet_tier_label(bet_tier) + "赌注（" +
+                            std::to_string(bet) + "金币）。";
+        return abandoned;
     }
 
     const char* type_str = challenge_type_label(challenge);

@@ -164,9 +164,14 @@ ActionResult GameSession::simulated_success_result() const {
     }
     const ActionSlot slot =
         phase_ == GamePhase::day_location ? ActionSlot::day : ActionSlot::night;
-    return ActionResult{active_result_id_, slot, pending_location_, ActionOutcome::completed,
-                        day_work_delta(pending_location_), 0, 0,
-                        completed_summary(pending_location_)};
+    ActionResult result;
+    result.result_id = active_result_id_;
+    result.slot = slot;
+    result.location = pending_location_;
+    result.outcome = ActionOutcome::completed;
+    result.delta = day_work_delta(pending_location_);
+    result.summary = completed_summary(pending_location_);
+    return result;
 }
 
 ActionResult GameSession::abandon_current_location() const {
@@ -175,9 +180,13 @@ ActionResult GameSession::abandon_current_location() const {
     }
     const ActionSlot slot =
         phase_ == GamePhase::day_location ? ActionSlot::day : ActionSlot::night;
-    return ActionResult{active_result_id_, slot, pending_location_, ActionOutcome::abandoned,
-                        {}, 0, 0,
-                        location_result_summary(pending_location_, ActionOutcome::abandoned)};
+    ActionResult result;
+    result.result_id = active_result_id_;
+    result.slot = slot;
+    result.location = pending_location_;
+    result.outcome = ActionOutcome::abandoned;
+    result.summary = location_result_summary(pending_location_, ActionOutcome::abandoned);
+    return result;
 }
 
 ActionResult GameSession::home_rest_result() {
@@ -188,9 +197,14 @@ ActionResult GameSession::home_rest_result() {
     location_started_ = true;
     active_result_id_ = next_result_id_++;
     phase_ = GamePhase::night_location;
-    return ActionResult{active_result_id_, ActionSlot::night, Location::home,
-                        ActionOutcome::completed, StatDelta{0, 15, 0, 0, 5}, 0, 0,
-                        completed_summary(Location::home)};
+    ActionResult result;
+    result.result_id = active_result_id_;
+    result.slot = ActionSlot::night;
+    result.location = Location::home;
+    result.outcome = ActionOutcome::completed;
+    result.delta = StatDelta{0, 15, 0, 0, 5};
+    result.summary = completed_summary(Location::home);
+    return result;
 }
 
 ApplyResult GameSession::apply_action_result(const ActionResult& result) {
@@ -212,6 +226,9 @@ ApplyResult GameSession::apply_action_result(const ActionResult& result) {
             return {false, "当前不能应用白天行动结果。"};
         }
         apply_delta(result.delta);
+        if (result.has_store_inventory_update) {
+            store_inventory_ = result.store_inventory_after;
+        }
         day_action_done_ = true;
         applied_result_ids_.push_back(result.result_id);
         last_summary_ = result.summary;
@@ -276,6 +293,7 @@ GameSessionSnapshot GameSession::snapshot() const {
                                main_ending_,
                                final_summary_,
                                applied_result_ids_,
+                               store_inventory_,
                                tavern_wins_,
                                tavern_losses_};
 }
@@ -297,6 +315,7 @@ GameSession GameSession::from_snapshot(const GameSessionSnapshot& snapshot) {
     session.main_ending_ = snapshot.main_ending;
     session.final_summary_ = snapshot.final_summary;
     session.applied_result_ids_ = snapshot.applied_result_ids;
+    session.store_inventory_ = snapshot.store_inventory;
     session.tavern_wins_ = snapshot.tavern_wins;
     session.tavern_losses_ = snapshot.tavern_losses;
     return session;

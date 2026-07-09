@@ -30,6 +30,7 @@ add_subdirectory(third_party/raylib EXCLUDE_FROM_ALL)
 
 add_library(pixel_town_locations
   src/locations/restaurant.cpp
+  src/locations/convenience_store.cpp
   src/locations/library_data.cpp
   src/locations/library_rules.cpp
 )
@@ -72,6 +73,7 @@ add_executable(pixel_town_tests
   tests/location_result_adapter_test.cpp
   tests/restaurant_ui_model_test.cpp
   tests/app_settings_test.cpp
+  tests/convenience_store_test.cpp
   tests/resource_diagnostics_test.cpp
   tests/save_game_test.cpp
   tests/restaurant_test.cpp
