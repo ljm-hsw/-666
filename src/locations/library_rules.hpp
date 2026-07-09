@@ -140,6 +140,10 @@ public:
 
     [[nodiscard]] const LibraryData& get_data() const;
 
+    [[nodiscard]] const LibraryConfig& get_config() const;
+
+    [[nodiscard]] const DailyContext& get_current_context() const;
+
     void check_plot_events(int knowledge, int visits);
 
     void trigger_plot_event(const std::string& event_id);

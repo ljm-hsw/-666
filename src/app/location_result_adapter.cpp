@@ -33,6 +33,12 @@ ActionResult library_action_result(const library::ActionResult& result,
     game_result.delta.knowledge = result.knowledge_change;
     game_result.delta.mood = result.mood_change;
     game_result.summary = result.summary;
+    if (!result.narrative_echo.empty()) {
+        if (!game_result.summary.empty()) {
+            game_result.summary += "\n";
+        }
+        game_result.summary += result.narrative_echo;
+    }
     return game_result;
 }
 

@@ -256,6 +256,10 @@ const NpcDialogue& LibraryRuleEngine::get_dialogue() const { return data_.dialog
 
 const LibraryData& LibraryRuleEngine::get_data() const { return data_; }
 
+const LibraryConfig& LibraryRuleEngine::get_config() const { return config_; }
+
+const DailyContext& LibraryRuleEngine::get_current_context() const { return current_context_; }
+
 void LibraryRuleEngine::check_plot_events(int knowledge, int visits) {
     for (const auto& event : data_.plot_events) {
         bool already_triggered = false;

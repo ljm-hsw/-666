@@ -32,17 +32,11 @@ constexpr Color correct_color{34, 139, 34, 255};
 constexpr Color wrong_color{178, 34, 34, 255};
 constexpr Color faded_ink{100, 100, 100, 200};
 constexpr Color plot_highlight{180, 150, 80, 255};
-constexpr Color floor_color{221, 211, 174, 255};
 constexpr Color wall_color{240, 230, 210, 255};
 constexpr Color window_frame{139, 90, 43, 255};
 constexpr Color window_glass{173, 216, 230, 150};
 constexpr Color plant_green{34, 139, 34, 255};
-constexpr Color lamp_gold{255, 215, 0, 255};
-constexpr Color rug_color{139, 69, 19, 180};
 constexpr Color door_brown{139, 90, 43, 255};
-constexpr Color npc_skin{255, 220, 180, 255};
-constexpr Color npc_clothes{70, 130, 180, 255};
-constexpr Color npc_hair{139, 90, 43, 255};
 
 float scaled(float value) {
     return std::round(value * native_ui_scale);
@@ -341,7 +335,7 @@ void draw_npc_sprite(const NpcState& state, const NpcData& data, bool is_hovered
     DrawTextEx(font, hint_text.c_str(), Vector2{text_x, text_y}, scaled_font_size(12), 1.0F, Color{80, 60, 40, 255});
 }
 
-void draw_room_ui(const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
+void draw_room_ui(const LibraryRenderConfig& config, const Font& font) {
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
@@ -585,11 +579,13 @@ void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState
                              ui_state.selected_category_id == categories[i].id, font);
     }
 
-    text(font, "按 ESC 放弃工作", 50, config.logical_height - 25, 14, Color{128, 128, 128, 255});
+    text(font, "按 I 重看说明 / ESC 放弃工作", 50, config.logical_height - 25, 14,
+         Color{128, 128, 128, 255});
 }
 
-void draw_feedback_screen(const LibraryRuleEngine& engine, const LibraryUIState& ui_state,
+void draw_feedback_screen(const LibraryRuleEngine& /*engine*/, const LibraryUIState& ui_state,
                           const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
+    (void)logical_mouse;
     ClearBackground(Color{221, 211, 174, 255});
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
@@ -725,7 +721,7 @@ void draw_library_room_scene(const LibraryScene& scene, const LibraryUIState& ui
         draw_npc_sprite(state, *data, is_hovered, font);
     }
 
-    draw_room_ui(render_config, font, library_mouse);
+    draw_room_ui(render_config, font);
 
     if (ui_state.is_transitioning) {
         draw_transition_effect(ui_state.transition_progress, render_config);
@@ -823,14 +819,16 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
         return false;
     } else if (ui_state.scene_state == LibrarySceneState::intro) {
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            ui_state.scene_state = LibrarySceneState::npc_talk;
+            advance_from_intro(ui_state);
             return false;
         }
     } else if (ui_state.scene_state == LibrarySceneState::npc_talk) {
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             if (engine.has_pending_plot_event()) {
                 ui_state.scene_state = LibrarySceneState::plot_event;
-            } else if (engine.should_reveal_map(engine.get_data().questions.size(), engine.get_npc_interaction().relationship != NpcRelationship::stranger ? 2 : 0)) {
+            } else if (const auto& context = engine.get_current_context();
+                       engine.should_reveal_map(context.current_knowledge,
+                                                context.library_visits)) {
                 ui_state.scene_state = LibrarySceneState::map_reveal;
             } else {
                 ui_state.scene_state = LibrarySceneState::answering;
@@ -846,6 +844,11 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
         if (IsKeyPressed(KEY_ESCAPE)) {
             engine.give_up();
             return true;
+        }
+
+        if (IsKeyPressed(KEY_I)) {
+            request_instruction_review(ui_state);
+            return false;
         }
 
         const int hint_btn_y = 185;
@@ -894,7 +897,8 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
                     ui_state.feedback_data.feedback_correct = current_question.feedback_correct;
                     ui_state.feedback_data.feedback_wrong = current_question.feedback_wrong;
                     ui_state.feedback_data.correct_category_name = correct_name;
-                    ui_state.feedback_data.knowledge_reward = 10;
+                    ui_state.feedback_data.knowledge_reward =
+                        engine.get_config().correct_knowledge_reward;
                     
                     engine.select_category(categories[i].id);
                     ui_state.selected_category_id = categories[i].id;

@@ -1,7 +1,11 @@
 #include <doctest/doctest.h>
 
+#include <filesystem>
+#include <fstream>
+
 #include "locations/library_data.hpp"
 #include "locations/library_rules.hpp"
+#include "locations/library_ui.hpp"
 
 namespace {
 
@@ -64,6 +68,43 @@ TEST_CASE("Library data loading - valid format") {
     CHECK(data.plot_events[0].required_knowledge == 30);
     CHECK(data.welcome_message == "欢迎来到小镇图书馆");
     CHECK(data.work_intro == "读者会提出各种问题");
+}
+
+TEST_CASE("Library data loading rejects questions with unknown categories") {
+    const std::filesystem::path path =
+        std::filesystem::current_path() / ".tmp-library-invalid-data.txt";
+    {
+        std::ofstream file(path);
+        file << "CATEGORY history: 历史\n";
+        file << "QUESTION science: 光速大约是多少？\n";
+    }
+
+    const auto result = pixel_town::library::load_library_data(path.string());
+    std::filesystem::remove(path);
+
+    CHECK_FALSE(result.success);
+    CHECK(result.error_message.find("unknown category") != std::string::npos);
+}
+
+TEST_CASE("Library UI state starts from intro instructions") {
+    const pixel_town::library::ui::LibraryUIState ui_state;
+
+    CHECK(ui_state.scene_state == pixel_town::library::ui::LibrarySceneState::intro);
+}
+
+TEST_CASE("Library UI instructions can be reviewed from answering state") {
+    pixel_town::library::ui::LibraryUIState ui_state;
+    ui_state.scene_state = pixel_town::library::ui::LibrarySceneState::answering;
+
+    pixel_town::library::ui::request_instruction_review(ui_state);
+
+    CHECK(ui_state.scene_state == pixel_town::library::ui::LibrarySceneState::intro);
+    CHECK(ui_state.return_to_answering_after_intro);
+
+    pixel_town::library::ui::advance_from_intro(ui_state);
+
+    CHECK(ui_state.scene_state == pixel_town::library::ui::LibrarySceneState::answering);
+    CHECK_FALSE(ui_state.return_to_answering_after_intro);
 }
 
 TEST_CASE("Library rule engine - start session") {
@@ -276,4 +317,33 @@ TEST_CASE("Library rule engine - map reveal conditions") {
     engine.reveal_map();
     CHECK(engine.get_npc_interaction().map_revealed);
     CHECK(!engine.should_reveal_map(30, 2));
+}
+
+TEST_CASE("Library rule engine exposes session context and config for UI decisions") {
+    pixel_town::library::LibraryData data = create_test_data();
+    pixel_town::library::LibraryConfig config =
+        pixel_town::library::default_library_config();
+    config.correct_knowledge_reward = 12;
+    config.knowledge_threshold_for_map = 40;
+    config.visits_threshold_for_map = 3;
+    pixel_town::library::LibraryRuleEngine engine(data, config);
+
+    pixel_town::library::DailyContext context;
+    context.day = 4;
+    context.random_seed = 12345;
+    context.library_visits = 3;
+    context.current_knowledge = 39;
+    engine.start_session(context);
+
+    CHECK(engine.get_config().correct_knowledge_reward == 12);
+    CHECK(engine.get_current_context().day == 4);
+    CHECK(engine.get_current_context().library_visits == 3);
+    CHECK(engine.get_current_context().current_knowledge == 39);
+    CHECK_FALSE(engine.should_reveal_map(engine.get_current_context().current_knowledge,
+                                         engine.get_current_context().library_visits));
+
+    context.current_knowledge = 40;
+    engine.start_session(context);
+    CHECK(engine.should_reveal_map(engine.get_current_context().current_knowledge,
+                                   engine.get_current_context().library_visits));
 }

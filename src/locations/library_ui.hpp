@@ -31,8 +31,9 @@ struct FeedbackData {
 };
 
 struct LibraryUIState {
-    LibrarySceneState scene_state{LibrarySceneState::room_view};
+    LibrarySceneState scene_state{LibrarySceneState::intro};
     bool show_instructions{true};
+    bool return_to_answering_after_intro{false};
     std::string selected_category_id;
     bool last_answer_correct{false};
     int feedback_timer{0};
@@ -43,6 +44,20 @@ struct LibraryUIState {
     bool is_transitioning{false};
     std::string clicked_npc_id;
 };
+
+inline void request_instruction_review(LibraryUIState& ui_state) {
+    ui_state.return_to_answering_after_intro = true;
+    ui_state.scene_state = LibrarySceneState::intro;
+}
+
+inline void advance_from_intro(LibraryUIState& ui_state) {
+    if (ui_state.return_to_answering_after_intro) {
+        ui_state.return_to_answering_after_intro = false;
+        ui_state.scene_state = LibrarySceneState::answering;
+        return;
+    }
+    ui_state.scene_state = LibrarySceneState::npc_talk;
+}
 
 struct LibraryRenderConfig {
     int logical_width{640};

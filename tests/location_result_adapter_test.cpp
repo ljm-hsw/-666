@@ -40,6 +40,47 @@ TEST_CASE("library give up maps to abandoned core result") {
     CHECK(result.delta.money == 0);
 }
 
+TEST_CASE("library action result keeps narrative echo in core summary") {
+    pixel_town::library::ActionResult library_result;
+    library_result.completed = true;
+    library_result.summary = "图书馆工作完成";
+    library_result.narrative_echo = "借书卡又多盖了一个章。";
+
+    const auto result = pixel_town::library_action_result(
+        library_result, 8, pixel_town::ActionSlot::day);
+
+    CHECK(result.summary.find("图书馆工作完成") != std::string::npos);
+    CHECK(result.summary.find("借书卡又多盖了一个章。") != std::string::npos);
+}
+
+TEST_CASE("library day action enters from map and returns to night choice") {
+    auto session = pixel_town::GameSession::new_game();
+
+    CHECK(session.can_enter(pixel_town::Location::library).allowed);
+    REQUIRE(session.enter_location(pixel_town::Location::library));
+    const int result_id = session.start_location();
+    REQUIRE(result_id != 0);
+
+    pixel_town::library::ActionResult library_result;
+    library_result.completed = true;
+    library_result.knowledge_change = 6;
+    library_result.reputation_change = 4;
+    library_result.stamina_change = -8;
+    library_result.summary = "图书馆工作完成";
+    library_result.narrative_echo = "泛黄书页被重新夹回借书卡盒子。";
+
+    const auto applied = session.apply_action_result(
+        pixel_town::library_action_result(library_result, result_id, pixel_town::ActionSlot::day));
+
+    CHECK(applied.accepted);
+    CHECK(session.phase() == pixel_town::GamePhase::night_choice);
+    CHECK(session.player().knowledge == 6);
+    CHECK(session.player().reputation == 4);
+    CHECK(session.player().stamina == 72);
+    CHECK(session.last_summary().find("泛黄书页") != std::string::npos);
+    CHECK_FALSE(session.can_enter(pixel_town::Location::library).allowed);
+}
+
 TEST_CASE("library daily context is deterministic from session and visit count") {
     const auto session = pixel_town::GameSession::new_game(20260709);
 
