@@ -25,6 +25,7 @@
 - [`story/README.md`](story/README.md)：主线剧情、文案风格、MVP 文本草案、地点/NPC、结局回声和剧情接入规划。
 - [`VISUAL_PROTOTYPE.md`](VISUAL_PROTOTYPE.md)：P0 待审视觉方案、调色板、像素尺寸与资源命名候选。
 - [`IMAGEGEN_VISUAL_PLAN.md`](IMAGEGEN_VISUAL_PLAN.md)：960×540 画布迁移与 imagegen 页面背景/建筑资产规划。
+- [`TEAM_BRANCH_INTEGRATION.md`](TEAM_BRANCH_INTEGRATION.md)：同学分支聚合、冲突处理、保留基线和后续风险。
 - [`adr/0001-adopt-raylib-and-doctest.md`](adr/0001-adopt-raylib-and-doctest.md)：raylib、doctest 与离线依赖策略。
 - [`../CREDITS.md`](../CREDITS.md)：第三方字体、贴图和许可证来源登记。
 

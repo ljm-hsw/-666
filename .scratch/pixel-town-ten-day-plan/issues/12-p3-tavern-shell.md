@@ -27,3 +27,10 @@ User stories: 28, 29, 34, 36
 - [06 P1：实现阶段边界自动存档与恢复](06-p1-save-and-resume.md)
 - [07 P1：完成窗口、输入、暂停与静音外壳](07-p1-interaction-shell.md)
 - [19 P1：接入 MVP 主线剧情骨架](19-p1-mvp-story-shell.md)
+
+## Integration record
+
+- 2026-07-09：`origin/dev-ckz` 已合入 `codex/integrate-team-branches`，集成提交为 `80bd9d3`。
+- 已合入酒馆规则、赌注、夜晚入口、胜负统计、存档字段和 `tests/tavern_rules_test.cpp`，并通过本地构建与 CTest。
+- 合并时保留 v1 存档兼容：旧存档缺少酒馆战绩字段时默认 `0`。
+- 尚需收口：真实五子棋/骗子骰子玩法仍由 Issue 13/14 承接，酒馆摘要需要接入统一剧情文本入口。

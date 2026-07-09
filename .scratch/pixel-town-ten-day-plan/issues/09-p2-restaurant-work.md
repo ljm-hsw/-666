@@ -30,3 +30,10 @@ User stories: 11-15, 35, 54, 61, 62
 - [04 P1：跑通一个完整游戏日](04-p1-one-day-vertical-loop.md)
 - [07 P1：完成窗口、输入、暂停与静音外壳](07-p1-interaction-shell.md)
 - [19 P1：接入 MVP 主线剧情骨架](19-p1-mvp-story-shell.md)
+
+## Integration record
+
+- 2026-07-09：`origin/dev-yhr` 已合入 `codex/integrate-team-branches`，集成提交为 `2cd3da6`。
+- 已合入规则、基础 UI、CMake 接入和 `tests/restaurant_test.cpp`，并通过本地构建与 CTest。
+- 合并时改为显式构造 `ActionResult`，避免 tavern 字段加入后破坏餐馆结果。
+- 尚需收口：`[[nodiscard]]` 警告、最终视觉统一、暂停计时冻结复查、餐馆摘要接入统一剧情文本入口。

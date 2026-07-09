@@ -19,6 +19,7 @@
 - Issue 07 的窗口缩放、逻辑输入、暂停/失焦冻结和静音设置外壳已实现并通过自动化测试；最终视觉批准转入 Issue 03/17。
 - Issue 08 已实现显式演示预设加载，演示模式不读取也不覆盖正式自动存档。
 - Issue 19 已接入 P1 MVP 主线剧情骨架：标题开场、十天每日提示、占位地点摘要、第十天评议会和占位结局文案；P2/P3 地点逻辑由组员在占位 UI 下并行推进。
+- 聚合分支 `codex/integrate-team-branches` 已合入餐馆、图书馆和酒馆模块，保留标题页、960×540 画布、StoryText 和 v1 存档兼容基线。集成说明见 [`docs/TEAM_BRANCH_INTEGRATION.md`](docs/TEAM_BRANCH_INTEGRATION.md)。
 
 当前不应把文档中的临时数值视为最终平衡承诺。
 

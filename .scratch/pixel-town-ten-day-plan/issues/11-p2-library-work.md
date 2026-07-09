@@ -29,3 +29,10 @@ User stories: 23-27, 54, 61, 62
 - [04 P1：跑通一个完整游戏日](04-p1-one-day-vertical-loop.md)
 - [07 P1：完成窗口、输入、暂停与静音外壳](07-p1-interaction-shell.md)
 - [19 P1：接入 MVP 主线剧情骨架](19-p1-mvp-story-shell.md)
+
+## Integration record
+
+- 2026-07-09：`origin/dev-xhy` 已合入 `codex/integrate-team-branches`，集成提交为 `340b5b2`。
+- 已合入数据文件、规则层、NPC/场景/UI 文件、资源诊断可选项和 `tests/test_library.cpp`，并通过本地构建与 CTest。
+- 合并时把 `LibraryRuleEngine` 从裸指针改为 `std::unique_ptr`，并确保进入图书馆 UI 前先调用 `GameSession::start_location()`。
+- 尚需收口：内部 640×360 图书馆 UI 与 960×540 主画布的最终适配、unused 警告、图书馆摘要接入统一剧情文本入口。
