@@ -32,6 +32,17 @@ constexpr Color correct_color{34, 139, 34, 255};
 constexpr Color wrong_color{178, 34, 34, 255};
 constexpr Color faded_ink{100, 100, 100, 200};
 constexpr Color plot_highlight{180, 150, 80, 255};
+constexpr Color floor_color{221, 211, 174, 255};
+constexpr Color wall_color{240, 230, 210, 255};
+constexpr Color window_frame{139, 90, 43, 255};
+constexpr Color window_glass{173, 216, 230, 150};
+constexpr Color plant_green{34, 139, 34, 255};
+constexpr Color lamp_gold{255, 215, 0, 255};
+constexpr Color rug_color{139, 69, 19, 180};
+constexpr Color door_brown{139, 90, 43, 255};
+constexpr Color npc_skin{255, 220, 180, 255};
+constexpr Color npc_clothes{70, 130, 180, 255};
+constexpr Color npc_hair{139, 90, 43, 255};
 
 float scaled(float value) {
     return std::round(value * native_ui_scale);
@@ -135,6 +146,213 @@ void draw_category_button(int x, int y, int width, int height, const std::string
     Color text_color = is_selected ? RAYWHITE : ink;
     panel(Rectangle{static_cast<float>(x), static_cast<float>(y), static_cast<float>(width), static_cast<float>(height)}, fill, ink);
     centered_text(font, name, Rectangle{static_cast<float>(x), static_cast<float>(y), static_cast<float>(width), static_cast<float>(height)}, 18, text_color);
+}
+
+void draw_library_floor(const LibraryRenderConfig& config) {
+    const float tile_size = scaled(16);
+    const int cols = static_cast<int>(scaled(config.logical_width) / tile_size);
+    const int rows = static_cast<int>(scaled(config.logical_height) / tile_size);
+    
+    const Color floor_light = Color{245, 238, 220, 255};
+    const Color floor_dark = Color{235, 228, 210, 255};
+    const Color floor_line = Color{220, 210, 190, 255};
+
+    for (int row = 0; row < rows; ++row) {
+        for (int col = 0; col < cols; ++col) {
+            float x = col * tile_size;
+            float y = row * tile_size;
+            
+            Color tile_color = ((row / 2) + (col / 2)) % 2 == 0 ? floor_light : floor_dark;
+            DrawRectangle(x, y, tile_size, tile_size, tile_color);
+        }
+    }
+    
+    for (int col = 0; col <= cols; ++col) {
+        float x = col * tile_size;
+        DrawRectangle(x, 0, scaled(1), scaled(config.logical_height), floor_line);
+    }
+    for (int row = 0; row <= rows; ++row) {
+        float y = row * tile_size;
+        DrawRectangle(0, y, scaled(config.logical_width), scaled(1), floor_line);
+    }
+}
+
+void draw_library_walls(const LibraryRenderConfig& config) {
+    DrawRectangle(0, 0, scaled(config.logical_width), scaled(80), wall_color);
+}
+
+void draw_scene_element(const SceneElement& element) {
+    const Vector2 pos = scaled_point(element.position);
+    const float w = scaled(element.width);
+    const float h = scaled(element.height);
+
+    switch (element.type) {
+        case SceneElementType::bookshelf: {
+            const Color wood_dark = Color{80, 50, 20, 255};
+            const Color wood_medium = Color{139, 90, 43, 255};
+            const Color shelf_bottom = Color{60, 35, 15, 255};
+            
+            const float side_width = scaled(6);
+            const float shelf_height = scaled(4);
+            const int num_shelves = 5;
+            const float shelf_spacing = (h - side_width * 2) / num_shelves;
+            
+            DrawRectangle(pos.x, pos.y, w, h, wood_medium);
+            
+            DrawRectangle(pos.x, pos.y, side_width, h, wood_dark);
+            DrawRectangle(pos.x + w - side_width, pos.y, side_width, h, wood_dark);
+            
+            DrawRectangle(pos.x, pos.y, w, side_width, wood_dark);
+            DrawRectangle(pos.x, pos.y + h - side_width, w, side_width, wood_dark);
+            
+            for (int i = 0; i <= num_shelves; ++i) {
+                float shelf_y = pos.y + side_width + i * shelf_spacing;
+                DrawRectangle(pos.x + side_width, shelf_y, w - side_width * 2, shelf_height, wood_dark);
+                DrawRectangle(pos.x + side_width, shelf_y + shelf_height, w - side_width * 2, scaled(2), shelf_bottom);
+            }
+            
+            const Color book_colors[] = {
+                Color{178, 34, 34, 255}, Color{70, 130, 180, 255}, Color{34, 139, 34, 255},
+                Color{255, 215, 0, 255}, Color{128, 0, 128, 255}, Color{255, 140, 0, 255},
+                Color{192, 192, 192, 255}, Color{60, 60, 60, 255}, Color{255, 99, 71, 255},
+                Color{100, 149, 237, 255}, Color{205, 92, 92, 255}, Color{65, 105, 225, 255},
+            };
+            
+            for (int shelf_idx = 0; shelf_idx < num_shelves; ++shelf_idx) {
+                float shelf_y = pos.y + side_width + shelf_idx * shelf_spacing;
+                float book_start_y = shelf_y - scaled(2);
+                
+                float current_x = pos.x + side_width + scaled(4);
+                float max_x = pos.x + w - side_width - scaled(4);
+                
+                while (current_x < max_x) {
+                    int color_idx = (shelf_idx * 5 + static_cast<int>(current_x / scaled(8))) % 12;
+                    float book_width = scaled(6) + (scaled(color_idx % 3) * 2);
+                    float book_height = shelf_spacing - shelf_height - scaled(6) - scaled(color_idx % 4);
+                    
+                    if (current_x + book_width > max_x) {
+                        book_width = max_x - current_x;
+                    }
+                    
+                    DrawRectangle(current_x, book_start_y - book_height, book_width, book_height, book_colors[color_idx]);
+                    float spine_line_x = current_x + book_width - scaled(1);
+                    DrawRectangle(spine_line_x, book_start_y - book_height, scaled(1), book_height, Color{0, 0, 0, 50});
+                    DrawRectangle(current_x, book_start_y - book_height, book_width, scaled(1), Color{255, 255, 255, 30});
+                    
+                    current_x += book_width + scaled(1);
+                }
+            }
+            break;
+        }
+        case SceneElementType::plant: {
+            DrawRectangle(pos.x + scaled(5), pos.y + scaled(20), scaled(20), scaled(20), plant_green);
+            DrawRectangle(pos.x + scaled(10), pos.y + scaled(10), scaled(10), scaled(15), plant_green);
+            DrawRectangle(pos.x + scaled(12), pos.y, scaled(6), scaled(10), Color{139, 90, 43, 255});
+            break;
+        }
+        case SceneElementType::window: {
+            DrawRectangle(pos.x, pos.y, w, h, window_frame);
+            DrawRectangle(pos.x + scaled(5), pos.y + scaled(5), w - scaled(10), h - scaled(10), window_glass);
+            DrawRectangle(pos.x + w / 2, pos.y, scaled(5), h, window_frame);
+            DrawRectangle(pos.x, pos.y + h / 2, w, scaled(5), window_frame);
+            break;
+        }
+        case SceneElementType::door: {
+            DrawRectangle(pos.x, pos.y, w, h, door_brown);
+            DrawCircle(pos.x + w - scaled(10), pos.y + scaled(20), scaled(3), Color{255, 215, 0, 255});
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void draw_npc_sprite(const NpcState& state, const NpcData& data, bool is_hovered, const Font& font) {
+    const Vector2 pos = scaled_point(state.position);
+    
+    DrawCircle(pos.x, pos.y + scaled(15), scaled(18), is_hovered ? Color{255, 255, 200, 100} : Color{0, 0, 0, 30});
+    
+    const Color skin = Color{255, 220, 180, 255};
+    const Color hair = data.id == "librarian" ? Color{80, 50, 30, 255} : Color{139, 90, 43, 255};
+    const Color clothes = data.id == "librarian" ? Color{60, 100, 160, 255} : Color{70, 130, 180, 255};
+    const Color pants = Color{40, 60, 100, 255};
+    const Color shoe = Color{30, 30, 30, 255};
+    
+    const float head_size = scaled(10);
+    const float body_width = scaled(14);
+    const float body_height = scaled(16);
+    const float leg_width = scaled(5);
+    const float leg_height = scaled(12);
+    
+    DrawRectangle(pos.x - leg_width, pos.y + body_height, leg_width, leg_height, pants);
+    DrawRectangle(pos.x, pos.y + body_height, leg_width, leg_height, pants);
+    
+    DrawRectangle(pos.x - leg_width - scaled(2), pos.y + body_height + leg_height, leg_width + scaled(2), scaled(3), shoe);
+    DrawRectangle(pos.x + scaled(2), pos.y + body_height + leg_height, leg_width + scaled(2), scaled(3), shoe);
+    
+    DrawRectangle(pos.x - body_width / 2, pos.y + scaled(4), body_width, body_height, clothes);
+    
+    DrawRectangle(pos.x - body_width / 2, pos.y + scaled(4), scaled(3), body_height, Color{0, 0, 0, 30});
+    
+    DrawRectangle(pos.x - body_width / 2 - scaled(3), pos.y + scaled(8), scaled(4), scaled(10), clothes);
+    DrawRectangle(pos.x + body_width / 2 - scaled(1), pos.y + scaled(8), scaled(4), scaled(10), clothes);
+    
+    DrawCircle(pos.x, pos.y - scaled(4), head_size, skin);
+    
+    DrawCircle(pos.x, pos.y - scaled(8), head_size * 0.7F, hair);
+    
+    DrawCircle(pos.x - scaled(3), pos.y - scaled(5), scaled(2), Color{45, 52, 54, 255});
+    DrawCircle(pos.x + scaled(3), pos.y - scaled(5), scaled(2), Color{45, 52, 54, 255});
+    
+    DrawCircle(pos.x - scaled(2.5F), pos.y - scaled(4.5F), scaled(0.8F), WHITE);
+    DrawCircle(pos.x + scaled(2.5F), pos.y - scaled(4.5F), scaled(0.8F), WHITE);
+    
+    DrawEllipse(pos.x, pos.y + scaled(1), scaled(2), scaled(1.5F), Color{200, 100, 100, 255});
+    
+    if (data.id == "librarian") {
+        DrawRectangle(pos.x - head_size - scaled(2), pos.y - scaled(6), scaled(3), scaled(6), Color{200, 180, 150, 255});
+        DrawRectangle(pos.x + head_size - scaled(1), pos.y - scaled(6), scaled(3), scaled(6), Color{200, 180, 150, 255});
+        DrawRectangle(pos.x - head_size - scaled(2), pos.y - scaled(6), scaled(7), scaled(2), Color{200, 180, 150, 255});
+    }
+    
+    // 在NPC头上方显示交互提示框
+    const float box_width = scaled(80);
+    const float box_height = scaled(24);
+    const float box_x = pos.x - box_width / 2;
+    const float box_y = pos.y - scaled(35) - box_height;
+    
+    // 提示框背景
+    Color box_bg = Color{255, 248, 220, 230};
+    Color box_border = Color{180, 150, 100, 255};
+    
+    if (is_hovered) {
+        box_bg = Color{255, 240, 200, 250};
+        box_border = Color{200, 170, 80, 255};
+    }
+    
+    DrawRectangle(box_x, box_y, box_width, box_height, Color{0, 0, 0, 40});
+    DrawRectangle(box_x + scaled(2), box_y + scaled(2), box_width - scaled(4), box_height - scaled(4), box_bg);
+    DrawRectangleLinesEx(Rectangle{box_x + scaled(2), box_y + scaled(2), box_width - scaled(4), box_height - scaled(4)}, scaled(2), box_border);
+    
+    // 提示文字
+    const std::string hint_text = "点击对话";
+    const float text_x = box_x + box_width / 2 - scaled(24);
+    const float text_y = box_y + scaled(6);
+    DrawTextEx(font, hint_text.c_str(), Vector2{text_x, text_y}, scaled_font_size(12), 1.0F, Color{80, 60, 40, 255});
+}
+
+void draw_room_ui(const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
+    DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
+    text(font, "像素小镇", 10, 8, 22, RAYWHITE);
+    text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
+    
+    text(font, "点击NPC进行互动", 10, 330, 14, faded_ink);
+}
+
+void draw_transition_effect(float progress, const LibraryRenderConfig& config) {
+    const unsigned char fade_alpha = static_cast<unsigned char>(progress * 255.0F);
+    DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height), 
+                  Color{0, 0, 0, fade_alpha});
 }
 
 void draw_intro_screen(const LibraryRuleEngine& engine, const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
@@ -381,7 +599,7 @@ void draw_feedback_screen(const LibraryRuleEngine& engine, const LibraryUIState&
     const Color feedback_color = ui_state.last_answer_correct ? correct_color : wrong_color;
     const char* feedback_text = ui_state.last_answer_correct ? "回答正确！" : "回答错误";
     
-    panel(Rectangle{config.logical_width / 2 - 140, 100, 280, 160}, ui_state.last_answer_correct ? Color{230, 245, 230, 255} : Color{245, 230, 230, 255});
+    panel(Rectangle{config.logical_width / 2.0F - 140.0F, 100.0F, 280.0F, 160.0F}, ui_state.last_answer_correct ? Color{230, 245, 230, 255} : Color{245, 230, 230, 255});
     text(font, feedback_text, config.logical_width / 2 - 70, 130, 32, feedback_color);
 
     const auto& feedback = ui_state.feedback_data;
@@ -456,14 +674,14 @@ void draw_summary_screen(const ActionResult& result, const LibraryRenderConfig& 
     }
 
     if (result.plot_triggered) {
-        panel(Rectangle{50, y + 5, 540, 70}, plot_highlight);
+        panel(Rectangle{50.0F, static_cast<float>(y) + 5.0F, 540.0F, 70.0F}, plot_highlight);
         text(font, "【剧情触发】", 70, y + 15, 16, gold);
         text(font, result.plot_title.c_str(), 170, y + 15, 16, ink);
         draw_text_wrapped(font, result.plot_description, 70, y + 35, scaled(500), 22, 14, faded_ink);
     }
 
     if (!result.narrative_echo.empty()) {
-        panel(Rectangle{50, y + 5, 540, 50}, Color{245, 240, 220, 255});
+        panel(Rectangle{50.0F, static_cast<float>(y) + 5.0F, 540.0F, 50.0F}, Color{245, 240, 220, 255});
         draw_text_wrapped(font, result.narrative_echo, 70, y + 15, scaled(500), 22, 14, faded_ink);
         y += 60;
     }
@@ -484,11 +702,45 @@ void draw_summary_screen(const ActionResult& result, const LibraryRenderConfig& 
 
 }  // namespace
 
+void draw_library_room_scene(const LibraryScene& scene, const LibraryUIState& ui_state,
+                             const LibraryRenderConfig& render_config, const Font& font, Vector2 logical_mouse) {
+    const Vector2 library_mouse = {logical_mouse.x / native_ui_scale, logical_mouse.y / native_ui_scale};
+
+    draw_library_floor(render_config);
+    draw_library_walls(render_config);
+
+    for (const auto& element : scene.get_elements()) {
+        draw_scene_element(element);
+    }
+
+    const auto& npc_states = scene.get_npc_manager().get_npc_states();
+    for (const auto& state : npc_states) {
+        const auto* data = scene.get_npc_manager().get_npc_data(state.npc_id);
+        if (!data) continue;
+
+        const float dist = std::sqrt(std::pow(library_mouse.x - state.position.x, 2) + 
+                                     std::pow(library_mouse.y - state.position.y, 2));
+        bool is_hovered = dist <= data->interaction_radius;
+
+        draw_npc_sprite(state, *data, is_hovered, font);
+    }
+
+    draw_room_ui(render_config, font, library_mouse);
+
+    if (ui_state.is_transitioning) {
+        draw_transition_effect(ui_state.transition_progress, render_config);
+    }
+}
+
 void draw_library_scene(const LibraryRuleEngine& engine, const LibraryUIState& ui_state,
-                        const LibraryRenderConfig& render_config, const Font& font, Vector2 logical_mouse) {
+                        const LibraryScene& scene, const LibraryRenderConfig& render_config, const Font& font, Vector2 logical_mouse) {
     const Vector2 library_mouse = {logical_mouse.x / native_ui_scale, logical_mouse.y / native_ui_scale};
 
     switch (ui_state.scene_state) {
+        case LibrarySceneState::room_view: {
+            draw_library_room_scene(scene, ui_state, render_config, font, logical_mouse);
+            break;
+        }
         case LibrarySceneState::intro:
             draw_intro_screen(engine, render_config, font, library_mouse);
             break;
@@ -515,9 +767,28 @@ void draw_library_scene(const LibraryRuleEngine& engine, const LibraryUIState& u
         case LibrarySceneState::exit:
             break;
     }
+
+    if (ui_state.is_transitioning) {
+        draw_transition_effect(ui_state.transition_progress, render_config);
+    }
 }
 
-void update_library_ui(LibraryRuleEngine& engine, LibraryUIState& ui_state) {
+void update_library_ui(LibraryRuleEngine& engine, LibraryUIState& ui_state, LibraryScene& scene) {
+    scene.update(1.0F / 60.0F);
+
+    if (ui_state.is_transitioning) {
+        ui_state.transition_progress += 0.05F;
+        if (ui_state.transition_progress >= 1.0F) {
+            ui_state.is_transitioning = false;
+            ui_state.transition_progress = 0.0F;
+            
+            if (ui_state.scene_state == LibrarySceneState::room_view) {
+                ui_state.scene_state = LibrarySceneState::intro;
+            }
+        }
+        return;
+    }
+
     if (ui_state.scene_state == LibrarySceneState::feedback) {
         ui_state.feedback_timer++;
         if (ui_state.feedback_timer >= 60) {
@@ -531,10 +802,26 @@ void update_library_ui(LibraryRuleEngine& engine, LibraryUIState& ui_state) {
     }
 }
 
-bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state, Vector2 logical_mouse) {
+bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state, 
+                          LibraryScene& scene, Vector2 logical_mouse) {
     const Vector2 library_mouse = {logical_mouse.x / native_ui_scale, logical_mouse.y / native_ui_scale};
 
-    if (ui_state.scene_state == LibrarySceneState::intro) {
+    if (ui_state.is_transitioning) {
+        return false;
+    }
+
+    if (ui_state.scene_state == LibrarySceneState::room_view) {
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            std::string npc_id;
+            if (scene.handle_click(library_mouse, npc_id)) {
+                ui_state.clicked_npc_id = npc_id;
+                ui_state.is_transitioning = true;
+                ui_state.transition_progress = 0.0F;
+                return false;
+            }
+        }
+        return false;
+    } else if (ui_state.scene_state == LibrarySceneState::intro) {
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             ui_state.scene_state = LibrarySceneState::npc_talk;
             return false;

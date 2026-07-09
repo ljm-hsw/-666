@@ -7,6 +7,7 @@
 #include "core/game_session.hpp"
 #include "locations/library_data.hpp"
 #include "locations/library_rules.hpp"
+#include "locations/library_scene.hpp"
 #include "locations/library_ui.hpp"
 
 namespace pixel_town {
@@ -21,6 +22,7 @@ struct GameAppState {
     bool in_library{false};
     library::LibraryData library_data;
     library::LibraryRuleEngine* library_engine{nullptr};
+    library::LibraryScene library_scene;
     library::ui::LibraryUIState library_ui_state;
     int library_visits{0};
 };

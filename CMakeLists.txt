@@ -21,17 +21,19 @@ add_library(pixel_town_io
 target_include_directories(pixel_town_io PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(pixel_town_io PUBLIC pixel_town_core)
 
-add_library(pixel_town_locations
-  src/locations/library_data.cpp
-  src/locations/library_rules.cpp
-)
-target_include_directories(pixel_town_locations PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
-target_link_libraries(pixel_town_locations PUBLIC pixel_town_core pixel_town_io)
-
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(USE_EXTERNAL_GLFW OFF CACHE STRING "" FORCE)
 add_subdirectory(third_party/raylib EXCLUDE_FROM_ALL)
+
+add_library(pixel_town_locations
+  src/locations/library_data.cpp
+  src/locations/library_rules.cpp
+  src/locations/library_npc.cpp
+  src/locations/library_scene.cpp
+)
+target_include_directories(pixel_town_locations PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(pixel_town_locations PUBLIC pixel_town_core pixel_town_io raylib)
 
 add_executable(pixel_town
   src/app/game_flow.cpp

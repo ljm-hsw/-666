@@ -11,7 +11,8 @@
 
 #ifdef _WIN32
 #define NOMINMAX
-#include <windows.h>
+using DWORD = unsigned long;
+extern "C" __declspec(dllimport) DWORD __stdcall GetModuleFileNameW(void*, wchar_t*, DWORD);
 #elif defined(__APPLE__)
 #include <mach-o/dyld.h>
 #elif defined(__linux__)

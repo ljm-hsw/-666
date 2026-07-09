@@ -503,6 +503,11 @@ const char* game_flow_glyphs() {
             "全称四大发明运动定律包含多少部戏剧最著名的前身叫什么名字周长大约是主要发生在部位结束于"
             "借书卡盒子敲掉窗台晒摊位标记盖章指空白翻递街边缘旧集市地图管理员今年事写上去孩子考试"
             "人类第一次登月是在哪一年这是1969年的历史性事件光速大约是多少公里每秒大约每秒30万公里"
+            "离开了图书馆什么也没做在图书馆工作了一天答对答错最高连续答对题获得金币表现出色表现不错"
+            "还需要继续努力帮孩子找到了考试要用的书又多盖了一个章旧地图递给你说可以先看看不急着还"
+            "书页翻动的声音很轻窗外的街也慢下来盒子里多了几张新记录收回去前指了指边上的空白处"
+            "说以后可以把今年的事也写上去递给你一杯热茶梧桐树影落在书页上今天的图书馆格外安静"
+            "管理员说点击对话像素小镇科学类历史类文学类艺术类技术类地理类生物类人类类"
             "红楼梦的作者是谁清代作家曹雪芹蒙娜丽莎是谁的作品文艺复兴时期的达芬奇计算机的基本组成部分有哪些"
             "CPU内存硬盘等世界上最大的海洋是什么太平洋是最大的海洋DNA的全称是什么脱氧核糖核酸中国的四大发明是什么"
             "造纸术印刷术火药指南针牛顿提出了哪些运动定律三大运动定律莎士比亚全集包含多少部戏剧大约37部"
@@ -552,8 +557,8 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
     }
 
     if (state.in_library && state.library_engine) {
-        library::ui::update_library_ui(*state.library_engine, state.library_ui_state);
-        bool exit_library = library::ui::handle_library_input(*state.library_engine, state.library_ui_state, logical_mouse);
+        library::ui::update_library_ui(*state.library_engine, state.library_ui_state, state.library_scene);
+        bool exit_library = library::ui::handle_library_input(*state.library_engine, state.library_ui_state, state.library_scene, logical_mouse);
         if (exit_library && state.library_ui_state.scene_state == library::ui::LibrarySceneState::summary) {
             auto result = state.library_engine->finish_session();
             ActionResult game_result;
@@ -695,7 +700,7 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
         library::ui::LibraryRenderConfig render_config;
         render_config.logical_width = 640;
         render_config.logical_height = 360;
-        library::ui::draw_library_scene(*state.library_engine, state.library_ui_state, render_config, font, logical_mouse);
+        library::ui::draw_library_scene(*state.library_engine, state.library_ui_state, state.library_scene, render_config, font, logical_mouse);
         if (!audio_enabled) {
             text(font, "静音", 586, 330, 18, red);
         }
