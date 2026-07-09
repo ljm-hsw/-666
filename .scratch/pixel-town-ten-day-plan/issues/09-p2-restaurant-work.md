@@ -36,4 +36,8 @@ User stories: 11-15, 35, 54, 61, 62
 - 2026-07-09：`origin/dev-yhr` 已合入 `codex/integrate-team-branches`，集成提交为 `2cd3da6`。
 - 已合入规则、基础 UI、CMake 接入和 `tests/restaurant_test.cpp`，并通过本地构建与 CTest。
 - 合并时改为显式构造 `ActionResult`，避免 tavern 字段加入后破坏餐馆结果。
-- 尚需收口：`[[nodiscard]]` 警告、最终视觉统一、暂停计时冻结复查、餐馆摘要接入统一剧情文本入口。
+- 2026-07-09 架构收口提交 `09a4817` 已移除餐馆测试中的 `[[nodiscard]]` 警告，并把地点运行期逻辑移到 `location_runtime`。
+- 尚需收口：餐馆玩法说明、订单票据、食物按钮、倒计时可视化、反馈与结算页、暂停计时冻结复查、餐馆摘要接入统一剧情文本入口。
+- 相关 follow-up：
+  - [20 P2：餐馆 UI、提示与操作反馈收口](20-p2-restaurant-ui-feedback.md)
+  - [21 P2：餐馆背景、食物与时间表现视觉规划](21-p2-restaurant-visual-assets-and-layout.md)
