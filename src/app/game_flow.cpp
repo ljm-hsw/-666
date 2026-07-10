@@ -7,6 +7,7 @@
 
 #include "app/restaurant_ui_model.hpp"
 #include "app/ui_primitives.hpp"
+#include "core/ending_rules.hpp"
 #include "core/story_text.hpp"
 
 namespace pixel_town {
@@ -124,18 +125,6 @@ constexpr std::array ui_texts{
     "风险：等待归零会超时，错单和超时会降低表现。",
     "结束：服务完全部顾客后点击结算；主动放弃会消耗白天且无收益。",
 };
-
-const char* store_price_tier_label(store::PriceTier tier) {
-    switch (tier) {
-        case store::PriceTier::low:
-            return "低价";
-        case store::PriceTier::standard:
-            return "标准价";
-        case store::PriceTier::high:
-            return "高价";
-    }
-    return "标准价";
-}
 
 int store_plan_quantity(const store::PurchasePlan& plan, const std::string& item_id) {
     const auto found = plan.quantities.find(item_id);
@@ -491,11 +480,18 @@ void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
         }
     }
 
-    panel(Rectangle{28, 300, 584, 42}, Color{65, 91, 89, 245});
+    panel(Rectangle{28, 282, 584, 64}, Color{65, 91, 89, 245});
     const auto context = state.session.current_day_context();
-    text(font, std::string{"今日提示："} + daily_prompt(context.day), 42, 304, 18,
-         Color{255, 224, 154, 255});
-    text(font, state.notice, 42, 324, 18, RAYWHITE);
+    const auto prompt_lines = wrap_text_lines(
+        std::string{"今日提示："} + daily_prompt(context.day), 34, 1);
+    if (!prompt_lines.empty()) {
+        text(font, prompt_lines.front(), 42, 286, 18, Color{255, 224, 154, 255});
+    }
+    const auto notice_lines = wrap_text_lines(state.notice, 34, 2);
+    for (std::size_t index = 0; index < notice_lines.size(); ++index) {
+        text(font, notice_lines[index], 42, 306.0F + static_cast<float>(index) * 18.0F,
+             17, RAYWHITE);
+    }
 }
 
 void draw_restaurant_ui(const Font& font, const GameAppState& state, bool audio_enabled,
@@ -627,29 +623,34 @@ void draw_location(const Font& font, const GameAppState& state, bool audio_enabl
     ClearBackground(Color{215, 221, 194, 255});
     draw_status(font, state.session, audio_enabled);
     if (location == Location::convenience_store) {
-        panel(Rectangle{72, 70, 496, 232}, cream);
+        panel(Rectangle{72, 70, 496, 240}, cream);
         text(font, location_label(location), 96, 82, 28, red);
         const auto context = state.session.current_day_context();
         text(font, std::string{"今日提示："} + context.weather + " / " + context.event,
              96, 116, 15, ink);
 
         text(font, "商品", 96, 142, 14, Color{78, 78, 72, 255});
-        text(font, "库存", 202, 142, 14, Color{78, 78, 72, 255});
-        text(font, "进货", 260, 142, 14, Color{78, 78, 72, 255});
-        text(font, "价格档", 324, 142, 14, Color{78, 78, 72, 255});
-        text(font, "售价", 410, 142, 14, Color{78, 78, 72, 255});
+        text(font, "库存", 200, 142, 14, Color{78, 78, 72, 255});
+        text(font, "进货 - / +", 248, 142, 14, Color{78, 78, 72, 255});
+        text(font, "价格 低/标/高", 344, 142, 14, Color{78, 78, 72, 255});
+        text(font, "售价", 478, 142, 14, Color{78, 78, 72, 255});
 
         const auto config = store::default_store_config();
         int total_cost = 0;
+        const bool controls_enabled = !state.session.location_started();
         for (std::size_t index = 0; index < config.products.size(); ++index) {
             const auto& product = config.products[index];
             const float y = 164.0F + static_cast<float>(index) * 22.0F;
+            const int product_index = static_cast<int>(index);
             const bool selected =
-                static_cast<int>(index) == state.locations.store_selected_product_index;
-            if (selected) {
-                DrawRectangleRec(scaled_rect(Rectangle{88, y - 3.0F, 410, 20}),
-                                 Color{255, 224, 154, 110});
-            }
+                product_index == state.locations.store_selected_product_index;
+            const Rectangle row = store_product_row(product_index);
+            const Color row_fill =
+                selected ? Color{255, 224, 154, 150}
+                         : (controls_enabled && hovered(row, mouse)
+                                ? Color{250, 238, 203, 180}
+                                : Color{255, 248, 226, 0});
+            DrawRectangleRec(scaled_rect(row), row_fill);
             const int purchase = store_plan_quantity(state.locations.store_purchase_plan,
                                                      product.id);
             const auto tier = store_plan_tier(state.locations.store_price_plan, product.id);
@@ -658,17 +659,39 @@ void draw_location(const Font& font, const GameAppState& state, bool audio_enabl
             text(font, product.name, 104, y, 14, ink);
             text(font, std::to_string(store_inventory_quantity(state.session, product.id)),
                  210, y, 14, ink);
-            text(font, std::to_string(purchase), 272, y, 14, ink);
-            text(font, store_price_tier_label(tier), 326, y, 14, ink);
-            text(font, std::to_string(store::price_for_tier(product, tier)), 418, y, 14, ink);
+            const auto draw_control = [&](Rectangle bounds, const char* label, bool active) {
+                Color fill = controls_enabled ? paper : Color{211, 202, 174, 255};
+                if (controls_enabled && hovered(bounds, mouse)) {
+                    fill = gold;
+                } else if (active) {
+                    fill = green;
+                }
+                const Rectangle scaled_bounds = scaled_rect(bounds);
+                DrawRectangleRec(scaled_bounds, fill);
+                DrawRectangleLinesEx(scaled_bounds, 2.0F, ink);
+                centered_text(font, label, bounds, 12,
+                              active ? RAYWHITE : (controls_enabled ? ink : disabled));
+            };
+            draw_control(store_purchase_decrease_button(product_index), "-", false);
+            text(font, std::to_string(purchase), 280, y, 14, ink);
+            draw_control(store_purchase_increase_button(product_index), "+", false);
+            draw_control(store_price_button(product_index, store::PriceTier::low), "低",
+                         tier == store::PriceTier::low);
+            draw_control(store_price_button(product_index, store::PriceTier::standard), "标",
+                         tier == store::PriceTier::standard);
+            draw_control(store_price_button(product_index, store::PriceTier::high), "高",
+                         tier == store::PriceTier::high);
+            text(font, std::to_string(store::price_for_tier(product, tier)), 484, y, 14, ink);
         }
 
         const int balance_after = state.session.player().money - total_cost;
         text(font, std::string{"进货成本 "} + std::to_string(total_cost) +
                        " / 剩余金钱 " + std::to_string(balance_after),
-             96, 258, 14, balance_after >= 0 ? Color{35, 83, 51, 255} : red);
-        text(font, "按1-4选商品  A/D调进货  Q/W/E调价格  空格开始/完成",
-             96, 278, 13, Color{78, 78, 72, 255});
+             96, 254, 14, balance_after >= 0 ? Color{35, 83, 51, 255} : red);
+        text(font, state.locations.store_feedback, 96, 274, 13,
+             balance_after >= 0 ? Color{78, 78, 72, 255} : red);
+        text(font, "键盘：1-4选商品，A/D调进货，Q/W/E调价格",
+             96, 290, 13, Color{78, 78, 72, 255});
     } else {
         panel(Rectangle{96, 78, 448, 210}, cream);
         text(font, location_label(location), 126, 106, 30, red);
@@ -689,10 +712,10 @@ void draw_location(const Font& font, const GameAppState& state, bool audio_enabl
         panel(back_button, hovered(back_button, mouse) ? paper : Color{211, 202, 174, 255});
         centered_text(font, "返回地图", back_button, 16, ink);
         panel(start_button, hovered(start_button, mouse) ? paper : green);
-        centered_text(font, "开始模拟", start_button, 16, RAYWHITE);
+        centered_text(font, is_store ? "锁定方案" : "开始模拟", start_button, 16, RAYWHITE);
     } else {
         panel(start_button, hovered(start_button, mouse) ? paper : green);
-        centered_text(font, "完成模拟", start_button, 16, RAYWHITE);
+        centered_text(font, is_store ? "结算销售" : "完成模拟", start_button, 16, RAYWHITE);
         panel(abandon_button, hovered(abandon_button, mouse) ? paper : red);
         centered_text(font, "主动放弃", abandon_button, 16, RAYWHITE);
     }
@@ -706,7 +729,7 @@ void draw_summary(const Font& font, const GameAppState& state, bool audio_enable
     text(font, "每日总结", 124, 116, 28, red);
     text_block(font, state.session.last_summary(), 124, 154, 14, 16, ink);
     text(font, day_closing_summary(state.session.day()), 124, 194, 14, Color{78, 78, 72, 255});
-    text(font, state.session.day() == 10 ? "确认后进入占位主结局。"
+    text(font, state.session.day() == 10 ? "确认后进入最终主结局。"
                                          : "确认后进入下一游戏日。",
          124, 214, 16, ink);
     const Rectangle next_button{242, 224, 156, 34};
@@ -729,7 +752,9 @@ void draw_ending(const Font& font, const GameAppState& state, bool audio_enabled
          118, 306, 16, ink);
     text(font,
          std::string{"知识 "} + std::to_string(player.knowledge) + "  心情 " +
-             std::to_string(player.mood) + "  成长路线：均衡体验",
+             std::to_string(player.mood) + "  酒馆胜 " +
+             std::to_string(state.session.tavern_wins()) + " / 负 " +
+             std::to_string(state.session.tavern_losses()),
          118, 330, 16, ink);
 }
 
@@ -748,7 +773,7 @@ const char* game_flow_glyphs() {
     static const std::string glyphs = [] {
         std::string result =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789. "
-            "·/：，。；“”‘’+-！？《》【】、———（）「」『』℃°";
+            "·/：，。；“”‘’+-！？《》【】、———（）「」『』℃°…";
         for (const char* value : ui_texts) {
             result += value;
         }
@@ -760,9 +785,11 @@ const char* game_flow_glyphs() {
             "午餐客流获得金钱与声望便利店模拟经营完成一次进货与销售结算图书馆帮助读者找书并提升"
             "便利店经营完成进货成本销售收入利润雨伞汽水便当数量都记进了账本店主在账本边角画了个"
             "小勾明天还能再调价格今日提示价格档低价标准价高价当前库存每种商品按选择调整无"
+            "点击商品行减号加号锁定方案结算销售已选择进货数量价格档已设为售价已经是达到库存上限"
+            "方案已锁定查看销售结果便利店商品选择无效"
             "知识行动完成回家休息恢复体力并结束今天主动放弃阶段已消耗本次无收益确认后进入下一游戏日"
-            "占位主结局最终状态成长路线摘要均衡体验小镇生活十日经营计划已经结束不能继续选择地点"
-            "点击地点查看原因成长路线均衡体验已暂停按P继续按M切换静音恢复声音"
+            "最终主结局最终状态成长路线判定依据库存清算十日经营计划已经结束不能继续选择地点"
+            "点击地点查看原因已暂停按P继续按M切换静音恢复声音酒馆胜负"
             "演示参数错误预设加载失败已加载正式存档不会被读取或覆盖"
             "炒饭面条汤饺子沙拉正确错单超时餐馆工作完成准备根据顾客订单按至菜品选择上想要等待秒"
             "剩余结算"
@@ -804,6 +831,8 @@ const char* game_flow_glyphs() {
             "读者问达·芬奇除了绘画还擅长什么回答正确达·芬奇还是科学家和发明家"
             "回答错误达·芬奇还擅长科学发明";
         result += story_text_glyphs();
+        result += ending_rules_glyphs();
+        result += store_runtime_glyphs();
         result += tavern_ui_glyphs();
         return result;
     }();
@@ -911,7 +940,7 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
         }
         if (state.session.pending_location() == Location::convenience_store &&
             !state.session.location_started()) {
-            update_store_selection(state.locations, state.session);
+            update_store_selection(state.locations, state.session, logical_mouse, state.notice);
         }
 
         const bool is_restaurant = state.session.pending_location() == Location::restaurant;

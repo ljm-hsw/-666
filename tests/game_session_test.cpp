@@ -1,5 +1,8 @@
 #include <doctest/doctest.h>
 
+#include <utility>
+#include <vector>
+
 #include "core/game_session.hpp"
 #include "test_game_session_helpers.hpp"
 
@@ -13,6 +16,23 @@ void complete_day_with_rest(pixel_town::GameSession& session, pixel_town::Locati
                 .accepted);
     REQUIRE(session.apply_action_result(session.home_rest_result()).accepted);
     REQUIRE(session.finish_day_summary());
+}
+
+pixel_town::GameSession day_ten_summary_session(
+    pixel_town::PlayerState player,
+    std::vector<pixel_town::StoreInventoryItem> inventory = {},
+    int tavern_wins = 0,
+    int tavern_losses = 0) {
+    auto snapshot = pixel_town::GameSession::new_game(20260710U).snapshot();
+    snapshot.day = 10;
+    snapshot.phase = pixel_town::GamePhase::day_summary;
+    snapshot.player = player;
+    snapshot.day_action_done = true;
+    snapshot.night_action_done = true;
+    snapshot.store_inventory = std::move(inventory);
+    snapshot.tavern_wins = tavern_wins;
+    snapshot.tavern_losses = tavern_losses;
+    return pixel_town::GameSession::from_snapshot(snapshot);
 }
 
 }  // namespace
@@ -89,7 +109,7 @@ TEST_CASE("full one-day path reaches day two") {
     CHECK(session.can_enter(pixel_town::Location::library).allowed);
 }
 
-TEST_CASE("ten-day path ends with one placeholder ending") {
+TEST_CASE("ten-day restaurant path ends with one formal money-route ending") {
     auto session = pixel_town::GameSession::new_game(20260707);
 
     for (int expected_day = 1; expected_day <= 10; ++expected_day) {
@@ -101,10 +121,57 @@ TEST_CASE("ten-day path ends with one placeholder ending") {
     CHECK(session.day() == 10);
     CHECK(session.phase() == pixel_town::GamePhase::ending);
     CHECK(session.is_ended());
-    CHECK(session.main_ending() == std::string{"平凡小镇新人"});
+    CHECK(session.main_ending() == std::string{"冷酷赚钱机器"});
     CHECK(session.final_summary().find("十天不长") != std::string::npos);
-    CHECK(session.final_summary().find("均衡体验") != std::string::npos);
+    CHECK(session.final_summary().find("赚钱路线") != std::string::npos);
     CHECK_FALSE(session.can_enter(pixel_town::Location::restaurant).allowed);
+    CHECK_FALSE(session.finish_day_summary());
+}
+
+TEST_CASE("day ten liquidates remaining inventory once before the ordinary ending") {
+    pixel_town::PlayerState player;
+    player.money = 50;
+    player.stamina = 50;
+    player.reputation = 20;
+    player.knowledge = 10;
+    player.mood = 60;
+    auto session = day_ten_summary_session(
+        player, {{"umbrella", 2}});
+
+    REQUIRE(session.finish_day_summary());
+
+    CHECK(session.phase() == pixel_town::GamePhase::ending);
+    CHECK(session.player().money == 56);
+    CHECK(session.store_inventory().empty());
+    CHECK(session.main_ending() == std::string{"平凡小镇新人"});
+    CHECK(session.final_summary().find("库存清算 6 金币") != std::string::npos);
+    CHECK(session.final_summary().find("成长路线") != std::string::npos);
+
+    CHECK_FALSE(session.finish_day_summary());
+    CHECK(session.player().money == 56);
+}
+
+TEST_CASE("day ten morning completes work and rest before the unique final ending") {
+    auto snapshot = pixel_town::GameSession::new_game(20260710U).snapshot();
+    snapshot.day = 10;
+    snapshot.store_inventory = {{"umbrella", 2}};
+    auto session = pixel_town::GameSession::from_snapshot(snapshot);
+
+    REQUIRE(session.enter_location(pixel_town::Location::restaurant));
+    REQUIRE(session.start_location() != 0);
+    REQUIRE(session.apply_action_result(
+                pixel_town::test_support::completed_location_result(session))
+                .accepted);
+    REQUIRE(session.apply_action_result(session.home_rest_result()).accepted);
+    REQUIRE(session.phase() == pixel_town::GamePhase::day_summary);
+
+    REQUIRE(session.finish_day_summary());
+
+    CHECK(session.phase() == pixel_town::GamePhase::ending);
+    CHECK(session.main_ending() == "平凡小镇新人");
+    CHECK(session.player().money == 74);
+    CHECK(session.store_inventory().empty());
+    CHECK(session.final_summary().find("第十天晚上") != std::string::npos);
     CHECK_FALSE(session.finish_day_summary());
 }
 

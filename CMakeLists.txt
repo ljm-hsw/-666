@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(pixel_town_core
+  src/core/ending_rules.cpp
   src/core/game_session.cpp
   src/core/story_text.cpp
   src/core/tavern_rules.cpp
@@ -78,6 +79,7 @@ enable_testing()
 
 add_executable(pixel_town_tests
   tests/display_config_test.cpp
+  tests/ending_rules_test.cpp
   tests/gomoku_rules_test.cpp
   tests/liars_dice_rules_test.cpp
   tests/tavern_rules_test.cpp

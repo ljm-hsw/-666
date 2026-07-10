@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "core/ending_rules.hpp"
 #include "core/story_text.hpp"
 
 TEST_CASE("story text provides ten stable daily prompts") {
@@ -27,10 +28,14 @@ TEST_CASE("story text maps placeholder location summaries by location") {
               .find("提前离开") != std::string::npos);
 }
 
-TEST_CASE("story text exposes council and placeholder ending copy for final pages") {
+TEST_CASE("story text exposes council and formal ending copy for final pages") {
     CHECK(std::string{pixel_town::opening_story()}.find("先住十天") != std::string::npos);
     CHECK(std::string{pixel_town::council_opening()}.find("十天不长") != std::string::npos);
-    CHECK(std::string{pixel_town::placeholder_ending_text()}.find("纸角") !=
-          std::string::npos);
+    CHECK(std::string{pixel_town::ending_narrative(
+              pixel_town::MainEnding::ordinary_newcomer)}
+              .find("纸角") != std::string::npos);
+    CHECK(std::string{pixel_town::ending_narrative(
+              pixel_town::MainEnding::business_failure)}
+              .find("账本") != std::string::npos);
     CHECK(pixel_town::story_text_glyphs().find("酒馆昨晚的棋盘") != std::string::npos);
 }

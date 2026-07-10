@@ -188,8 +188,8 @@ StoreSettlement simulate_sales(const StoreConfig& config,
 }
 
 ActionResult build_store_action_result(const StoreConfig& config,
-                                       const StoreSettlement& settlement,
-                                       int result_id) {
+                                        const StoreSettlement& settlement,
+                                        int result_id) {
     ActionResult result;
     result.result_id = result_id;
     result.slot = ActionSlot::day;
@@ -212,6 +212,13 @@ ActionResult build_store_action_result(const StoreConfig& config,
         result.store_inventory_after.push_back(StoreInventoryItem{item_id, quantity});
     }
     return result;
+}
+
+const char* convenience_store_glyphs() {
+    return "0123456789-未知商品进货数量不能为负数进货后库存不能超过单品上限"
+           "现金不足，不能完成这次进货便利店经营完成：进货成本销售收入利润。"
+           "雨伞、汽水和便当的数量都记进了账本店主在账本边角画了个小勾"
+           "账本最后留了几处空白，明天还能再调价格咖啡";
 }
 
 }  // namespace pixel_town::store

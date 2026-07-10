@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 
+#include "core/ending_rules.hpp"
 namespace pixel_town {
 namespace {
 
@@ -89,9 +90,24 @@ const char* council_opening() {
            "“十天不长，”他说，“但也够大家记住一些事了。”";
 }
 
-const char* placeholder_ending_text() {
-    return "十天过去得很快。你走过几条街，认识了几扇门，也错过了一些声音。\n"
-           "地图折起来时，纸角比刚来时软了一点。";
+const char* ending_narrative(MainEnding ending) {
+    switch (ending) {
+        case MainEnding::town_star:
+            return "菜单、账本、借书卡和棋子旁，都有人提起你的名字。";
+        case MainEnding::money_machine:
+            return "账本最后一页很整齐，店主又在总数旁添了一道线。";
+        case MainEnding::popular_resident:
+            return "街上已经有人先向你点头，像你在这里住了很久。";
+        case MainEnding::library_star:
+            return "管理员展开旧地图，在空白处添上了你的名字。";
+        case MainEnding::tavern_legend:
+            return "常客未必记准每一局，却一直留着你坐过的位置。";
+        case MainEnding::ordinary_newcomer:
+            return "地图的纸角软了一点，小镇记住了你走过的路。";
+        case MainEnding::business_failure:
+            return "账本留着几处空白，镇长把折好的地图放回你手边。";
+    }
+    return "地图的纸角软了一点，小镇记住了你走过的路。";
 }
 
 std::string story_text_glyphs() {
@@ -110,7 +126,18 @@ std::string story_text_glyphs() {
     glyphs += location_result_summary(Location::home, ActionOutcome::completed);
     glyphs += location_result_summary(Location::home, ActionOutcome::abandoned);
     glyphs += council_opening();
-    glyphs += placeholder_ending_text();
+    constexpr std::array endings{
+        MainEnding::town_star,
+        MainEnding::money_machine,
+        MainEnding::popular_resident,
+        MainEnding::library_star,
+        MainEnding::tavern_legend,
+        MainEnding::ordinary_newcomer,
+        MainEnding::business_failure,
+    };
+    for (const MainEnding ending : endings) {
+        glyphs += ending_narrative(ending);
+    }
     glyphs.erase(std::remove(glyphs.begin(), glyphs.end(), '\n'), glyphs.end());
     return glyphs;
 }

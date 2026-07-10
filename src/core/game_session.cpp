@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 
+#include "core/ending_rules.hpp"
 #include "core/story_text.hpp"
 
 namespace pixel_town {
@@ -311,6 +312,10 @@ ApplyResult GameSession::apply_action_result(const ActionResult& result) {
 }
 
 bool GameSession::finish_day_summary() {
+    return finish_day_summary(default_ending_config());
+}
+
+bool GameSession::finish_day_summary(const EndingConfig& config) {
     if (phase_ != GamePhase::day_summary) {
         return false;
     }
@@ -322,7 +327,9 @@ bool GameSession::finish_day_summary() {
         last_summary_.clear();
         phase_ = GamePhase::day_choice;
     } else {
-        create_placeholder_ending();
+        if (!create_final_ending(config)) {
+            return false;
+        }
         clear_pending_location();
         phase_ = GamePhase::ending;
         return true;
@@ -393,10 +400,22 @@ void GameSession::apply_delta(const StatDelta& delta) {
     player_.mood = clamp_value(player_.mood + delta.mood, 0, 100);
 }
 
-void GameSession::create_placeholder_ending() {
-    main_ending_ = "平凡小镇新人";
-    final_summary_ = std::string{council_opening()} + "\n" + placeholder_ending_text() +
-                     "\n成长路线摘要：均衡体验小镇生活。";
+bool GameSession::create_final_ending(const EndingConfig& config) {
+    const auto settlement = settle_ending(
+        EndingInput{player_, store_inventory_, tavern_wins_, tavern_losses_},
+        config);
+    if (!settlement.accepted) {
+        return false;
+    }
+    player_.money = clamp_value(player_.money + settlement.inventory_cash, 0, 999);
+    store_inventory_.clear();
+    main_ending_ = main_ending_label(settlement.ending);
+    final_summary_ = std::string{council_opening()} + "\n" +
+                     ending_narrative(settlement.ending) + "\n库存清算 " +
+                     std::to_string(settlement.inventory_cash) +
+                     " 金币 · 成长路线：" + settlement.growth_route +
+                     "。\n判定依据：" + settlement.reason;
+    return true;
 }
 
 }  // namespace pixel_town

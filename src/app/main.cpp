@@ -148,7 +148,7 @@ std::filesystem::path application_directory_from_argv(const char* executable_pat
     return directory_from_executable_path(std::filesystem::path{executable_path});
 }
 
-void advance_to_placeholder_ending(pixel_town::GameAppState& state) {
+void advance_to_ending(pixel_town::GameAppState& state) {
     state.has_session = true;
     state.session = pixel_town::GameSession::new_game();
     for (int day = 1; day <= 10 && !state.session.is_ended(); ++day) {
@@ -188,8 +188,41 @@ void setup_store_diagnostic(pixel_town::GameAppState& state, bool started) {
     state.locations.store_selected_product_index = 1;
     if (started) {
         (void)state.session.start_location();
+        state.locations.store_feedback = "方案已锁定：点击“结算销售”查看销售结果。";
     }
     state.notice = started ? "诊断：便利店已开始。" : "诊断：便利店准备页。";
+}
+
+void setup_store_result_diagnostic(pixel_town::GameAppState& state) {
+    state = pixel_town::GameAppState{};
+    state.has_session = true;
+    state.session = pixel_town::GameSession::new_game(20260710U);
+    (void)state.session.enter_location(pixel_town::Location::convenience_store);
+    pixel_town::prepare_store_runtime(state.locations);
+    state.locations.store_purchase_plan.quantities["umbrella"] = 8;
+    if (!pixel_town::start_pending_location(state.session, state.locations, state.notice)) {
+        return;
+    }
+
+    const auto config = pixel_town::store::default_store_config();
+    const auto day_context = state.session.current_day_context();
+    const pixel_town::store::DailyStoreContext context{
+        state.session.day(),
+        state.session.location_seed(pixel_town::Location::convenience_store),
+        day_context.weather,
+        day_context.event,
+    };
+    const auto settlement = pixel_town::store::simulate_sales(
+        config, {}, state.locations.store_purchase_plan,
+        state.locations.store_price_plan, context, state.session.player().money);
+    if (!settlement.accepted) {
+        state.notice = settlement.message;
+        return;
+    }
+    const auto applied = state.session.apply_action_result(
+        pixel_town::store::build_store_action_result(
+            config, settlement, state.session.active_result_id()));
+    state.notice = applied.accepted ? settlement.summary : applied.message;
 }
 
 void setup_library_diagnostic(pixel_town::GameAppState& state,
@@ -271,25 +304,28 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
             setup_store_diagnostic(state, true);
             break;
         case 4:
-            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::intro);
+            setup_store_result_diagnostic(state);
             break;
         case 5:
-            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::npc_talk);
+            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::intro);
             break;
         case 6:
-            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::answering);
+            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::npc_talk);
             break;
         case 7:
+            setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::answering);
+            break;
+        case 8:
             setup_library_diagnostic(state, pixel_town::library::ui::LibrarySceneState::answering,
                                      true);
             break;
-        case 8:
+        case 9:
             setup_tavern_diagnostic(state, pixel_town::TavernScreen::lobby);
             break;
-        case 9:
+        case 10:
             setup_tavern_diagnostic(state, pixel_town::TavernScreen::challenge_select);
             break;
-        case 10:
+        case 11:
             setup_tavern_diagnostic(state, pixel_town::TavernScreen::gomoku);
             break;
         default:
@@ -539,11 +575,12 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 12> ui_diagnostic_capture_paths{
+    const std::array<const char*, 13> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/store-prepare.png",
         "ui-diagnostics-captures/store-started.png",
+        "ui-diagnostics-captures/store-result-map.png",
         "ui-diagnostics-captures/library-intro.png",
         "ui-diagnostics-captures/library-dialog.png",
         "ui-diagnostics-captures/library-answering.png",
@@ -724,7 +761,7 @@ int main(int argc, char* argv[]) {
                 game_flow.session = pixel_town::GameSession::new_game();
                 game_flow.notice = "第 1 天开始：请选择一个白天工作地点。";
             } else if (capture_game_flow && capture_index == 2) {
-                advance_to_placeholder_ending(game_flow);
+                advance_to_ending(game_flow);
             }
             if (capture_ui_diagnostics && capture_index < ui_diagnostic_capture_paths.size()) {
                 setup_ui_diagnostic_capture(game_flow, capture_index);

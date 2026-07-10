@@ -1,5 +1,8 @@
 #include <doctest/doctest.h>
 
+#include <algorithm>
+
+#include "core/ending_rules.hpp"
 #include "locations/convenience_store.hpp"
 
 TEST_CASE("store decision rejects purchases beyond available cash") {
@@ -176,4 +179,27 @@ TEST_CASE("rejected store settlement creates a reward-free abandoned result") {
     CHECK(result.delta.reputation == 0);
     CHECK_FALSE(result.has_store_inventory_update);
     CHECK(result.summary == "现金不足");
+}
+
+TEST_CASE("final liquidation values stay aligned with store unit costs") {
+    const auto store_config = pixel_town::store::default_store_config();
+    const auto ending_config = pixel_town::default_ending_config();
+
+    REQUIRE(ending_config.inventory_values.size() == store_config.products.size());
+    for (const auto& product : store_config.products) {
+        const auto found = std::find_if(
+            ending_config.inventory_values.begin(),
+            ending_config.inventory_values.end(),
+            [&](const auto& value) { return value.item_id == product.id; });
+        REQUIRE(found != ending_config.inventory_values.end());
+        CHECK(found->unit_cost == product.unit_cost);
+    }
+}
+
+TEST_CASE("store glyph manifest covers every conditional summary ending") {
+    const std::string glyphs = pixel_town::store::convenience_store_glyphs();
+
+    CHECK(glyphs.find("店主在账本边角画了个小勾") != std::string::npos);
+    CHECK(glyphs.find("账本最后留了几处空白") != std::string::npos);
+    CHECK(glyphs.find("现金不足，不能完成这次进货") != std::string::npos);
 }

@@ -88,5 +88,6 @@ struct StoreSettlement {
 [[nodiscard]] ActionResult build_store_action_result(const StoreConfig& config,
                                                      const StoreSettlement& settlement,
                                                      int result_id);
+[[nodiscard]] const char* convenience_store_glyphs();
 
 }  // namespace pixel_town::store

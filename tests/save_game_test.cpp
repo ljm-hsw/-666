@@ -346,6 +346,34 @@ TEST_CASE("ending saves require an ending label and final summary") {
     CHECK(std::filesystem::is_regular_file(save_path));
 }
 
+TEST_CASE("formal ending and liquidated inventory survive save reload") {
+    TempSaveDir temp;
+    const auto save_path = temp.path() / "formal-ending.sav";
+    auto snapshot = pixel_town::GameSession::new_game(20260710U).snapshot();
+    snapshot.day = 10;
+    snapshot.phase = pixel_town::GamePhase::day_summary;
+    snapshot.day_action_done = true;
+    snapshot.night_action_done = true;
+    snapshot.player.money = 50;
+    snapshot.player.reputation = 20;
+    snapshot.store_inventory = {{"umbrella", 2}};
+    auto session = pixel_town::GameSession::from_snapshot(snapshot);
+    REQUIRE(session.finish_day_summary());
+    REQUIRE(pixel_town::save_session_atomic(save_path, session).status ==
+            pixel_town::SaveStatus::ok);
+
+    const auto loaded = pixel_town::load_session(save_path);
+
+    REQUIRE(loaded.status == pixel_town::SaveStatus::ok);
+    CHECK(loaded.session.phase() == pixel_town::GamePhase::ending);
+    CHECK(loaded.session.main_ending() == session.main_ending());
+    CHECK(loaded.session.final_summary() == session.final_summary());
+    CHECK(loaded.session.player().money == 56);
+    CHECK(loaded.session.store_inventory().empty());
+    auto resumed = loaded.session;
+    CHECK_FALSE(resumed.finish_day_summary());
+}
+
 TEST_CASE("default save path stays beside the application directory") {
     const auto base = std::filesystem::path{"portable"};
     CHECK(pixel_town::default_save_path(base) == base / "saves" / "slot1.sav");

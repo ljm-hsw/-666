@@ -5,6 +5,8 @@
 
 namespace pixel_town {
 
+struct EndingConfig;
+
 enum class GamePhase {
     day_choice,
     day_location,
@@ -151,6 +153,7 @@ public:
     [[nodiscard]] ActionResult home_rest_result();
     [[nodiscard]] ApplyResult apply_action_result(const ActionResult& result);
     [[nodiscard]] bool finish_day_summary();
+    [[nodiscard]] bool finish_day_summary(const EndingConfig& config);
     [[nodiscard]] GameSessionSnapshot snapshot() const;
     [[nodiscard]] static GameSession from_snapshot(const GameSessionSnapshot& snapshot);
 
@@ -178,7 +181,7 @@ private:
     [[nodiscard]] bool result_was_applied(int result_id) const;
     void clear_pending_location();
     void apply_delta(const StatDelta& delta);
-    void create_placeholder_ending();
+    [[nodiscard]] bool create_final_ending(const EndingConfig& config);
 };
 
 }  // namespace pixel_town

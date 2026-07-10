@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include <raylib.h>
@@ -18,6 +19,26 @@
 
 namespace pixel_town {
 
+enum class StorePlanActionType {
+    select_product,
+    decrease_purchase,
+    increase_purchase,
+    set_low_price,
+    set_standard_price,
+    set_high_price,
+};
+
+struct StorePlanAction {
+    StorePlanActionType type{StorePlanActionType::select_product};
+    int product_index{0};
+};
+
+struct StorePlanFeedback {
+    bool accepted{false};
+    bool changed{false};
+    std::string message;
+};
+
 struct LocationRuntimeState {
     std::unique_ptr<RestaurantSession> restaurant;
     float restaurant_timer{0.0F};
@@ -26,6 +47,7 @@ struct LocationRuntimeState {
     store::PurchasePlan store_purchase_plan;
     store::PricePlan store_price_plan;
     int store_selected_product_index{0};
+    std::string store_feedback;
     bool in_library{false};
     library::LibraryData library_data;
     std::unique_ptr<library::LibraryRuleEngine> library_engine;
@@ -44,10 +66,20 @@ struct LocationRuntimeState {
 [[nodiscard]] Rectangle store_back_button();
 [[nodiscard]] Rectangle store_start_button();
 [[nodiscard]] Rectangle store_abandon_button();
+[[nodiscard]] Rectangle store_product_row(int product_index);
+[[nodiscard]] Rectangle store_purchase_decrease_button(int product_index);
+[[nodiscard]] Rectangle store_purchase_increase_button(int product_index);
+[[nodiscard]] Rectangle store_price_button(int product_index, store::PriceTier tier);
+[[nodiscard]] std::optional<StorePlanAction> store_plan_action_at(
+    Vector2 logical_mouse, int product_count);
 
 void prepare_restaurant_runtime(LocationRuntimeState& runtime, unsigned int seed);
 void prepare_store_runtime(LocationRuntimeState& runtime);
-void update_store_selection(LocationRuntimeState& runtime, const GameSession& session);
+[[nodiscard]] StorePlanFeedback apply_store_plan_action(
+    LocationRuntimeState& runtime, const GameSession& session, StorePlanAction action);
+[[nodiscard]] std::string store_runtime_glyphs();
+void update_store_selection(LocationRuntimeState& runtime, const GameSession& session,
+                            Vector2 logical_mouse, std::string& notice);
 [[nodiscard]] bool start_pending_location(GameSession& session,
                                            LocationRuntimeState& runtime,
                                            std::string& notice);

@@ -4,6 +4,39 @@
 #include <sstream>
 
 namespace pixel_town {
+namespace {
+
+std::size_t utf8_codepoint_length(unsigned char leading_byte) {
+    if ((leading_byte & 0x80U) == 0U) {
+        return 1;
+    }
+    if ((leading_byte & 0xE0U) == 0xC0U) {
+        return 2;
+    }
+    if ((leading_byte & 0xF0U) == 0xE0U) {
+        return 3;
+    }
+    if ((leading_byte & 0xF8U) == 0xF0U) {
+        return 4;
+    }
+    return 1;
+}
+
+void replace_last_codepoint_with_ellipsis(std::string& line) {
+    if (line.empty()) {
+        line = "…";
+        return;
+    }
+    std::size_t offset = line.size() - 1;
+    while (offset > 0 &&
+           (static_cast<unsigned char>(line[offset]) & 0xC0U) == 0x80U) {
+        --offset;
+    }
+    line.erase(offset);
+    line += "…";
+}
+
+}  // namespace
 
 float scaled(float value) {
     return std::round(value * ui::design_to_canvas_scale);
@@ -86,6 +119,59 @@ bool activated(Rectangle bounds, Vector2 mouse, KeyboardKey key) {
 
 bool hovered(Rectangle bounds, Vector2 mouse) {
     return CheckCollisionPointRec(mouse, scaled_rect(bounds));
+}
+
+std::vector<std::string> wrap_text_lines(const std::string& value,
+                                         std::size_t max_codepoints_per_line,
+                                         std::size_t max_lines) {
+    if (value.empty() || max_codepoints_per_line == 0 || max_lines == 0) {
+        return {};
+    }
+
+    std::vector<std::string> lines;
+    std::string current;
+    std::size_t current_count = 0;
+    bool truncated = false;
+    for (std::size_t offset = 0; offset < value.size();) {
+        if (value[offset] == '\n') {
+            lines.push_back(current);
+            current.clear();
+            current_count = 0;
+            ++offset;
+            if (lines.size() == max_lines && offset < value.size()) {
+                truncated = true;
+                break;
+            }
+            continue;
+        }
+
+        if (current_count == max_codepoints_per_line) {
+            lines.push_back(current);
+            current.clear();
+            current_count = 0;
+            if (lines.size() == max_lines) {
+                truncated = true;
+                break;
+            }
+        }
+
+        std::size_t length = utf8_codepoint_length(
+            static_cast<unsigned char>(value[offset]));
+        if (offset + length > value.size()) {
+            length = 1;
+        }
+        current.append(value, offset, length);
+        offset += length;
+        ++current_count;
+    }
+
+    if (!truncated && !current.empty() && lines.size() < max_lines) {
+        lines.push_back(current);
+    }
+    if (truncated && !lines.empty()) {
+        replace_last_codepoint_with_ellipsis(lines.back());
+    }
+    return lines;
 }
 
 }  // namespace pixel_town

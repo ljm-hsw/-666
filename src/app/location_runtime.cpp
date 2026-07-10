@@ -45,21 +45,16 @@ void ensure_store_runtime_plan(LocationRuntimeState& runtime, const store::Store
     }
 }
 
-const store::ProductConfig& selected_store_product(LocationRuntimeState& runtime,
-                                                   const store::StoreConfig& config) {
-    ensure_store_runtime_plan(runtime, config);
-    return config.products[static_cast<std::size_t>(runtime.store_selected_product_index)];
-}
-
-void adjust_selected_store_purchase(LocationRuntimeState& runtime,
-                                    const store::StoreConfig& config,
-                                    const GameSession& session,
-                                    int delta) {
-    const auto& product = selected_store_product(runtime, config);
-    int& quantity = runtime.store_purchase_plan.quantities[product.id];
-    const int max_add =
-        std::max(0, config.max_stock_per_product - inventory_quantity(session, product.id));
-    quantity = std::max(0, std::min(max_add, quantity + delta));
+const char* store_price_name(store::PriceTier tier) {
+    switch (tier) {
+        case store::PriceTier::low:
+            return "低价";
+        case store::PriceTier::standard:
+            return "标准价";
+        case store::PriceTier::high:
+            return "高价";
+    }
+    return "标准价";
 }
 
 store::DailyStoreContext make_store_context(const GameSession& session) {
@@ -101,15 +96,77 @@ Rectangle restaurant_stats_panel() {
 }
 
 Rectangle store_back_button() {
-    return Rectangle{126.0F, 314.0F, 112.0F, 34.0F};
+    return Rectangle{126.0F, 316.0F, 112.0F, 30.0F};
 }
 
 Rectangle store_start_button() {
-    return Rectangle{264.0F, 314.0F, 112.0F, 34.0F};
+    return Rectangle{264.0F, 316.0F, 112.0F, 30.0F};
 }
 
 Rectangle store_abandon_button() {
-    return Rectangle{402.0F, 314.0F, 112.0F, 34.0F};
+    return Rectangle{402.0F, 316.0F, 112.0F, 30.0F};
+}
+
+Rectangle store_product_row(int product_index) {
+    return Rectangle{88.0F, 161.0F + static_cast<float>(product_index) * 22.0F,
+                     456.0F, 20.0F};
+}
+
+Rectangle store_purchase_decrease_button(int product_index) {
+    return Rectangle{248.0F, 160.0F + static_cast<float>(product_index) * 22.0F,
+                     20.0F, 20.0F};
+}
+
+Rectangle store_purchase_increase_button(int product_index) {
+    return Rectangle{306.0F, 160.0F + static_cast<float>(product_index) * 22.0F,
+                     20.0F, 20.0F};
+}
+
+Rectangle store_price_button(int product_index, store::PriceTier tier) {
+    float x = 344.0F;
+    if (tier == store::PriceTier::standard) {
+        x = 378.0F;
+    } else if (tier == store::PriceTier::high) {
+        x = 412.0F;
+    }
+    return Rectangle{x, 160.0F + static_cast<float>(product_index) * 22.0F,
+                     30.0F, 20.0F};
+}
+
+std::optional<StorePlanAction> store_plan_action_at(Vector2 logical_mouse,
+                                                    int product_count) {
+    for (int product_index = 0; product_index < product_count; ++product_index) {
+        if (CheckCollisionPointRec(
+                logical_mouse,
+                scaled_rect(store_purchase_decrease_button(product_index)))) {
+            return StorePlanAction{StorePlanActionType::decrease_purchase, product_index};
+        }
+        if (CheckCollisionPointRec(
+                logical_mouse,
+                scaled_rect(store_purchase_increase_button(product_index)))) {
+            return StorePlanAction{StorePlanActionType::increase_purchase, product_index};
+        }
+        if (CheckCollisionPointRec(
+                logical_mouse,
+                scaled_rect(store_price_button(product_index, store::PriceTier::low)))) {
+            return StorePlanAction{StorePlanActionType::set_low_price, product_index};
+        }
+        if (CheckCollisionPointRec(
+                logical_mouse,
+                scaled_rect(store_price_button(product_index, store::PriceTier::standard)))) {
+            return StorePlanAction{StorePlanActionType::set_standard_price, product_index};
+        }
+        if (CheckCollisionPointRec(
+                logical_mouse,
+                scaled_rect(store_price_button(product_index, store::PriceTier::high)))) {
+            return StorePlanAction{StorePlanActionType::set_high_price, product_index};
+        }
+        if (CheckCollisionPointRec(logical_mouse,
+                                   scaled_rect(store_product_row(product_index)))) {
+            return StorePlanAction{StorePlanActionType::select_product, product_index};
+        }
+    }
+    return std::nullopt;
 }
 
 void prepare_restaurant_runtime(LocationRuntimeState& runtime, unsigned int seed) {
@@ -122,42 +179,141 @@ void prepare_store_runtime(LocationRuntimeState& runtime) {
     runtime.store_purchase_plan = store::PurchasePlan{};
     runtime.store_price_plan = store::default_price_plan(config);
     runtime.store_selected_product_index = 0;
+    runtime.store_feedback = "点击商品行，再用减号/加号调整进货并选择价格档。";
     ensure_store_runtime_plan(runtime, config);
 }
 
-void update_store_selection(LocationRuntimeState& runtime, const GameSession& session) {
+StorePlanFeedback apply_store_plan_action(LocationRuntimeState& runtime,
+                                          const GameSession& session,
+                                          StorePlanAction action) {
     const auto config = store::default_store_config();
     ensure_store_runtime_plan(runtime, config);
+    StorePlanFeedback feedback;
+    if (action.product_index < 0 ||
+        action.product_index >= static_cast<int>(config.products.size())) {
+        feedback.message = "便利店商品选择无效。";
+        return feedback;
+    }
+
+    feedback.accepted = true;
+    const auto& product = config.products[static_cast<std::size_t>(action.product_index)];
+    const int previous_selection = runtime.store_selected_product_index;
+    runtime.store_selected_product_index = action.product_index;
+    int& quantity = runtime.store_purchase_plan.quantities[product.id];
+    auto& tier = runtime.store_price_plan.tiers[product.id];
+
+    switch (action.type) {
+        case StorePlanActionType::select_product:
+            feedback.changed = previous_selection != action.product_index;
+            feedback.message = std::string{"已选择"} + product.name + "：进货 " +
+                               std::to_string(quantity) + "，价格 " +
+                               store_price_name(tier) + "。";
+            break;
+        case StorePlanActionType::decrease_purchase:
+            if (quantity == 0) {
+                feedback.message = std::string{product.name} + "进货数量已经是 0。";
+                break;
+            }
+            --quantity;
+            feedback.changed = true;
+            feedback.message = std::string{product.name} + "进货数量：" +
+                               std::to_string(quantity) + "（成本 " +
+                               std::to_string(quantity * product.unit_cost) + " 金币）。";
+            break;
+        case StorePlanActionType::increase_purchase: {
+            const int max_add = std::max(
+                0, config.max_stock_per_product - inventory_quantity(session, product.id));
+            if (quantity >= max_add) {
+                feedback.message = std::string{product.name} + "已达库存上限 " +
+                                   std::to_string(config.max_stock_per_product) + "。";
+                break;
+            }
+            ++quantity;
+            feedback.changed = true;
+            feedback.message = std::string{product.name} + "进货数量：" +
+                               std::to_string(quantity) + "（成本 " +
+                               std::to_string(quantity * product.unit_cost) + " 金币）。";
+            break;
+        }
+        case StorePlanActionType::set_low_price:
+        case StorePlanActionType::set_standard_price:
+        case StorePlanActionType::set_high_price: {
+            const store::PriceTier next_tier =
+                action.type == StorePlanActionType::set_low_price
+                    ? store::PriceTier::low
+                    : (action.type == StorePlanActionType::set_standard_price
+                           ? store::PriceTier::standard
+                           : store::PriceTier::high);
+            feedback.changed = tier != next_tier;
+            tier = next_tier;
+            feedback.message = std::string{product.name} + "价格档已设为" +
+                               store_price_name(tier) + "，售价 " +
+                               std::to_string(store::price_for_tier(product, tier)) +
+                               " 金币。";
+            break;
+        }
+    }
+    runtime.store_feedback = feedback.message;
+    return feedback;
+}
+
+std::string store_runtime_glyphs() {
+    return std::string{store::convenience_store_glyphs()} +
+           "低价标准价高价点击商品行，再用减号/加号调整进货并选择价格档。"
+           "便利店商品选择无效。已选择：进货 0，价格。进货数量已经是 0。"
+           "进货数量：（成本 金币）。已达库存上限。价格档已设为，售价 金币。"
+           "方案已锁定：点击“结算销售”查看收入、利润和剩余库存。"
+           "地点已开始：完成或放弃都会消耗本阶段。";
+}
+
+void update_store_selection(LocationRuntimeState& runtime, const GameSession& session,
+                            Vector2 logical_mouse, std::string& notice) {
+    const auto config = store::default_store_config();
+    ensure_store_runtime_plan(runtime, config);
+    if (runtime.store_feedback.empty()) {
+        runtime.store_feedback = "点击商品行，再用减号/加号调整进货并选择价格档。";
+    }
+
+    const auto apply = [&](StorePlanActionType type, int index) {
+        const auto feedback = apply_store_plan_action(runtime, session, {type, index});
+        notice = feedback.message;
+    };
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        const auto action = store_plan_action_at(
+            logical_mouse, static_cast<int>(config.products.size()));
+        if (action.has_value()) {
+            apply(action->type, action->product_index);
+            return;
+        }
+    }
 
     if (IsKeyPressed(KEY_ONE)) {
-        runtime.store_selected_product_index = 0;
+        apply(StorePlanActionType::select_product, 0);
     }
     if (IsKeyPressed(KEY_TWO) && config.products.size() > 1) {
-        runtime.store_selected_product_index = 1;
+        apply(StorePlanActionType::select_product, 1);
     }
     if (IsKeyPressed(KEY_THREE) && config.products.size() > 2) {
-        runtime.store_selected_product_index = 2;
+        apply(StorePlanActionType::select_product, 2);
     }
     if (IsKeyPressed(KEY_FOUR) && config.products.size() > 3) {
-        runtime.store_selected_product_index = 3;
+        apply(StorePlanActionType::select_product, 3);
     }
     if (IsKeyPressed(KEY_Q)) {
-        const auto& product = selected_store_product(runtime, config);
-        runtime.store_price_plan.tiers[product.id] = store::PriceTier::low;
+        apply(StorePlanActionType::set_low_price, runtime.store_selected_product_index);
     }
     if (IsKeyPressed(KEY_W)) {
-        const auto& product = selected_store_product(runtime, config);
-        runtime.store_price_plan.tiers[product.id] = store::PriceTier::standard;
+        apply(StorePlanActionType::set_standard_price, runtime.store_selected_product_index);
     }
     if (IsKeyPressed(KEY_E)) {
-        const auto& product = selected_store_product(runtime, config);
-        runtime.store_price_plan.tiers[product.id] = store::PriceTier::high;
+        apply(StorePlanActionType::set_high_price, runtime.store_selected_product_index);
     }
     if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) {
-        adjust_selected_store_purchase(runtime, config, session, -1);
+        apply(StorePlanActionType::decrease_purchase, runtime.store_selected_product_index);
     }
     if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) {
-        adjust_selected_store_purchase(runtime, config, session, 1);
+        apply(StorePlanActionType::increase_purchase, runtime.store_selected_product_index);
     }
 }
 
@@ -195,6 +351,7 @@ bool start_pending_location(GameSession& session, LocationRuntimeState& runtime,
             session.player().money);
         if (!validation.allowed) {
             notice = validation.message;
+            runtime.store_feedback = validation.message;
             return false;
         }
     }
@@ -203,7 +360,13 @@ bool start_pending_location(GameSession& session, LocationRuntimeState& runtime,
         return false;
     }
 
-    notice = "地点已开始：完成或放弃都会消耗本阶段。";
+    if (session.pending_location() == Location::convenience_store) {
+        runtime.store_feedback =
+            "方案已锁定：点击“结算销售”查看收入、利润和剩余库存。";
+        notice = runtime.store_feedback;
+    } else {
+        notice = "地点已开始：完成或放弃都会消耗本阶段。";
+    }
     return true;
 }
 

@@ -36,11 +36,13 @@ const char* opening_story();
 const char* daily_prompt(int day);
 const char* location_result_summary(Location location, ActionOutcome outcome);
 const char* council_opening();
-const char* placeholder_ending_text();
-std::string story_glyphs();
+const char* ending_narrative(MainEnding ending);
+std::string story_text_glyphs();
 ```
 
 P1 不需要立刻做外部数据加载器。先把 S 级文本集中在核心层，保证测试和 UI 接入简单。P4 若文本量扩大，再评估 `assets/data/story/` 数据文件。
+
+P3 已按该边界完成正式结局接入：`EndingRules` 负责结局枚举、成长路线和判定依据，`StoryText` 只根据结局枚举选择叙事文案；两者都不依赖 raylib。
 
 ## P1：MVP 主线骨架
 

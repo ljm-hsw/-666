@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
+#include <vector>
 
 #include <raylib.h>
 
@@ -39,5 +41,8 @@ void panel(Rectangle bounds, Color fill, Color border = ink);
 [[nodiscard]] bool clicked(Rectangle bounds, Vector2 mouse);
 [[nodiscard]] bool activated(Rectangle bounds, Vector2 mouse, KeyboardKey key);
 [[nodiscard]] bool hovered(Rectangle bounds, Vector2 mouse);
+[[nodiscard]] std::vector<std::string> wrap_text_lines(
+    const std::string& value, std::size_t max_codepoints_per_line,
+    std::size_t max_lines);
 
 }  // namespace pixel_town
