@@ -3,7 +3,7 @@
 Status: ready-for-human
 Milestone: P4
 Type: HITL
-User stories: 37, 38, 62
+User stories: 37, 38, 62, 71, 72
 
 ## What to build
 
@@ -13,6 +13,7 @@ User stories: 37, 38, 62
 
 - [ ] 内容集合覆盖所有已确认地点规则，不加入 PRD 范围外的新系统。
 - [ ] 剧情内容扩充遵循 `docs/story/LOCATIONS_AND_NPCS.md`，只在核心玩法稳定后加入 NPC 三段式、旧集市碎片或条件回声。
+- [ ] Issue 23-28 的人物对话与室内移动经过人工试玩，记录台词长度、语气、重复感、移动速度、互动距离、NPC 轨迹和是否打断玩法；最终批准版本保持轻量且不增加好感度或任务链。
 - [ ] 所有初始状态、边界、消耗、恢复、收益、价格、需求、概率、计时、赌注、清算和结局阈值集中配置。
 - [ ] 固定种子批量模拟能够复现，并生成各路线最终状态和结局分布摘要。
 - [ ] 不存在因合法选择导致无法继续白天或夜晚流程的软锁。
@@ -34,6 +35,11 @@ User stories: 37, 38, 62
 - [14 P3：接入 1v1 骗子骰子](14-p3-liars-dice.md)
 - [15 P3：完成库存清算与七种主结局](15-p3-endings.md)
 - [22 P3：深化酒馆运行期与挑战结算架构](22-p3-tavern-runtime-and-settlement-architecture.md)
+- [24 P4：接入餐馆老板对话切片](24-p4-restaurant-npc-dialogue.md)
+- [25 P4：接入便利店店主对话切片](25-p4-convenience-store-npc-dialogue.md)
+- [26 P4：接入镇长与主角生命周期对话](26-p4-mayor-protagonist-dialogues.md)
+- [27 P4：接入图书馆室内移动、静态碰撞与管理员轨迹](27-p4-library-room-navigation.md)
+- [28 P4：接入酒馆室内移动、静态碰撞与常客轨迹](28-p4-tavern-room-navigation.md)
 
 ## Comments
 

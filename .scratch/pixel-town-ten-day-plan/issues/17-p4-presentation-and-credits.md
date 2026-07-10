@@ -3,7 +3,7 @@
 Status: ready-for-human
 Milestone: P4
 Type: HITL
-User stories: 58, 59, 61, 63, 67
+User stories: 58, 59, 61, 63, 67, 71, 72
 
 ## What to build
 
@@ -15,6 +15,9 @@ User stories: 58, 59, 61, 63, 67
 
 - [ ] 全部场景遵循 P0 批准的调色板、像素网格、字体和资源命名规范。
 - [ ] P2/P3 期间产生的占位 UI 已统一审查，最终保留、替换或删除的依据记录清楚。
+- [ ] 镇长、主角、餐馆老板、便利店店主、图书馆管理员和酒保的小人与统一对话框已替换或明确批准保留，原生尺寸、帧对齐和缺失资源 fallback 通过人工验收。
+- [ ] 图书馆与酒馆的主角/NPC 四方向移动帧、朝向、停留和巡逻表现通过原生像素尺寸验收；占位单帧若保留必须有明确人工批准。
+- [ ] 每个书架、家具、柜台、吧台、桌椅和墙体的阻挡范围与画面一致；新增、移动、缩放或替换视觉物件时已同步碰撞体并记录检查结果。
 - [ ] 简体中文标题、正文、状态值、教程和错误信息在目标窗口中清晰可读。
 - [ ] 静态小镇地图热点与场景入口在视觉上可识别，不要求角色自由行走。
 - [ ] 每个地点首次进入显示可跳过说明，暂停菜单可重新查看。
@@ -38,6 +41,12 @@ User stories: 58, 59, 61, 63, 67
 - [14 P3：接入 1v1 骗子骰子](14-p3-liars-dice.md)
 - [15 P3：完成库存清算与七种主结局](15-p3-endings.md)
 - [22 P3：深化酒馆运行期与挑战结算架构](22-p3-tavern-runtime-and-settlement-architecture.md)
+- [23 P4：用酒保切片建立共享人物对话运行期](23-p4-shared-dialogue-bartender-slice.md)
+- [24 P4：接入餐馆老板对话切片](24-p4-restaurant-npc-dialogue.md)
+- [25 P4：接入便利店店主对话切片](25-p4-convenience-store-npc-dialogue.md)
+- [26 P4：接入镇长与主角生命周期对话](26-p4-mayor-protagonist-dialogues.md)
+- [27 P4：接入图书馆室内移动、静态碰撞与管理员轨迹](27-p4-library-room-navigation.md)
+- [28 P4：接入酒馆室内移动、静态碰撞与常客轨迹](28-p4-tavern-room-navigation.md)
 
 ## Comments
 
