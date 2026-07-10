@@ -1,6 +1,6 @@
 # Team Branch Integration Notes
 
-Last updated: 2026-07-09
+Last updated: 2026-07-10
 
 This document records the current integration state of teammate feature branches on
 `codex/integrate-team-branches`.
@@ -23,7 +23,7 @@ The following baseline behavior is intentionally preserved:
 | Branch | Module | Integration commit | Current state |
 |---|---|---:|---|
 | `origin/dev-yhr` | Restaurant | `2cd3da6` | Rules, basic UI, CMake target, and tests merged. |
-| `origin/dev-ckz` | Tavern shell/rules | `80bd9d3` | Tavern rules, win/loss counters, save fields, night entry, and tests merged. |
+| `origin/dev-ckz` | Tavern shell/rules/minigames | `80bd9d3` + source `6ebaddd` | Shell contract retained; playable Gomoku, Liar's Dice, candidate lobby/NPC assets, tests, and diagnostic captures integrated through current adapters. |
 | `origin/dev-xhy` | Library | `340b5b2` | Data, rules, NPC/scene/UI files, optional data manifest, map entry, and tests merged. |
 
 ## Intentional integration decisions
@@ -44,6 +44,10 @@ The following baseline behavior is intentionally preserved:
   library scene/NPC support is isolated in `pixel_town_location_scene`.
 - `ui_primitives` centralizes 960×540 logical-canvas drawing helpers and hit testing so scene code
   does not duplicate scaling, text, panel, click, and hover rules.
+- The rewritten `dev-ckz` branch was not merged wholesale because it was based on an older `main`.
+  Gomoku and Liar's Dice rules were moved into the headless locations target; tavern input state and
+  drawing were split into `tavern_runtime` and `tavern_view`, preserving the current save, story,
+  inventory, location-seed, and action-validation contracts.
 
 ## Current risks and follow-up
 
@@ -57,6 +61,9 @@ The following baseline behavior is intentionally preserved:
 - Convenience store is integrated with P2 placeholder UI: rule tests, product-specific keyboard
   purchase/price decisions, inventory updates, and save/load round-trip are covered. Mouse-first
   convenience-store controls and final convenience-store visuals remain polish work.
+- The current Cozy Tavern lobby is licensed only for non-commercial projects and remains a P3
+  candidate. A commercial-capable final release must replace it with project-authored or generated
+  art; the bartender candidate has separate Pixel Crawler terms recorded in `CREDITS.md`.
 
 ## Architecture refactor on 2026-07-09
 

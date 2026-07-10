@@ -125,24 +125,6 @@ void prepare_store_runtime(LocationRuntimeState& runtime) {
     ensure_store_runtime_plan(runtime, config);
 }
 
-void update_tavern_selection(LocationRuntimeState& runtime) {
-    if (IsKeyPressed(KEY_ONE)) {
-        runtime.tavern_challenge = ChallengeType::gomoku;
-    }
-    if (IsKeyPressed(KEY_TWO)) {
-        runtime.tavern_challenge = ChallengeType::liars_dice;
-    }
-    if (IsKeyPressed(KEY_THREE)) {
-        runtime.tavern_bet = BetTier::low;
-    }
-    if (IsKeyPressed(KEY_FOUR)) {
-        runtime.tavern_bet = BetTier::medium;
-    }
-    if (IsKeyPressed(KEY_FIVE)) {
-        runtime.tavern_bet = BetTier::high;
-    }
-}
-
 void update_store_selection(LocationRuntimeState& runtime, const GameSession& session) {
     const auto config = store::default_store_config();
     ensure_store_runtime_plan(runtime, config);
@@ -181,16 +163,6 @@ void update_store_selection(LocationRuntimeState& runtime, const GameSession& se
 
 bool start_pending_location(GameSession& session, LocationRuntimeState& runtime,
                             std::string& notice) {
-    const bool is_tavern = session.phase() == GamePhase::night_location &&
-                           session.pending_location() == Location::tavern;
-    if (is_tavern) {
-        const TavernChallengeConfig config;
-        if (!can_afford_tavern_bet(session.player(), runtime.tavern_bet, config)) {
-            notice = "金钱不足，无法选择该赌注档位。";
-            return false;
-        }
-    }
-
     if (session.pending_location() == Location::library) {
         const auto load_result = library::load_library_data(library_data_path);
         if (!load_result.success) {
@@ -231,12 +203,7 @@ bool start_pending_location(GameSession& session, LocationRuntimeState& runtime,
         return false;
     }
 
-    if (is_tavern) {
-        notice = std::string{"已选择"} + challenge_type_label(runtime.tavern_challenge) +
-                 "、" + bet_tier_label(runtime.tavern_bet) + "赌注：按空格完成模拟。";
-    } else {
-        notice = "地点已开始：完成或放弃都会消耗本阶段。";
-    }
+    notice = "地点已开始：完成或放弃都会消耗本阶段。";
     return true;
 }
 
@@ -265,9 +232,6 @@ bool update_active_library(GameSession& session, LocationRuntimeState& runtime,
 
 bool update_started_location(GameSession& session, LocationRuntimeState& runtime,
                              std::string& notice, Vector2 logical_mouse) {
-    const bool is_tavern = session.phase() == GamePhase::night_location &&
-                           session.pending_location() == Location::tavern;
-
     if (session.pending_location() == Location::restaurant && runtime.restaurant) {
         auto& restaurant = *runtime.restaurant;
         const Rectangle close_button{568, 94, 28, 28};
@@ -331,18 +295,9 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
 
     const Rectangle finish_button = session.pending_location() == Location::convenience_store
                                         ? store_start_button()
-                                        : location_start_button(is_tavern);
+                                        : location_start_button(false);
     if (activated(finish_button, logical_mouse, KEY_SPACE)) {
-        if (is_tavern) {
-            const TavernChallengeConfig config;
-            const auto result = tavern_action_result(session, runtime.tavern_challenge,
-                                                     runtime.tavern_bet, ChallengeOutcome::win,
-                                                     config);
-            if (result.result_id != 0) {
-                const auto applied = session.apply_action_result(result);
-                notice = applied.message;
-            }
-        } else if (session.pending_location() == Location::convenience_store) {
+        if (session.pending_location() == Location::convenience_store) {
             const auto config = store::default_store_config();
             ensure_store_runtime_plan(runtime, config);
             const auto settlement = store::simulate_sales(
@@ -364,7 +319,7 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
 
     const Rectangle abandon_button = session.pending_location() == Location::convenience_store
                                          ? store_abandon_button()
-                                         : location_abandon_button(is_tavern);
+                                         : location_abandon_button(false);
     if (clicked(abandon_button, logical_mouse)) {
         const auto applied = session.apply_action_result(session.abandon_current_location());
         notice = applied.message;

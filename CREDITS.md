@@ -99,3 +99,34 @@
 - 生成源已归档为仓库内候选原图；交付记录以仓库路径和 SHA-256 为准。
 
 该资源是项目内 P1 地图 UI 的候选生成资产，不是第三方素材，也不是最终美术批准结果。当前代码把处理后的 sprite sheet 作为地图页主体建筑资源优先显示；缺失时仍回退到 Kenney/代码绘制方案。是否进入最终交付仍需 Issue 03 或后续美术验收确认。
+
+## Pixel Crawler Free Pack Tavern NPC Candidate
+
+- 名称：Pixel Crawler - Free Pack / Citizen_F Tavern_A Walk Down Sheet
+- 作者：Anokolisa
+- 版本：Pixel Crawler - Free Pack 2.1（上游页面于 2026-07-07 更新）
+- 来源：`https://anokolisa.itch.io/free-pixel-art-asset-pack-topdown-tileset-rpg-16x16-sprites`
+- 原始包内路径：`Entities/Npc's/Citizen_F/Tavern_A/Walk/Walk_Down-Sheet.png`
+- 许可证/条款：允许用于商业、学习或其他功能性项目；允许修改；不得将素材本身作为最终产品单独销售
+- 条款文件：[`assets/textures/ui/tavern/LICENSES/pixel_crawler_free_pack_terms.txt`](assets/textures/ui/tavern/LICENSES/pixel_crawler_free_pack_terms.txt)
+- 条款文件 SHA-256：`6eea461769c5c89126b3b566cd9e11dea9e56a386b6f9cf5e134939c6d53b4d1`
+- 仓库路径：[`assets/textures/ui/tavern/npc/bartender_idle_sheet.png`](assets/textures/ui/tavern/npc/bartender_idle_sheet.png)
+- 仓库文件 SHA-256：`d54f1d1c859a0481efc21e8e3029e097238c160808bc409524fc578be97f7dba`
+- 当前用途：酒馆老板 NPC 的 6 帧、每帧 64×64 向下动画候选
+
+该资源仍需 P4 视觉验收。若替换或重新绘制，应同步更新本节和文件哈希。
+
+## Cozy Tavern Interior Pack Free Tavern Lobby Candidate
+
+- 名称：Cozy Tavern Interior Pack（Free Version）
+- 作者：MangoSeven
+- 来源：`https://mangoseven.itch.io/cozy-tavern-interior-pack`
+- 场景制作：酒馆模块负责人使用 Tiled 组合并导出为 480×272 PNG
+- 许可证/条款：仅允许在非商业项目中使用和修改
+- 条款文件：[`assets/textures/ui/tavern/LICENSES/cozy_tavern_free_readme.txt`](assets/textures/ui/tavern/LICENSES/cozy_tavern_free_readme.txt)
+- 条款文件 SHA-256：`9a94205492bd7f8dd66f1c83c5a358b0529cf5f14c8807d808f1ade223866873`
+- 仓库路径：[`assets/textures/ui/tavern/tavern_lobby.png`](assets/textures/ui/tavern/tavern_lobby.png)
+- 仓库文件 SHA-256：`2669847c3f89ee4a9d2c6393c634563c25ac2d3c889c97f1947cce11534a8227`
+- 当前用途：P3 酒馆大厅运行时背景候选；缺失时使用程序绘制回退
+
+该背景适用于当前非商业教学项目，但不具备商业项目使用许可。P4 最终发布前应确认项目用途；若需要不受非商业限制的交付版本，应替换为项目自制或 imagegen 生成素材并更新本节。

@@ -87,6 +87,9 @@ TEST_CASE("production baseline manifest keeps the startup resource contract") {
                  false);
     require_spec("textures/imagegen_buildings/p1_building_sprites.png", ResourceKind::texture,
                  false);
+    require_spec("textures/ui/tavern/tavern_lobby.png", ResourceKind::texture, false);
+    require_spec("textures/ui/tavern/npc/bartender_idle_sheet.png", ResourceKind::texture,
+                 false);
     require_spec("data/baseline.txt", ResourceKind::data, true);
     require_spec("audio/theme.ogg", ResourceKind::audio, false);
 }

@@ -31,6 +31,8 @@ add_subdirectory(third_party/raylib EXCLUDE_FROM_ALL)
 add_library(pixel_town_locations
   src/locations/restaurant.cpp
   src/locations/convenience_store.cpp
+  src/locations/gomoku_rules.cpp
+  src/locations/liars_dice_rules.cpp
   src/locations/library_data.cpp
   src/locations/library_rules.cpp
 )
@@ -49,6 +51,8 @@ add_library(pixel_town_app_logic
   src/app/location_result_adapter.cpp
   src/app/location_runtime.cpp
   src/app/restaurant_ui_model.cpp
+  src/app/tavern_runtime.cpp
+  src/app/tavern_view.cpp
   src/app/ui_primitives.cpp
 )
 target_include_directories(pixel_town_app_logic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -66,6 +70,8 @@ enable_testing()
 
 add_executable(pixel_town_tests
   tests/display_config_test.cpp
+  tests/gomoku_rules_test.cpp
+  tests/liars_dice_rules_test.cpp
   tests/tavern_rules_test.cpp
   tests/demo_preset_test.cpp
   tests/game_session_test.cpp

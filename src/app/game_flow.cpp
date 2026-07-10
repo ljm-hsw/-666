@@ -1,5 +1,7 @@
 #include "app/game_flow.hpp"
 
+#include "app/tavern_view.hpp"
+
 #include <array>
 #include <string>
 
@@ -592,32 +594,19 @@ void draw_location(const Font& font, const GameAppState& state, bool audio_enabl
         draw_restaurant_ui(font, state, audio_enabled, mouse);
         return;
     }
-    ClearBackground(Color{215, 221, 194, 255});
-    draw_status(font, state.session, audio_enabled);
     const Location location = state.session.pending_location();
     const bool is_tavern = state.session.phase() == GamePhase::night_location &&
                            location == Location::tavern;
 
     if (is_tavern) {
-        panel(Rectangle{64, 70, 512, 230}, cream);
-        text(font, location_label(location), 126, 90, 30, red);
+        draw_tavern_view(font, state.session, state.locations.tavern, mouse);
+        draw_status(font, state.session, audio_enabled);
+        return;
+    }
 
-        const std::string challenge_text = std::string{"挑战："} +
-            challenge_type_label(state.locations.tavern_challenge) + " / 骗子骰子";
-        const std::string bet_text = std::string{"赌注："} +
-            bet_tier_label(state.locations.tavern_bet) + "赌注（" +
-            std::to_string(bet_amount(TavernChallengeConfig{}, state.locations.tavern_bet)) + "金币）";
-        text(font, challenge_text, 126, 136, 18, ink);
-        text(font, bet_text, 126, 160, 18, ink);
-
-        const char* status_text = state.session.location_started()
-            ? "地点已开始：按空格完成模拟。"
-            : "尚未开始：现在返回地图不会消耗本阶段。";
-        text(font, status_text, 126, 190, 16, ink);
-
-        text(font, "[1/2] 选择挑战    [3/4/5] 选择赌注    空格开始/完成    Esc返回",
-             90, 220, 16, Color{78, 78, 72, 255});
-    } else if (location == Location::convenience_store) {
+    ClearBackground(Color{215, 221, 194, 255});
+    draw_status(font, state.session, audio_enabled);
+    if (location == Location::convenience_store) {
         panel(Rectangle{72, 70, 496, 232}, cream);
         text(font, location_label(location), 96, 82, 28, red);
         const auto context = state.session.current_day_context();
@@ -671,11 +660,11 @@ void draw_location(const Font& font, const GameAppState& state, bool audio_enabl
 
     const bool is_store = location == Location::convenience_store;
     const Rectangle back_button = is_store ? store_back_button()
-                                           : Rectangle{126, is_tavern ? 252.0F : 228.0F, 112, 34};
+                                           : Rectangle{126, 228, 112, 34};
     const Rectangle start_button = is_store ? store_start_button()
-                                            : Rectangle{264, is_tavern ? 252.0F : 228.0F, 112, 34};
+                                            : Rectangle{264, 228, 112, 34};
     const Rectangle abandon_button = is_store ? store_abandon_button()
-                                              : Rectangle{402, is_tavern ? 252.0F : 228.0F, 112, 34};
+                                              : Rectangle{402, 228, 112, 34};
     if (!state.session.location_started()) {
         panel(back_button, hovered(back_button, mouse) ? paper : Color{211, 202, 174, 255});
         centered_text(font, "返回地图", back_button, 16, ink);
@@ -795,6 +784,7 @@ const char* game_flow_glyphs() {
             "读者问达·芬奇除了绘画还擅长什么回答正确达·芬奇还是科学家和发明家"
             "回答错误达·芬奇还擅长科学发明";
         result += story_text_glyphs();
+        result += tavern_ui_glyphs();
         return result;
     }();
     return glyphs.c_str();
@@ -864,6 +854,7 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             }
             if (location == Location::tavern) {
                 if (state.session.enter_location(location)) {
+                    prepare_tavern_runtime(state.locations.tavern);
                     state.notice = "已进入酒馆，选择挑战和赌注。";
                 }
                 return;
@@ -891,8 +882,10 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
         const bool is_tavern = state.session.phase() == GamePhase::night_location &&
                                state.session.pending_location() == Location::tavern;
 
-        if (is_tavern && !state.session.location_started()) {
-            update_tavern_selection(state.locations);
+        if (is_tavern) {
+            (void)update_tavern_runtime(state.session, state.locations.tavern,
+                                        state.notice, logical_mouse);
+            return;
         }
         if (state.session.pending_location() == Location::convenience_store &&
             !state.session.location_started()) {

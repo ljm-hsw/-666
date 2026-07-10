@@ -128,6 +128,12 @@ Release：
 .\build\Debug\pixel_town.exe --capture-prototype
 ```
 
+生成餐馆、便利店、图书馆和酒馆地点 UI 诊断截图：
+
+```powershell
+.\build\Debug\pixel_town.exe --capture-ui-diagnostics
+```
+
 加载演示预设：
 
 ```powershell
@@ -211,6 +217,12 @@ ctest --test-dir build --output-on-failure
 
 ```bash
 ./build/pixel_town --capture-prototype
+```
+
+生成餐馆、便利店、图书馆和酒馆地点 UI 诊断截图：
+
+```bash
+./build/pixel_town --capture-ui-diagnostics
 ```
 
 加载演示预设：

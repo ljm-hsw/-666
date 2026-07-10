@@ -7,6 +7,7 @@
 
 #include "core/game_session.hpp"
 #include "core/tavern_rules.hpp"
+#include "app/tavern_runtime.hpp"
 #include "locations/convenience_store.hpp"
 #include "locations/library_data.hpp"
 #include "locations/library_rules.hpp"
@@ -19,8 +20,7 @@ namespace pixel_town {
 struct LocationRuntimeState {
     std::unique_ptr<RestaurantSession> restaurant;
     float restaurant_timer{0.0F};
-    ChallengeType tavern_challenge{ChallengeType::gomoku};
-    BetTier tavern_bet{BetTier::medium};
+    TavernRuntimeState tavern;
     store::PurchasePlan store_purchase_plan;
     store::PricePlan store_price_plan;
     int store_selected_product_index{0};
@@ -45,7 +45,6 @@ struct LocationRuntimeState {
 
 void prepare_restaurant_runtime(LocationRuntimeState& runtime, unsigned int seed);
 void prepare_store_runtime(LocationRuntimeState& runtime);
-void update_tavern_selection(LocationRuntimeState& runtime);
 void update_store_selection(LocationRuntimeState& runtime, const GameSession& session);
 [[nodiscard]] bool start_pending_location(GameSession& session,
                                            LocationRuntimeState& runtime,

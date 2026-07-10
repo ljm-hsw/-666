@@ -155,7 +155,7 @@ sequenceDiagram
 
 应用层通过窄适配器把地点模块的局部结果转换为核心 `ActionResult`。当前入口是
 `src/app/location_result_adapter.*`：它只处理结果映射、行动槽推断、图书馆每日上下文和酒馆赌注合法性，不直接绘制 UI 或写入全局状态。地点运行期的窗口输入、临时 UI 状态和开始/完成流程集中在 `src/app/location_runtime.*`，避免继续把地点流程堆入 `game_flow.cpp`。
-CMake 中 `pixel_town_locations` 只承载可无窗口测试的地点规则；需要 raylib 类型的图书馆场景/NPC 支持放在 `pixel_town_location_scene`。
+CMake 中 `pixel_town_locations` 只承载可无窗口测试的地点规则；五子棋和骗子骰子分别位于 `src/locations/gomoku_rules.*` 与 `src/locations/liars_dice_rules.*`。需要 raylib 类型的图书馆场景/NPC 支持放在 `pixel_town_location_scene`，酒馆输入状态和绘制则通过 app 层的窄运行期/视图模块接入。
 
 ### 通用生命周期
 
@@ -226,6 +226,8 @@ P2/P3 合并地点后，应用层按以下 Module 维持 Locality：
 - `StoryText`：raylib-free 剧情文本 Module，负责开场、每日提示、地点摘要和结局叙事文本。
 - `location_result_adapter`：地点结果 Adapter，负责把图书馆、酒馆等地点内部结果转换为统一 `ActionResult`，调用者不重复维护字段映射。
 - `location_runtime`：地点 UI Adapter，负责餐馆、图书馆和酒馆在 app 层的临时运行状态、启动顺序、主动放弃和结果提交；地点规则仍只返回内部统计或 `ActionResult`。
+- `tavern_runtime`：酒馆临时状态与输入 Adapter，持有当前页面、棋局/骰局、电脑行动计时和候选素材句柄；使用核心地点种子并通过 `location_result_adapter` 提交最终胜负。
+- `tavern_view`：酒馆只读绘制 Module，使用共享设计网格和 `ui_primitives`，不直接修改玩家状态、阶段或酒馆战绩。
 - `ui_primitives`：960×540 逻辑画布绘制 Module，集中缩放、文本、面板、点击和 hover 判断，避免各场景散落坐标转换规则。
 - `game_flow`：高层场景路由 Module，只决定当前画面应进入标题、地图、地点、总结或结局，不拥有地点规则细节。
 
