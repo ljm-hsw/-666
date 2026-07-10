@@ -9,6 +9,7 @@
 #include "core/game_session.hpp"
 #include "io/save_game.hpp"
 #include "locations/convenience_store.hpp"
+#include "test_game_session_helpers.hpp"
 
 namespace {
 
@@ -49,7 +50,9 @@ pixel_town::GameSession session_after_day_result() {
     auto session = pixel_town::GameSession::new_game(42);
     REQUIRE(session.enter_location(pixel_town::Location::library));
     REQUIRE(session.start_location() != 0);
-    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+    REQUIRE(session.apply_action_result(
+                pixel_town::test_support::completed_location_result(session))
+                .accepted);
     return session;
 }
 
@@ -155,7 +158,7 @@ TEST_CASE("store inventory round trips through save file") {
         pixel_town::store::simulate_sales(config, inventory, purchase, prices, context, 50);
     REQUIRE(settlement.accepted);
     REQUIRE(session.apply_action_result(
-                pixel_town::store::build_store_action_result(settlement, result_id))
+                pixel_town::store::build_store_action_result(config, settlement, result_id))
                 .accepted);
 
     REQUIRE(pixel_town::save_session_atomic(save_path, session).status ==

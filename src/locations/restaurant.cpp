@@ -146,7 +146,7 @@ bool RestaurantSession::finish_session() {
     if (phase_ == RestaurantPhase::finished) {
         return true;  // already finished
     }
-    if (orders_remaining() > 0 && phase_ != RestaurantPhase::showing_instructions) {
+    if (orders_remaining() > 0) {
         return false;  // still have orders to handle
     }
     phase_ = RestaurantPhase::finished;
@@ -165,6 +165,9 @@ void RestaurantSession::advance_to_next_order_or_finish() {
 }
 
 ActionResult RestaurantSession::build_result(int result_id) const {
+    if (phase_ != RestaurantPhase::finished) {
+        return {};
+    }
     return compute_restaurant_result(stats_, config_, result_id);
 }
 

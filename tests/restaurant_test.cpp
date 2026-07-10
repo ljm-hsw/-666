@@ -273,20 +273,44 @@ TEST_CASE("empty stats produces abandoned result") {
 }
 
 TEST_CASE("session build_result matches compute_restaurant_result") {
-    const auto stats = run_perfect_session(42);
     RestaurantConfig config;
-    RestaurantSession session(42);
+    RestaurantSession session(42, config);
     REQUIRE(session.skip_instructions());
 
-    // Use standalone computation
-    const auto standalone = compute_restaurant_result(stats, config, 7);
+    while (session.phase() != RestaurantPhase::finished) {
+        if (session.phase() == RestaurantPhase::waiting_for_order) {
+            const auto* order = session.current_order();
+            REQUIRE(order != nullptr);
+            REQUIRE(session.serve_dish(order->required_dish));
+        } else if (session.phase() == RestaurantPhase::order_feedback) {
+            REQUIRE(session.advance_time());
+        }
+    }
 
-    // Use session's build_result with the same stats
-    // We can't directly compare because build_result uses its internal stats,
-    // but we can verify the result_id and structure
-    CHECK(standalone.result_id == 7);
-    CHECK(standalone.location == Location::restaurant);
-    CHECK(standalone.slot == ActionSlot::day);
+    const auto standalone = compute_restaurant_result(session.stats(), config, 7);
+    const auto from_session = session.build_result(7);
+
+    CHECK(from_session.result_id == standalone.result_id);
+    CHECK(from_session.location == standalone.location);
+    CHECK(from_session.slot == standalone.slot);
+    CHECK(from_session.outcome == standalone.outcome);
+    CHECK(from_session.delta.money == standalone.delta.money);
+    CHECK(from_session.delta.stamina == standalone.delta.stamina);
+    CHECK(from_session.delta.reputation == standalone.delta.reputation);
+    CHECK(from_session.delta.mood == standalone.delta.mood);
+    CHECK(from_session.summary == standalone.summary);
+}
+
+TEST_CASE("restaurant cannot finish or build a result before serving all orders") {
+    RestaurantSession session(42);
+
+    CHECK_FALSE(session.finish_session());
+    CHECK(session.phase() == RestaurantPhase::showing_instructions);
+    CHECK(session.build_result(7).result_id == 0);
+
+    REQUIRE(session.skip_instructions());
+    CHECK_FALSE(session.finish_session());
+    CHECK(session.build_result(7).result_id == 0);
 }
 
 }  // namespace pixel_town

@@ -1,13 +1,16 @@
 #include <doctest/doctest.h>
 
 #include "core/game_session.hpp"
+#include "test_game_session_helpers.hpp"
 
 namespace {
 
 void complete_day_with_rest(pixel_town::GameSession& session, pixel_town::Location day_location) {
     REQUIRE(session.enter_location(day_location));
     REQUIRE(session.start_location() != 0);
-    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+    REQUIRE(session.apply_action_result(
+                pixel_town::test_support::completed_location_result(session))
+                .accepted);
     REQUIRE(session.apply_action_result(session.home_rest_result()).accepted);
     REQUIRE(session.finish_day_summary());
 }
@@ -37,7 +40,9 @@ TEST_CASE("only current phase locations are legal") {
 
     REQUIRE(session.enter_location(pixel_town::Location::restaurant));
     REQUIRE(session.start_location() != 0);
-    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+    REQUIRE(session.apply_action_result(
+                pixel_town::test_support::completed_location_result(session))
+                .accepted);
 
     CHECK(session.phase() == pixel_town::GamePhase::night_choice);
     CHECK(session.can_enter(pixel_town::Location::home).allowed);
@@ -50,7 +55,7 @@ TEST_CASE("day action result applies once and moves to night choice") {
     REQUIRE(session.enter_location(pixel_town::Location::library));
     REQUIRE(session.start_location() != 0);
 
-    const auto result = session.simulated_success_result();
+    const auto result = pixel_town::test_support::completed_location_result(session);
     const auto before = session.player();
     const auto applied = session.apply_action_result(result);
 
@@ -69,7 +74,9 @@ TEST_CASE("full one-day path reaches day two") {
 
     REQUIRE(session.enter_location(pixel_town::Location::restaurant));
     REQUIRE(session.start_location() != 0);
-    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+    REQUIRE(session.apply_action_result(
+                pixel_town::test_support::completed_location_result(session))
+                .accepted);
 
     const auto night_result = session.home_rest_result();
     REQUIRE(session.apply_action_result(night_result).accepted);
@@ -117,18 +124,116 @@ TEST_CASE("fixed seed produces repeatable daily context and results") {
         REQUIRE(second.enter_location(pixel_town::Location::library));
         REQUIRE(first.start_location() != 0);
         REQUIRE(second.start_location() != 0);
-        CHECK(first.simulated_success_result().delta.money ==
-              second.simulated_success_result().delta.money);
-        CHECK(first.simulated_success_result().summary ==
-              second.simulated_success_result().summary);
+        CHECK(pixel_town::test_support::completed_location_result(first).delta.money ==
+              pixel_town::test_support::completed_location_result(second).delta.money);
+        CHECK(pixel_town::test_support::completed_location_result(first).summary ==
+              pixel_town::test_support::completed_location_result(second).summary);
 
-        REQUIRE(first.apply_action_result(first.simulated_success_result()).accepted);
-        REQUIRE(second.apply_action_result(second.simulated_success_result()).accepted);
+        REQUIRE(first.apply_action_result(
+                    pixel_town::test_support::completed_location_result(first))
+                    .accepted);
+        REQUIRE(second.apply_action_result(
+                    pixel_town::test_support::completed_location_result(second))
+                    .accepted);
         REQUIRE(first.apply_action_result(first.home_rest_result()).accepted);
         REQUIRE(second.apply_action_result(second.home_rest_result()).accepted);
         REQUIRE(first.finish_day_summary());
         REQUIRE(second.finish_day_summary());
     }
+}
+
+TEST_CASE("daily context derives a distinct seed for each game day") {
+    auto session = pixel_town::GameSession::new_game(42);
+    const unsigned int first_day_seed = session.current_day_context().seed;
+
+    complete_day_with_rest(session, pixel_town::Location::restaurant);
+
+    CHECK(session.day() == 2);
+    CHECK(session.current_day_context().seed != first_day_seed);
+}
+
+TEST_CASE("day work cannot submit convenience store inventory from another location") {
+    auto session = pixel_town::GameSession::new_game();
+    REQUIRE(session.enter_location(pixel_town::Location::restaurant));
+    const int result_id = session.start_location();
+    REQUIRE(result_id != 0);
+
+    pixel_town::ActionResult result;
+    result.result_id = result_id;
+    result.slot = pixel_town::ActionSlot::day;
+    result.location = pixel_town::Location::restaurant;
+    result.has_store_inventory_update = true;
+    result.store_inventory_after = {{"umbrella", 2}};
+
+    CHECK_FALSE(session.apply_action_result(result).accepted);
+    CHECK(session.phase() == pixel_town::GamePhase::day_location);
+    CHECK(session.store_inventory().empty());
+}
+
+TEST_CASE("day work cannot modify tavern records") {
+    auto session = pixel_town::GameSession::new_game();
+    REQUIRE(session.enter_location(pixel_town::Location::library));
+    const int result_id = session.start_location();
+    REQUIRE(result_id != 0);
+
+    pixel_town::ActionResult result;
+    result.result_id = result_id;
+    result.slot = pixel_town::ActionSlot::day;
+    result.location = pixel_town::Location::library;
+    result.tavern_win_delta = 1;
+
+    CHECK_FALSE(session.apply_action_result(result).accepted);
+    CHECK(session.phase() == pixel_town::GamePhase::day_location);
+    CHECK(session.tavern_wins() == 0);
+}
+
+TEST_CASE("snapshot equality includes location-owned persistent state") {
+    const auto baseline = pixel_town::GameSession::new_game().snapshot();
+    auto changed = baseline;
+
+    changed.store_inventory.push_back({"umbrella", 1});
+    CHECK(changed != baseline);
+
+    changed = baseline;
+    changed.tavern_wins = 1;
+    CHECK(changed != baseline);
+
+    changed = baseline;
+    changed.tavern_losses = 1;
+    CHECK(changed != baseline);
+}
+
+TEST_CASE("abandoned action cannot carry rewards") {
+    auto session = pixel_town::GameSession::new_game();
+    REQUIRE(session.enter_location(pixel_town::Location::restaurant));
+    const int result_id = session.start_location();
+    REQUIRE(result_id != 0);
+
+    auto result = session.abandon_current_location();
+    result.delta.money = 10;
+
+    CHECK_FALSE(session.apply_action_result(result).accepted);
+    CHECK(session.phase() == pixel_town::GamePhase::day_location);
+    CHECK(session.player().money == 50);
+}
+
+TEST_CASE("convenience store action rejects duplicate or negative inventory entries") {
+    auto session = pixel_town::GameSession::new_game();
+    REQUIRE(session.enter_location(pixel_town::Location::convenience_store));
+    const int result_id = session.start_location();
+    REQUIRE(result_id != 0);
+
+    pixel_town::ActionResult result;
+    result.result_id = result_id;
+    result.slot = pixel_town::ActionSlot::day;
+    result.location = pixel_town::Location::convenience_store;
+    result.has_store_inventory_update = true;
+    result.store_inventory_after = {{"umbrella", 1}, {"umbrella", 2}};
+    CHECK_FALSE(session.apply_action_result(result).accepted);
+
+    result.store_inventory_after = {{"umbrella", -1}};
+    CHECK_FALSE(session.apply_action_result(result).accepted);
+    CHECK(session.phase() == pixel_town::GamePhase::day_location);
 }
 
 TEST_CASE("day nine advances to day ten and day ten does not advance to eleven") {
@@ -186,7 +291,9 @@ TEST_CASE("returning before start does not consume the day action") {
 
     REQUIRE(session.enter_location(pixel_town::Location::library));
     REQUIRE(session.start_location() != 0);
-    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+    REQUIRE(session.apply_action_result(
+                pixel_town::test_support::completed_location_result(session))
+                .accepted);
     CHECK(session.phase() == pixel_town::GamePhase::night_choice);
 }
 
@@ -215,7 +322,9 @@ TEST_CASE("tavern is accessible at night_choice after day action") {
     auto session = pixel_town::GameSession::new_game();
     REQUIRE(session.enter_location(pixel_town::Location::library));
     REQUIRE(session.start_location() != 0);
-    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+    REQUIRE(session.apply_action_result(
+                pixel_town::test_support::completed_location_result(session))
+                .accepted);
     CHECK(session.phase() == pixel_town::GamePhase::night_choice);
     CHECK(session.can_enter(pixel_town::Location::tavern).allowed);
     CHECK(session.can_enter(pixel_town::Location::home).allowed);
@@ -225,7 +334,9 @@ TEST_CASE("tavern apply action result transitions to day_summary and updates rec
     auto session = pixel_town::GameSession::new_game();
     REQUIRE(session.enter_location(pixel_town::Location::restaurant));
     REQUIRE(session.start_location() != 0);
-    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+    REQUIRE(session.apply_action_result(
+                pixel_town::test_support::completed_location_result(session))
+                .accepted);
 
     REQUIRE(session.enter_location(pixel_town::Location::tavern));
     REQUIRE(session.start_location() != 0);
@@ -249,7 +360,9 @@ TEST_CASE("tavern and home are mutually exclusive per night") {
     auto session = pixel_town::GameSession::new_game();
     REQUIRE(session.enter_location(pixel_town::Location::library));
     REQUIRE(session.start_location() != 0);
-    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+    REQUIRE(session.apply_action_result(
+                pixel_town::test_support::completed_location_result(session))
+                .accepted);
 
     REQUIRE(session.enter_location(pixel_town::Location::tavern));
     REQUIRE(session.start_location() != 0);
@@ -271,7 +384,9 @@ TEST_CASE("home rest path is unchanged after tavern is added") {
 
     REQUIRE(session.enter_location(pixel_town::Location::library));
     REQUIRE(session.start_location() != 0);
-    REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+    REQUIRE(session.apply_action_result(
+                pixel_town::test_support::completed_location_result(session))
+                .accepted);
 
     REQUIRE(session.apply_action_result(session.home_rest_result()).accepted);
     CHECK(session.phase() == pixel_town::GamePhase::day_summary);
@@ -307,7 +422,9 @@ TEST_CASE("ten days completing day work then tavern each night reaches ending") 
         REQUIRE(session.phase() == pixel_town::GamePhase::day_choice);
         REQUIRE(session.enter_location(pixel_town::Location::restaurant));
         REQUIRE(session.start_location() != 0);
-        REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+        REQUIRE(session.apply_action_result(
+                    pixel_town::test_support::completed_location_result(session))
+                    .accepted);
 
         REQUIRE(session.enter_location(pixel_town::Location::tavern));
         REQUIRE(session.start_location() != 0);

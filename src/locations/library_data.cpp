@@ -1,8 +1,10 @@
 #include "locations/library_data.hpp"
 
+#include <charconv>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 namespace pixel_town::library {
 
@@ -21,6 +23,16 @@ bool starts_with(const std::string& s, const std::string& prefix) {
     return s.size() >= prefix.size() && s.substr(0, prefix.size()) == prefix;
 }
 
+bool parse_nonnegative_int(std::string_view text, int& value) {
+    if (text.empty()) {
+        return false;
+    }
+    const char* begin = text.data();
+    const char* end = begin + text.size();
+    const auto parsed = std::from_chars(begin, end, value);
+    return parsed.ec == std::errc{} && parsed.ptr == end && value >= 0;
+}
+
 }  // namespace
 
 LoadResult load_library_data(const std::string& file_path) {
@@ -32,9 +44,6 @@ LoadResult load_library_data(const std::string& file_path) {
     }
 
     std::string line;
-    std::string current_category_id;
-    std::string current_question_id;
-
     while (std::getline(file, line)) {
         const std::string trimmed = trim(line);
         if (trimmed.empty() || starts_with(trimmed, "//")) {
@@ -48,18 +57,26 @@ LoadResult load_library_data(const std::string& file_path) {
                 result.error_message = "Invalid category format: " + line;
                 return result;
             }
-            current_category_id = trim(rest.substr(0, colon_pos));
+            const std::string current_category_id = trim(rest.substr(0, colon_pos));
             const std::string name = trim(rest.substr(colon_pos + 1));
             if (current_category_id.empty() || name.empty()) {
                 result.error_message = "Empty category id or name: " + line;
                 return result;
             }
+            for (const auto& category : result.data.categories) {
+                if (category.id == current_category_id) {
+                    result.error_message = "Duplicate category id: " + current_category_id;
+                    return result;
+                }
+            }
             result.data.categories.push_back({current_category_id, name, ""});
         } else if (starts_with(trimmed, "CATEGORY_DESC ")) {
             const std::string desc = trim(trimmed.substr(15));
-            if (!result.data.categories.empty()) {
-                result.data.categories.back().description = desc;
+            if (result.data.categories.empty()) {
+                result.error_message = "Category description has no category: " + line;
+                return result;
             }
+            result.data.categories.back().description = desc;
         } else if (starts_with(trimmed, "QUESTION ")) {
             const std::string rest = trimmed.substr(9);
             const auto colon_pos = rest.find(':');
@@ -76,19 +93,25 @@ LoadResult load_library_data(const std::string& file_path) {
             result.data.questions.push_back({question, category_id, "", "", ""});
         } else if (starts_with(trimmed, "HINT ")) {
             const std::string hint = trim(trimmed.substr(5));
-            if (!result.data.questions.empty()) {
-                result.data.questions.back().hint = hint;
+            if (result.data.questions.empty()) {
+                result.error_message = "Hint has no question: " + line;
+                return result;
             }
+            result.data.questions.back().hint = hint;
         } else if (starts_with(trimmed, "FEEDBACK_CORRECT ")) {
             const std::string feedback = trim(trimmed.substr(17));
-            if (!result.data.questions.empty()) {
-                result.data.questions.back().feedback_correct = feedback;
+            if (result.data.questions.empty()) {
+                result.error_message = "Correct feedback has no question: " + line;
+                return result;
             }
+            result.data.questions.back().feedback_correct = feedback;
         } else if (starts_with(trimmed, "FEEDBACK_WRONG ")) {
             const std::string feedback = trim(trimmed.substr(15));
-            if (!result.data.questions.empty()) {
-                result.data.questions.back().feedback_wrong = feedback;
+            if (result.data.questions.empty()) {
+                result.error_message = "Wrong feedback has no question: " + line;
+                return result;
             }
+            result.data.questions.back().feedback_wrong = feedback;
         } else if (starts_with(trimmed, "DIALOGUE_GREETING ")) {
             result.data.dialogue.greeting = trim(trimmed.substr(18));
         } else if (starts_with(trimmed, "DIALOGUE_INTRO ")) {
@@ -116,26 +139,50 @@ LoadResult load_library_data(const std::string& file_path) {
             }
             std::string event_id = trim(rest.substr(0, colon_pos));
             std::string event_title = trim(rest.substr(colon_pos + 1));
+            if (event_id.empty() || event_title.empty()) {
+                result.error_message = "Empty plot event id or title: " + line;
+                return result;
+            }
+            for (const auto& event : result.data.plot_events) {
+                if (event.id == event_id) {
+                    result.error_message = "Duplicate plot event id: " + event_id;
+                    return result;
+                }
+            }
             result.data.plot_events.push_back({event_id, event_title, "", 0, 0, false});
         } else if (starts_with(trimmed, "PLOT_DESC ")) {
             const std::string desc = trim(trimmed.substr(10));
-            if (!result.data.plot_events.empty()) {
-                result.data.plot_events.back().description = desc;
+            if (result.data.plot_events.empty()) {
+                result.error_message = "Plot description has no event: " + line;
+                return result;
             }
+            result.data.plot_events.back().description = desc;
         } else if (starts_with(trimmed, "PLOT_REQUIREMENT ")) {
             const std::string rest = trimmed.substr(17);
-            if (!result.data.plot_events.empty()) {
-                auto& event = result.data.plot_events.back();
-                const auto colon_pos = rest.find(':');
-                if (colon_pos != std::string::npos) {
-                    event.required_visits = std::stoi(trim(rest.substr(0, colon_pos)));
-                    event.required_knowledge = std::stoi(trim(rest.substr(colon_pos + 1)));
-                }
+            const auto colon_pos = rest.find(':');
+            if (result.data.plot_events.empty() || colon_pos == std::string::npos) {
+                result.error_message = "Invalid plot requirement format: " + line;
+                return result;
             }
+            int required_visits = 0;
+            int required_knowledge = 0;
+            const std::string visits_text = trim(rest.substr(0, colon_pos));
+            const std::string knowledge_text = trim(rest.substr(colon_pos + 1));
+            if (!parse_nonnegative_int(visits_text, required_visits) ||
+                !parse_nonnegative_int(knowledge_text, required_knowledge)) {
+                result.error_message = "Invalid plot requirement values: " + line;
+                return result;
+            }
+            auto& event = result.data.plot_events.back();
+            event.required_visits = required_visits;
+            event.required_knowledge = required_knowledge;
         } else if (starts_with(trimmed, "WELCOME ")) {
             result.data.welcome_message = trim(trimmed.substr(9));
         } else if (starts_with(trimmed, "WORK_INTRO ")) {
             result.data.work_intro = trim(trimmed.substr(11));
+        } else {
+            result.error_message = "Unknown library data directive: " + line;
+            return result;
         }
     }
 

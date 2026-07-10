@@ -5,9 +5,10 @@
 TEST_CASE("store decision rejects purchases beyond available cash") {
     const auto config = pixel_town::store::default_store_config();
     pixel_town::store::PurchasePlan plan;
-    plan.quantities = {{"umbrella", 20}};
+    plan.quantities = {{"umbrella", 9}};
 
-    const auto validation = pixel_town::store::validate_purchase_plan(config, plan, 50);
+    const auto validation =
+        pixel_town::store::validate_purchase_plan(config, {}, plan, 50);
 
     CHECK_FALSE(validation.allowed);
     CHECK(validation.message.find("现金") != std::string::npos);
@@ -18,10 +19,24 @@ TEST_CASE("store purchase plan costs each product independently") {
     pixel_town::store::PurchasePlan plan;
     plan.quantities = {{"umbrella", 1}, {"soda", 3}, {"bento", 2}};
 
-    const auto validation = pixel_town::store::validate_purchase_plan(config, plan, 50);
+    const auto validation =
+        pixel_town::store::validate_purchase_plan(config, {}, plan, 50);
 
     REQUIRE(validation.allowed);
     CHECK(validation.purchase_cost == 1 * 6 + 3 * 3 + 2 * 5);
+}
+
+TEST_CASE("store purchase plan respects existing inventory capacity") {
+    const auto config = pixel_town::store::default_store_config();
+    const pixel_town::store::StoreInventory inventory = {{"umbrella", 9}};
+    pixel_town::store::PurchasePlan plan;
+    plan.quantities = {{"umbrella", 2}};
+
+    const auto validation =
+        pixel_town::store::validate_purchase_plan(config, inventory, plan, 50);
+
+    CHECK_FALSE(validation.allowed);
+    CHECK(validation.message.find("库存") != std::string::npos);
 }
 
 TEST_CASE("store demand is deterministic and price sensitive") {
@@ -117,11 +132,48 @@ TEST_CASE("store settlement preserves inventory and creates one action result") 
     CHECK(settlement.profit == settlement.revenue - settlement.purchase_cost);
     CHECK(settlement.remaining_inventory.at("umbrella") >= 0);
 
-    const auto result = pixel_town::store::build_store_action_result(settlement, 12);
+    const auto result = pixel_town::store::build_store_action_result(config, settlement, 12);
     CHECK(result.result_id == 12);
     CHECK(result.slot == pixel_town::ActionSlot::day);
     CHECK(result.location == pixel_town::Location::convenience_store);
     CHECK(result.delta.money == settlement.profit);
     CHECK(result.has_store_inventory_update);
     CHECK(result.summary.find("账本") != std::string::npos);
+}
+
+TEST_CASE("store action result uses the settlement configuration") {
+    auto config = pixel_town::store::default_store_config();
+    config.stamina_cost = 7;
+    config.base_reputation = 9;
+    config.profit_reputation_step = 1000;
+    config.base_mood_change = 4;
+
+    pixel_town::store::StoreSettlement settlement;
+    settlement.accepted = true;
+    settlement.profit = 5;
+    settlement.summary = "测试结算";
+
+    const auto result =
+        pixel_town::store::build_store_action_result(config, settlement, 99);
+
+    CHECK(result.delta.stamina == -7);
+    CHECK(result.delta.reputation == 9);
+    CHECK(result.delta.mood == 4);
+}
+
+TEST_CASE("rejected store settlement creates a reward-free abandoned result") {
+    const auto config = pixel_town::store::default_store_config();
+    pixel_town::store::StoreSettlement settlement;
+    settlement.accepted = false;
+    settlement.message = "现金不足";
+
+    const auto result =
+        pixel_town::store::build_store_action_result(config, settlement, 100);
+
+    CHECK(result.outcome == pixel_town::ActionOutcome::abandoned);
+    CHECK(result.delta.money == 0);
+    CHECK(result.delta.stamina == 0);
+    CHECK(result.delta.reputation == 0);
+    CHECK_FALSE(result.has_store_inventory_update);
+    CHECK(result.summary == "现金不足");
 }

@@ -40,6 +40,7 @@ target_link_libraries(pixel_town_locations PUBLIC pixel_town_core)
 add_library(pixel_town_location_scene
   src/locations/library_npc.cpp
   src/locations/library_scene.cpp
+  src/locations/library_ui.cpp
 )
 target_include_directories(pixel_town_location_scene PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(pixel_town_location_scene PUBLIC pixel_town_locations raylib)
@@ -57,7 +58,6 @@ add_executable(pixel_town
   src/app/game_flow.cpp
   src/app/main.cpp
   src/app/visual_prototype.cpp
-  src/locations/library_ui.cpp
 )
 target_link_libraries(pixel_town PRIVATE pixel_town_io pixel_town_app_logic)
 target_compile_definitions(pixel_town PRIVATE PIXEL_TOWN_VERSION="${PROJECT_VERSION}")
@@ -71,6 +71,7 @@ add_executable(pixel_town_tests
   tests/game_session_test.cpp
   tests/interaction_runtime_test.cpp
   tests/location_result_adapter_test.cpp
+  tests/location_runtime_test.cpp
   tests/restaurant_ui_model_test.cpp
   tests/app_settings_test.cpp
   tests/convenience_store_test.cpp

@@ -4,6 +4,8 @@
 
 #include <raylib.h>
 
+#include "ui/ui_metrics.hpp"
+
 namespace pixel_town {
 
 inline constexpr Color ink{45, 52, 54, 255};
@@ -17,8 +19,6 @@ inline constexpr Color red{183, 83, 72, 255};
 inline constexpr Color gold{224, 169, 74, 255};
 inline constexpr Color shadow{39, 48, 53, 120};
 inline constexpr Color slate{60, 79, 82, 255};
-inline constexpr float native_ui_scale = 1.5F;
-
 [[nodiscard]] float scaled(float value);
 [[nodiscard]] float scaled_font_size(float design_size);
 [[nodiscard]] Vector2 scaled_point(Vector2 value);

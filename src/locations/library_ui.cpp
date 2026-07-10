@@ -1,5 +1,7 @@
 #include "locations/library_ui.hpp"
 
+#include "ui/ui_metrics.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <string>
@@ -11,8 +13,6 @@
 namespace pixel_town::library::ui {
 
 namespace {
-
-constexpr float native_ui_scale = 1.5F;
 
 constexpr Color ink{45, 52, 54, 255};
 constexpr Color paper{250, 238, 203, 255};
@@ -41,7 +41,7 @@ constexpr Color plant_green{34, 139, 34, 255};
 constexpr Color door_brown{139, 90, 43, 255};
 
 float scaled(float value) {
-    return std::round(value * native_ui_scale);
+    return std::round(value * ::pixel_town::ui::design_to_canvas_scale);
 }
 
 float scaled_font_size(float design_size) {
@@ -691,7 +691,9 @@ void draw_summary_screen(const ActionResult& result, const LibraryRenderConfig& 
 
 void draw_library_room_scene(const LibraryScene& scene, const LibraryUIState& ui_state,
                              const LibraryRenderConfig& render_config, const Font& font, Vector2 logical_mouse) {
-    const Vector2 library_mouse = {logical_mouse.x / native_ui_scale, logical_mouse.y / native_ui_scale};
+    const Vector2 library_mouse = {
+        logical_mouse.x / ::pixel_town::ui::design_to_canvas_scale,
+        logical_mouse.y / ::pixel_town::ui::design_to_canvas_scale};
 
     draw_library_floor(render_config);
     draw_library_walls(render_config);
@@ -721,7 +723,9 @@ void draw_library_room_scene(const LibraryScene& scene, const LibraryUIState& ui
 
 void draw_library_scene(const LibraryRuleEngine& engine, const LibraryUIState& ui_state,
                         const LibraryScene& scene, const LibraryRenderConfig& render_config, const Font& font, Vector2 logical_mouse) {
-    const Vector2 library_mouse = {logical_mouse.x / native_ui_scale, logical_mouse.y / native_ui_scale};
+    const Vector2 library_mouse = {
+        logical_mouse.x / ::pixel_town::ui::design_to_canvas_scale,
+        logical_mouse.y / ::pixel_town::ui::design_to_canvas_scale};
 
     switch (ui_state.scene_state) {
         case LibrarySceneState::room_view: {
@@ -791,7 +795,9 @@ void update_library_ui(LibraryRuleEngine& engine, LibraryUIState& ui_state, Libr
 
 bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state, 
                           LibraryScene& scene, Vector2 logical_mouse) {
-    const Vector2 library_mouse = {logical_mouse.x / native_ui_scale, logical_mouse.y / native_ui_scale};
+    const Vector2 library_mouse = {
+        logical_mouse.x / ::pixel_town::ui::design_to_canvas_scale,
+        logical_mouse.y / ::pixel_town::ui::design_to_canvas_scale};
 
     if (ui_state.is_transitioning) {
         return false;

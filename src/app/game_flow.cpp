@@ -477,9 +477,10 @@ void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
     text(font, state.notice, 42, 324, 18, RAYWHITE);
 }
 
-void draw_restaurant_ui(const Font& font, const GameAppState& state, Vector2 mouse) {
+void draw_restaurant_ui(const Font& font, const GameAppState& state, bool audio_enabled,
+                        Vector2 mouse) {
     draw_restaurant_background();
-    draw_status(font, state.session, true);
+    draw_status(font, state.session, audio_enabled);
     const auto& rest = *state.locations.restaurant;
 
     panel(Rectangle{34, 96, 592, 250}, Color{255, 248, 226, 244});
@@ -518,7 +519,7 @@ void draw_restaurant_ui(const Font& font, const GameAppState& state, Vector2 mou
             text(font, line, 62, y, 14, ink);
             y += 21.0F;
         }
-        const Rectangle start_btn{232, 314, 176, 28};
+        const Rectangle start_btn = restaurant_instructions_start_button();
         panel(start_btn, CheckCollisionPointRec(mouse, scaled_rect(start_btn)) ? paper : green);
         centered_text(font, "开始接待", start_btn, 18, RAYWHITE);
 
@@ -558,12 +559,13 @@ void draw_restaurant_ui(const Font& font, const GameAppState& state, Vector2 mou
             }
         }
         const auto& stats = rest.stats();
-        panel(Rectangle{58, 356, 540, 34}, Color{65, 91, 89, 245});
+        const Rectangle stats_panel = restaurant_stats_panel();
+        panel(stats_panel, Color{65, 91, 89, 245});
         text(font, std::string("正确 ") + std::to_string(stats.correct) +
                  "  错单 " + std::to_string(stats.wrong) +
                  "  超时 " + std::to_string(stats.timeout) +
                  "  剩余 " + std::to_string(rest.orders_remaining()),
-             76, 364, 16, RAYWHITE);
+             76, 328, 14, RAYWHITE);
     } else if (rest.phase() == RestaurantPhase::finished) {
         const auto summary = restaurant_completion_summary(rest, state.session.active_result_id());
         text(font, "餐馆工作完成", 56, 136, 22, ink);
@@ -584,13 +586,14 @@ void draw_restaurant_ui(const Font& font, const GameAppState& state, Vector2 mou
 }
 
 
-void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
+void draw_location(const Font& font, const GameAppState& state, bool audio_enabled,
+                   Vector2 mouse) {
     if (state.session.pending_location() == Location::restaurant && state.locations.restaurant) {
-        draw_restaurant_ui(font, state, mouse);
+        draw_restaurant_ui(font, state, audio_enabled, mouse);
         return;
     }
     ClearBackground(Color{215, 221, 194, 255});
-    draw_status(font, state.session, true);
+    draw_status(font, state.session, audio_enabled);
     const Location location = state.session.pending_location();
     const bool is_tavern = state.session.phase() == GamePhase::night_location &&
                            location == Location::tavern;
@@ -686,9 +689,10 @@ void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
     }
 }
 
-void draw_summary(const Font& font, const GameAppState& state, Vector2 mouse) {
+void draw_summary(const Font& font, const GameAppState& state, bool audio_enabled,
+                  Vector2 mouse) {
     ClearBackground(Color{37, 50, 57, 255});
-    draw_status(font, state.session, true);
+    draw_status(font, state.session, audio_enabled);
     panel(Rectangle{90, 88, 460, 188}, cream);
     text(font, "每日总结", 124, 116, 28, red);
     text_block(font, state.session.last_summary(), 124, 154, 14, 16, ink);
@@ -701,9 +705,9 @@ void draw_summary(const Font& font, const GameAppState& state, Vector2 mouse) {
     centered_text(font, "继续到下一天", next_button, 16, RAYWHITE);
 }
 
-void draw_ending(const Font& font, const GameAppState& state) {
+void draw_ending(const Font& font, const GameAppState& state, bool audio_enabled) {
     ClearBackground(Color{37, 50, 57, 255});
-    draw_status(font, state.session, true);
+    draw_status(font, state.session, audio_enabled);
     panel(Rectangle{72, 82, 496, 276}, cream);
     const auto& player = state.session.player();
     text(font, "十日计划完成", 118, 112, 28, red);
@@ -867,7 +871,7 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             if (state.session.enter_location(location)) {
                 if (location == Location::restaurant) {
                     prepare_restaurant_runtime(state.locations,
-                                               state.session.current_day_context().seed);
+                                               state.session.location_seed(Location::restaurant));
                     state.notice = "已进入餐馆";
                 } else if (location == Location::convenience_store) {
                     prepare_store_runtime(state.locations);
@@ -949,7 +953,7 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
     if (state.locations.in_library && state.locations.library_engine) {
         draw_active_library(font, state.locations, logical_mouse);
         if (!audio_enabled) {
-            text(font, "静音", 586, 330, 18, red);
+            text(font, "静音", 586, 10, 18, Color{255, 208, 166, 255});
         }
         if (paused) {
             draw_pause_overlay(font, audio_enabled);
@@ -964,15 +968,11 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
                  logical_mouse);
     } else if (state.session.phase() == GamePhase::day_location ||
                state.session.phase() == GamePhase::night_location) {
-        draw_location(font, state, logical_mouse);
+        draw_location(font, state, audio_enabled, logical_mouse);
     } else if (state.session.phase() == GamePhase::day_summary) {
-        draw_summary(font, state, logical_mouse);
+        draw_summary(font, state, audio_enabled, logical_mouse);
     } else {
-        draw_ending(font, state);
-    }
-
-    if (!audio_enabled && state.has_session) {
-        text(font, "静音", 586, 330, 18, red);
+        draw_ending(font, state, audio_enabled);
     }
     if (paused) {
         draw_pause_overlay(font, audio_enabled);

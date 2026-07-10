@@ -28,11 +28,6 @@ int inventory_quantity(const GameSession& session, const std::string& item_id) {
     return 0;
 }
 
-int planned_quantity(const store::PurchasePlan& plan, const std::string& item_id) {
-    const auto found = plan.quantities.find(item_id);
-    return found == plan.quantities.end() ? 0 : found->second;
-}
-
 void ensure_store_runtime_plan(LocationRuntimeState& runtime, const store::StoreConfig& config) {
     for (const auto& product : config.products) {
         if (runtime.store_purchase_plan.quantities.find(product.id) ==
@@ -67,50 +62,11 @@ void adjust_selected_store_purchase(LocationRuntimeState& runtime,
     quantity = std::max(0, std::min(max_add, quantity + delta));
 }
 
-int planned_store_purchase_cost(const store::StoreConfig& config,
-                                const store::PurchasePlan& plan) {
-    int cost = 0;
-    for (const auto& product : config.products) {
-        cost += product.unit_cost * planned_quantity(plan, product.id);
-    }
-    return cost;
-}
-
-void clamp_store_purchase_to_inventory(LocationRuntimeState& runtime,
-                                       const store::StoreConfig& config,
-                                       const GameSession& session) {
-    ensure_store_runtime_plan(runtime, config);
-    for (const auto& product : config.products) {
-        int& quantity = runtime.store_purchase_plan.quantities[product.id];
-        const int max_add =
-            std::max(0, config.max_stock_per_product - inventory_quantity(session, product.id));
-        quantity = std::max(0, std::min(max_add, quantity));
-    }
-}
-
-void reduce_store_purchase_to_budget(LocationRuntimeState& runtime,
-                                     const store::StoreConfig& config,
-                                     int available_money) {
-    while (planned_store_purchase_cost(config, runtime.store_purchase_plan) > available_money) {
-        bool reduced = false;
-        for (auto iterator = config.products.rbegin(); iterator != config.products.rend();
-             ++iterator) {
-            int& quantity = runtime.store_purchase_plan.quantities[iterator->id];
-            if (quantity > 0) {
-                --quantity;
-                reduced = true;
-                break;
-            }
-        }
-        if (!reduced) {
-            break;
-        }
-    }
-}
-
 store::DailyStoreContext make_store_context(const GameSession& session) {
     const auto day_context = session.current_day_context();
-    return store::DailyStoreContext{session.day(), day_context.seed, day_context.weather,
+    return store::DailyStoreContext{session.day(),
+                                    session.location_seed(Location::convenience_store),
+                                    day_context.weather,
                                     day_context.event};
 }
 
@@ -134,6 +90,14 @@ Rectangle restaurant_abandon_button() {
 
 Rectangle restaurant_dish_button(int dish_index) {
     return Rectangle{58.0F + static_cast<float>(dish_index) * 116.0F, 274.0F, 102.0F, 50.0F};
+}
+
+Rectangle restaurant_instructions_start_button() {
+    return Rectangle{232.0F, 314.0F, 176.0F, 28.0F};
+}
+
+Rectangle restaurant_stats_panel() {
+    return Rectangle{58.0F, 326.0F, 540.0F, 20.0F};
 }
 
 Rectangle store_back_button() {
@@ -252,10 +216,15 @@ bool start_pending_location(GameSession& session, LocationRuntimeState& runtime,
     }
 
     if (session.pending_location() == Location::convenience_store) {
-        ensure_store_runtime_plan(runtime, store::default_store_config());
-        clamp_store_purchase_to_inventory(runtime, store::default_store_config(), session);
-        reduce_store_purchase_to_budget(runtime, store::default_store_config(),
-                                        session.player().money);
+        const auto config = store::default_store_config();
+        ensure_store_runtime_plan(runtime, config);
+        const auto validation = store::validate_purchase_plan(
+            config, to_store_inventory(session.store_inventory()), runtime.store_purchase_plan,
+            session.player().money);
+        if (!validation.allowed) {
+            notice = validation.message;
+            return false;
+        }
     }
 
     if (session.start_location() == 0) {
@@ -310,7 +279,7 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
         }
 
         if (restaurant.phase() == RestaurantPhase::showing_instructions) {
-            const Rectangle start_button{232, 300, 176, 30};
+            const Rectangle start_button = restaurant_instructions_start_button();
             if (activated(start_button, logical_mouse, KEY_SPACE)) {
                 (void)restaurant.skip_instructions();
             }
@@ -376,8 +345,6 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
         } else if (session.pending_location() == Location::convenience_store) {
             const auto config = store::default_store_config();
             ensure_store_runtime_plan(runtime, config);
-            clamp_store_purchase_to_inventory(runtime, config, session);
-            reduce_store_purchase_to_budget(runtime, config, session.player().money);
             const auto settlement = store::simulate_sales(
                 config, to_store_inventory(session.store_inventory()),
                 runtime.store_purchase_plan, runtime.store_price_plan,
@@ -387,11 +354,10 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
                 return true;
             }
             const auto applied = session.apply_action_result(
-                store::build_store_action_result(settlement, session.active_result_id()));
+                store::build_store_action_result(config, settlement, session.active_result_id()));
             notice = applied.accepted ? settlement.summary : applied.message;
         } else {
-            const auto applied = session.apply_action_result(session.simulated_success_result());
-            notice = applied.message;
+            notice = "地点运行状态缺失，无法结算；请返回最近存档重试。";
         }
         return true;
     }

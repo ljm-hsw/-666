@@ -6,7 +6,7 @@
 namespace pixel_town {
 
 float scaled(float value) {
-    return std::round(value * native_ui_scale);
+    return std::round(value * ui::design_to_canvas_scale);
 }
 
 float scaled_font_size(float design_size) {

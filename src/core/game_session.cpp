@@ -12,37 +12,57 @@ int clamp_value(int value, int lower, int upper) {
     return std::max(lower, std::min(value, upper));
 }
 
+unsigned int mix_seed(unsigned int value) {
+    value ^= value >> 16U;
+    value *= 0x7feb352dU;
+    value ^= value >> 15U;
+    value *= 0x846ca68bU;
+    value ^= value >> 16U;
+    return value;
+}
+
+unsigned int derive_seed(unsigned int root_seed, int day, unsigned int stream,
+                         unsigned int session_index) {
+    unsigned int value = root_seed ^ 0x9e3779b9U;
+    value ^= static_cast<unsigned int>(day) * 0x85ebca6bU;
+    value ^= stream * 0xc2b2ae35U;
+    value ^= session_index * 0x27d4eb2fU;
+    return mix_seed(value);
+}
+
 bool is_day_work(Location location) {
     return location == Location::restaurant || location == Location::convenience_store ||
            location == Location::library;
-}
-
-StatDelta day_work_delta(Location location) {
-    switch (location) {
-        case Location::restaurant:
-            return StatDelta{18, -18, 4, 0, -3};
-        case Location::convenience_store:
-            return StatDelta{14, -12, 2, 0, -1};
-        case Location::library:
-            return StatDelta{6, -8, 5, 6, 2};
-        case Location::home:
-        case Location::tavern:
-            break;
-    }
-    return {};
 }
 
 DayContext make_day_context(int day, unsigned int seed) {
     constexpr std::array<const char*, 4> weather{"晴天", "多云", "小雨", "微风"};
     constexpr std::array<const char*, 4> event{"餐馆客流增加", "便利店零食更受欢迎",
                                                "图书馆读者变多", "小镇节奏平稳"};
-    const std::size_t weather_index = static_cast<std::size_t>((seed + day * 3U) % weather.size());
-    const std::size_t event_index = static_cast<std::size_t>((seed / 7U + day * 5U) % event.size());
-    return DayContext{day, seed, weather[weather_index], event[event_index]};
+    const unsigned int day_seed = derive_seed(seed, day, 0U, 0U);
+    const std::size_t weather_index = static_cast<std::size_t>(day_seed % weather.size());
+    const std::size_t event_index =
+        static_cast<std::size_t>((day_seed / 7U) % event.size());
+    return DayContext{day, day_seed, weather[weather_index], event[event_index]};
 }
 
-std::string completed_summary(Location location) {
-    return location_result_summary(location, ActionOutcome::completed);
+bool has_nonzero_delta(const StatDelta& delta) {
+    return delta.money != 0 || delta.stamina != 0 || delta.reputation != 0 ||
+           delta.knowledge != 0 || delta.mood != 0;
+}
+
+bool has_valid_store_inventory(const std::vector<StoreInventoryItem>& inventory) {
+    for (std::size_t index = 0; index < inventory.size(); ++index) {
+        if (inventory[index].item_id.empty() || inventory[index].quantity < 0) {
+            return false;
+        }
+        for (std::size_t previous = 0; previous < index; ++previous) {
+            if (inventory[previous].item_id == inventory[index].item_id) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 }  // namespace
@@ -81,6 +101,28 @@ const char* location_label(Location location) {
     return "未知地点";
 }
 
+bool operator==(const GameSessionSnapshot& left, const GameSessionSnapshot& right) {
+    return left.day == right.day && left.seed == right.seed &&
+           left.next_result_id == right.next_result_id &&
+           left.active_result_id == right.active_result_id && left.phase == right.phase &&
+           left.player.money == right.player.money &&
+           left.player.stamina == right.player.stamina &&
+           left.player.reputation == right.player.reputation &&
+           left.player.knowledge == right.player.knowledge &&
+           left.player.mood == right.player.mood &&
+           left.has_pending_location == right.has_pending_location &&
+           left.pending_location == right.pending_location &&
+           left.location_started == right.location_started &&
+           left.day_action_done == right.day_action_done &&
+           left.night_action_done == right.night_action_done &&
+           left.last_summary == right.last_summary && left.main_ending == right.main_ending &&
+           left.final_summary == right.final_summary &&
+           left.applied_result_ids == right.applied_result_ids &&
+           left.store_inventory == right.store_inventory &&
+           left.tavern_wins == right.tavern_wins &&
+           left.tavern_losses == right.tavern_losses;
+}
+
 GameSession GameSession::new_game(unsigned int seed) {
     GameSession session;
     session.seed_ = seed;
@@ -89,6 +131,12 @@ GameSession GameSession::new_game(unsigned int seed) {
 
 DayContext GameSession::current_day_context() const {
     return make_day_context(day_, seed_);
+}
+
+unsigned int GameSession::location_seed(Location location,
+                                        unsigned int session_index) const noexcept {
+    const unsigned int stream = static_cast<unsigned int>(location) + 1U;
+    return derive_seed(seed_, day_, stream, session_index);
 }
 
 Location GameSession::pending_location() const noexcept {
@@ -158,22 +206,6 @@ int GameSession::start_location() {
     return active_result_id_;
 }
 
-ActionResult GameSession::simulated_success_result() const {
-    if (!has_pending_location() || !location_started_) {
-        return {};
-    }
-    const ActionSlot slot =
-        phase_ == GamePhase::day_location ? ActionSlot::day : ActionSlot::night;
-    ActionResult result;
-    result.result_id = active_result_id_;
-    result.slot = slot;
-    result.location = pending_location_;
-    result.outcome = ActionOutcome::completed;
-    result.delta = day_work_delta(pending_location_);
-    result.summary = completed_summary(pending_location_);
-    return result;
-}
-
 ActionResult GameSession::abandon_current_location() const {
     if (!has_pending_location() || !location_started_) {
         return {};
@@ -203,7 +235,7 @@ ActionResult GameSession::home_rest_result() {
     result.location = Location::home;
     result.outcome = ActionOutcome::completed;
     result.delta = StatDelta{0, 15, 0, 0, 5};
-    result.summary = completed_summary(Location::home);
+    result.summary = location_result_summary(Location::home, ActionOutcome::completed);
     return result;
 }
 
@@ -219,6 +251,27 @@ ApplyResult GameSession::apply_action_result(const ActionResult& result) {
     }
     if (result.location != pending_location_) {
         return {false, "行动结果地点与当前地点不一致。"};
+    }
+    if (result.outcome == ActionOutcome::abandoned &&
+        (has_nonzero_delta(result.delta) || result.has_store_inventory_update ||
+         result.tavern_win_delta != 0 || result.tavern_loss_delta != 0)) {
+        return {false, "主动放弃结果不能携带收益或地点状态变化。"};
+    }
+    if (result.has_store_inventory_update) {
+        if (result.location != Location::convenience_store ||
+            !has_valid_store_inventory(result.store_inventory_after)) {
+            return {false, "店铺库存更新不属于当前便利店行动或库存数据非法。"};
+        }
+    } else if (!result.store_inventory_after.empty()) {
+        return {false, "行动结果携带了未声明的店铺库存。"};
+    }
+    if (result.tavern_win_delta < 0 || result.tavern_loss_delta < 0 ||
+        result.tavern_win_delta + result.tavern_loss_delta > 1) {
+        return {false, "酒馆战绩变化非法。"};
+    }
+    if ((result.tavern_win_delta != 0 || result.tavern_loss_delta != 0) &&
+        result.location != Location::tavern) {
+        return {false, "酒馆战绩只能由酒馆行动修改。"};
     }
 
     if (phase_ == GamePhase::day_location) {

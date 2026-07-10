@@ -33,11 +33,9 @@ constexpr unsigned long MAX_PATH_W = 260;
 #include "io/resource_diagnostics.hpp"
 #include "io/save_game.hpp"
 #include "io/startup_log.hpp"
+#include "ui/ui_metrics.hpp"
 
 namespace {
-
-constexpr int legacy_ui_width = 640;
-constexpr int legacy_ui_height = 360;
 
 void draw_resource_error(const pixel_town::ResourceReport& report, bool log_written) {
     ClearBackground(Color{47, 30, 35, 255});
@@ -70,7 +68,14 @@ bool complete_day_with_rest(pixel_town::GameSession& session, pixel_town::Locati
     if (session.start_location() == 0) {
         return false;
     }
-    if (!session.apply_action_result(session.simulated_success_result()).accepted) {
+    pixel_town::ActionResult result;
+    result.result_id = session.active_result_id();
+    result.slot = pixel_town::ActionSlot::day;
+    result.location = location;
+    result.outcome = pixel_town::ActionOutcome::completed;
+    result.delta = pixel_town::StatDelta{18, -18, 4, 0, -3};
+    result.summary = "诊断截图快速推进白天行动。";
+    if (!session.apply_action_result(result).accepted) {
         return false;
     }
     if (!session.apply_action_result(session.home_rest_result()).accepted) {
@@ -159,7 +164,8 @@ void setup_restaurant_diagnostic(pixel_town::GameAppState& state, bool started) 
     state.has_session = true;
     state.session = pixel_town::GameSession::new_game();
     (void)state.session.enter_location(pixel_town::Location::restaurant);
-    pixel_town::prepare_restaurant_runtime(state.locations, state.session.current_day_context().seed);
+    pixel_town::prepare_restaurant_runtime(
+        state.locations, state.session.location_seed(pixel_town::Location::restaurant));
     if (started) {
         (void)state.session.start_location();
         if (state.locations.restaurant) {
@@ -204,7 +210,7 @@ void setup_library_diagnostic(pixel_town::GameAppState& state,
         state.locations.library_data, pixel_town::library::default_library_config());
     pixel_town::library::DailyContext context;
     context.day = state.session.day();
-    context.random_seed = state.session.current_day_context().seed;
+    context.random_seed = state.session.location_seed(pixel_town::Location::library, 1);
     context.library_visits = 1;
     context.current_knowledge = state.session.player().knowledge;
     state.locations.library_engine->start_session(context);
@@ -267,34 +273,15 @@ bool is_save_boundary(const pixel_town::GameSession& session) {
            phase == pixel_town::GamePhase::ending;
 }
 
-bool same_snapshot(const pixel_town::GameSessionSnapshot& left,
-                   const pixel_town::GameSessionSnapshot& right) {
-    return left.day == right.day && left.seed == right.seed &&
-           left.next_result_id == right.next_result_id &&
-           left.active_result_id == right.active_result_id && left.phase == right.phase &&
-           left.player.money == right.player.money &&
-           left.player.stamina == right.player.stamina &&
-           left.player.reputation == right.player.reputation &&
-           left.player.knowledge == right.player.knowledge &&
-           left.player.mood == right.player.mood &&
-           left.has_pending_location == right.has_pending_location &&
-           left.pending_location == right.pending_location &&
-           left.location_started == right.location_started &&
-           left.day_action_done == right.day_action_done &&
-           left.night_action_done == right.night_action_done &&
-           left.last_summary == right.last_summary && left.main_ending == right.main_ending &&
-           left.final_summary == right.final_summary &&
-           left.applied_result_ids == right.applied_result_ids;
-}
-
 }  // namespace
 
 int main(int argc, char* argv[]) {
     constexpr auto display = pixel_town::default_display_config();
     constexpr float prototype_ui_scale =
-        static_cast<float>(display.logical_width) / static_cast<float>(legacy_ui_width);
-    static_assert(display.logical_width * legacy_ui_height ==
-                      display.logical_height * legacy_ui_width,
+        static_cast<float>(display.logical_width) /
+        static_cast<float>(pixel_town::ui::design_width);
+    static_assert(display.logical_width * pixel_town::ui::design_height ==
+                      display.logical_height * pixel_town::ui::design_width,
                   "prototype UI scale requires the same 16:9 aspect ratio");
     const auto demo_args = pixel_town::parse_demo_preset_args(argc, argv);
     const bool capture_prototype =
@@ -613,8 +600,7 @@ int main(int argc, char* argv[]) {
                 if (persistence_enabled && game_flow.has_session &&
                     is_save_boundary(game_flow.session)) {
                     const auto current_snapshot = game_flow.session.snapshot();
-                    if (!has_persisted_snapshot ||
-                        !same_snapshot(persisted_snapshot, current_snapshot)) {
+                    if (!has_persisted_snapshot || persisted_snapshot != current_snapshot) {
                         const auto save_result =
                             pixel_town::save_session_atomic(save_path, game_flow.session);
                         if (save_result.status == pixel_town::SaveStatus::ok) {

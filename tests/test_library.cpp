@@ -70,6 +70,16 @@ TEST_CASE("Library data loading - valid format") {
     CHECK(data.work_intro == "读者会提出各种问题");
 }
 
+TEST_CASE("Bundled library data passes the production parser") {
+    const auto result =
+        pixel_town::library::load_library_data("assets/data/library_data.txt");
+
+    REQUIRE(result.success);
+    CHECK(result.data.categories.size() >= 5);
+    CHECK(result.data.questions.size() >= 5);
+    CHECK(result.data.plot_events.size() == 3);
+}
+
 TEST_CASE("Library data loading rejects questions with unknown categories") {
     const std::filesystem::path path =
         std::filesystem::current_path() / ".tmp-library-invalid-data.txt";
@@ -84,6 +94,51 @@ TEST_CASE("Library data loading rejects questions with unknown categories") {
 
     CHECK_FALSE(result.success);
     CHECK(result.error_message.find("unknown category") != std::string::npos);
+}
+
+TEST_CASE("Library data loading rejects malformed plot requirements without throwing") {
+    const std::filesystem::path path =
+        std::filesystem::current_path() / ".tmp-library-invalid-plot-requirement.txt";
+    {
+        std::ofstream file(path);
+        file << "CATEGORY history: 历史\n";
+        file << "QUESTION history: 小镇旧地图属于哪一类？\n";
+        file << "PLOT_EVENT old_map: 旧地图\n";
+        file << "PLOT_REQUIREMENT two:30\n";
+    }
+
+    pixel_town::library::LoadResult result;
+    CHECK_NOTHROW(result = pixel_town::library::load_library_data(path.string()));
+    std::filesystem::remove(path);
+
+    CHECK_FALSE(result.success);
+    CHECK(result.error_message.find("plot requirement") != std::string::npos);
+}
+
+TEST_CASE("Library data loading rejects detached fields and duplicate ids") {
+    const auto detached_path =
+        std::filesystem::current_path() / ".tmp-library-detached-field.txt";
+    {
+        std::ofstream file(detached_path);
+        file << "HINT 没有对应问题\n";
+    }
+    const auto detached = pixel_town::library::load_library_data(detached_path.string());
+    std::filesystem::remove(detached_path);
+    CHECK_FALSE(detached.success);
+    CHECK(detached.error_message.find("no question") != std::string::npos);
+
+    const auto duplicate_path =
+        std::filesystem::current_path() / ".tmp-library-duplicate-category.txt";
+    {
+        std::ofstream file(duplicate_path);
+        file << "CATEGORY history: 历史\n";
+        file << "CATEGORY history: 重复历史\n";
+        file << "QUESTION history: 测试问题\n";
+    }
+    const auto duplicate = pixel_town::library::load_library_data(duplicate_path.string());
+    std::filesystem::remove(duplicate_path);
+    CHECK_FALSE(duplicate.success);
+    CHECK(duplicate.error_message.find("Duplicate category") != std::string::npos);
 }
 
 TEST_CASE("Library UI state starts from intro instructions") {

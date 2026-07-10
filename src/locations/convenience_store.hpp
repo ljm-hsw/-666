@@ -76,15 +76,17 @@ struct StoreSettlement {
                                                 const std::string& item_id);
 [[nodiscard]] int price_for_tier(const ProductConfig& product, PriceTier tier);
 [[nodiscard]] ValidationResult validate_purchase_plan(const StoreConfig& config,
-                                                      const PurchasePlan& plan,
-                                                      int available_cash);
+                                                       const StoreInventory& starting_inventory,
+                                                       const PurchasePlan& plan,
+                                                       int available_cash);
 [[nodiscard]] StoreSettlement simulate_sales(const StoreConfig& config,
                                              const StoreInventory& starting_inventory,
                                              const PurchasePlan& purchase_plan,
                                              const PricePlan& price_plan,
                                              const DailyStoreContext& context,
                                              int available_cash);
-[[nodiscard]] ActionResult build_store_action_result(const StoreSettlement& settlement,
+[[nodiscard]] ActionResult build_store_action_result(const StoreConfig& config,
+                                                     const StoreSettlement& settlement,
                                                      int result_id);
 
 }  // namespace pixel_town::store

@@ -36,4 +36,5 @@ User stories: 23-27, 54, 61, 62
 - 已合入数据文件、规则层、NPC/场景/UI 文件、资源诊断可选项和 `tests/test_library.cpp`，并通过本地构建与 CTest。
 - 合并时把 `LibraryRuleEngine` 从裸指针改为 `std::unique_ptr`，并确保进入图书馆 UI 前先调用 `GameSession::start_location()`。
 - 2026-07-09：按 TDD 补齐图书馆 UI 初始说明入口、答题中按 `I` 重看说明、配置/每日上下文暴露、旧地图判定上下文、反馈奖励配置来源、行动结果叙事回声合并、非法内容加载错误和地图进入/完成/返回夜晚选择集成链路；本地构建与 CTest 通过。
-- 后续非阻塞 polish：图书馆仍使用内部 640×360 坐标经缩放绘制到 960×540，最终视觉统一可在 P4 或专门视觉 issue 中继续处理。
+- 2026-07-10：补齐非法 `PLOT_REQUIREMENT` 数值诊断，解析失败返回 `LoadResult` 错误而不抛出异常；图书馆 UI 与全局 UI 共享 `src/ui/ui_metrics.hpp` 的设计网格比例。
+- 后续非阻塞 polish：图书馆仍使用 640×360 设计网格映射到 960×540 逻辑画布，最终视觉统一可在 P4 或专门视觉 issue 中继续处理。

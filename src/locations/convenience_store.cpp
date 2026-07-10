@@ -120,6 +120,7 @@ int price_for_tier(const ProductConfig& product, PriceTier tier) {
 }
 
 ValidationResult validate_purchase_plan(const StoreConfig& config,
+                                        const StoreInventory& starting_inventory,
                                         const PurchasePlan& plan,
                                         int available_cash) {
     ValidationResult result;
@@ -131,6 +132,11 @@ ValidationResult validate_purchase_plan(const StoreConfig& config,
         }
         if (quantity < 0) {
             result.message = "进货数量不能为负数。";
+            return result;
+        }
+        if (quantity_for(starting_inventory, item_id) + quantity >
+            config.max_stock_per_product) {
+            result.message = "进货后库存不能超过单品上限。";
             return result;
         }
         result.purchase_cost += product->unit_cost * quantity;
@@ -150,7 +156,8 @@ StoreSettlement simulate_sales(const StoreConfig& config,
                                const DailyStoreContext& context,
                                int available_cash) {
     StoreSettlement settlement;
-    const auto validation = validate_purchase_plan(config, purchase_plan, available_cash);
+    const auto validation =
+        validate_purchase_plan(config, starting_inventory, purchase_plan, available_cash);
     settlement.purchase_cost = validation.purchase_cost;
     if (!validation.allowed) {
         settlement.message = validation.message;
@@ -180,18 +187,25 @@ StoreSettlement simulate_sales(const StoreConfig& config,
     return settlement;
 }
 
-ActionResult build_store_action_result(const StoreSettlement& settlement, int result_id) {
+ActionResult build_store_action_result(const StoreConfig& config,
+                                       const StoreSettlement& settlement,
+                                       int result_id) {
     ActionResult result;
     result.result_id = result_id;
     result.slot = ActionSlot::day;
     result.location = Location::convenience_store;
-    result.outcome = settlement.accepted ? ActionOutcome::completed : ActionOutcome::abandoned;
+    if (!settlement.accepted) {
+        result.outcome = ActionOutcome::abandoned;
+        result.summary = settlement.message;
+        return result;
+    }
+    result.outcome = ActionOutcome::completed;
     result.delta.money = settlement.profit;
-    result.delta.stamina = -default_store_config().stamina_cost;
+    result.delta.stamina = -config.stamina_cost;
+    const int reputation_step = std::max(1, config.profit_reputation_step);
     result.delta.reputation =
-        default_store_config().base_reputation +
-        std::max(0, settlement.profit / default_store_config().profit_reputation_step);
-    result.delta.mood = default_store_config().base_mood_change;
+        config.base_reputation + std::max(0, settlement.profit / reputation_step);
+    result.delta.mood = config.base_mood_change;
     result.summary = settlement.summary;
     result.has_store_inventory_update = true;
     for (const auto& [item_id, quantity] : settlement.remaining_inventory) {

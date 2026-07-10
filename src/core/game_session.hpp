@@ -109,6 +109,13 @@ struct GameSessionSnapshot {
     int tavern_losses{0};
 };
 
+[[nodiscard]] bool operator==(const GameSessionSnapshot& left,
+                              const GameSessionSnapshot& right);
+[[nodiscard]] inline bool operator!=(const GameSessionSnapshot& left,
+                                     const GameSessionSnapshot& right) {
+    return !(left == right);
+}
+
 [[nodiscard]] const char* phase_label(GamePhase phase);
 [[nodiscard]] const char* location_label(Location location);
 
@@ -120,6 +127,8 @@ public:
     [[nodiscard]] GamePhase phase() const noexcept { return phase_; }
     [[nodiscard]] const PlayerState& player() const noexcept { return player_; }
     [[nodiscard]] DayContext current_day_context() const;
+    [[nodiscard]] unsigned int location_seed(Location location,
+                                             unsigned int session_index = 0) const noexcept;
     [[nodiscard]] const std::string& last_summary() const noexcept { return last_summary_; }
     [[nodiscard]] const std::string& main_ending() const noexcept { return main_ending_; }
     [[nodiscard]] const std::string& final_summary() const noexcept { return final_summary_; }
@@ -138,7 +147,6 @@ public:
     [[nodiscard]] bool enter_location(Location location);
     [[nodiscard]] bool return_to_map();
     [[nodiscard]] int start_location();
-    [[nodiscard]] ActionResult simulated_success_result() const;
     [[nodiscard]] ActionResult abandon_current_location() const;
     [[nodiscard]] ActionResult home_rest_result();
     [[nodiscard]] ApplyResult apply_action_result(const ActionResult& result);

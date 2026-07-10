@@ -40,4 +40,5 @@ User stories: 11-15, 35, 54, 61, 62
 - 新增 `src/app/restaurant_ui_model.*`，把教程文案、订单票据、反馈文本和结算变化行从绘制逻辑中抽出为可测试模型。
 - 餐馆规则新增 `RestaurantFeedback::timeout` 等反馈状态，超时会进入短反馈阶段后再继续下一单。
 - 餐馆 UI 增加程序绘制背景、订单票据、食物图标槽位、倒计时条、鼠标菜品点击、主动放弃说明和完成结算变化展示。
+- 2026-07-10：诊断确认统计条经设计网格缩放后超出 960×540 画布，且“开始接待”绘制与命中矩形不一致；现已使用共享布局矩形修复，并增加画布范围测试和诊断截图复查。
 - 验证：`.tools/CMake.app/Contents/bin/cmake --build build --parallel 4` 通过；`.tools/CMake.app/Contents/bin/ctest --test-dir build --output-on-failure` 通过。

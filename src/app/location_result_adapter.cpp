@@ -1,6 +1,6 @@
 #include "app/location_result_adapter.hpp"
 
-#include <cstdint>
+#include <algorithm>
 
 namespace pixel_town {
 
@@ -11,9 +11,8 @@ ActionSlot action_slot_for_phase(GamePhase phase) {
 library::DailyContext make_library_daily_context(const GameSession& session, int library_visits) {
     library::DailyContext context;
     context.day = session.day();
-    context.random_seed = static_cast<std::uint64_t>(session.current_day_context().seed) +
-                          static_cast<std::uint64_t>(session.day()) * 100000ULL +
-                          static_cast<std::uint64_t>(library_visits) * 100ULL;
+    context.random_seed = session.location_seed(
+        Location::library, static_cast<unsigned int>(std::max(0, library_visits)));
     context.library_visits = library_visits;
     context.current_knowledge = session.player().knowledge;
     return context;

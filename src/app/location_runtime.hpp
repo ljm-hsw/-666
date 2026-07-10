@@ -37,6 +37,8 @@ struct LocationRuntimeState {
 [[nodiscard]] Rectangle location_abandon_button(bool is_tavern);
 [[nodiscard]] Rectangle restaurant_abandon_button();
 [[nodiscard]] Rectangle restaurant_dish_button(int dish_index);
+[[nodiscard]] Rectangle restaurant_instructions_start_button();
+[[nodiscard]] Rectangle restaurant_stats_panel();
 [[nodiscard]] Rectangle store_back_button();
 [[nodiscard]] Rectangle store_start_button();
 [[nodiscard]] Rectangle store_abandon_button();

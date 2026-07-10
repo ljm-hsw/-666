@@ -9,6 +9,7 @@
 #include "core/game_session.hpp"
 #include "io/demo_preset.hpp"
 #include "io/save_game.hpp"
+#include "test_game_session_helpers.hpp"
 
 namespace {
 
@@ -44,7 +45,9 @@ pixel_town::GameSession make_midgame_session() {
     for (int day = 1; day < 5; ++day) {
         REQUIRE(session.enter_location(pixel_town::Location::restaurant));
         REQUIRE(session.start_location() != 0);
-        REQUIRE(session.apply_action_result(session.simulated_success_result()).accepted);
+        REQUIRE(session.apply_action_result(
+                    pixel_town::test_support::completed_location_result(session))
+                    .accepted);
         REQUIRE(session.apply_action_result(session.home_rest_result()).accepted);
         REQUIRE(session.finish_day_summary());
     }
@@ -92,7 +95,7 @@ TEST_CASE("loading a demo preset does not read or overwrite the formal autosave"
 
     REQUIRE(loaded.status == pixel_town::DemoPresetStatus::ok);
     CHECK(loaded.session.day() == 5);
-    CHECK(loaded.session.current_day_context().seed == 20260707);
+    CHECK(loaded.session.snapshot().seed == 20260707);
     CHECK(read_text(formal_save) == before);
 }
 
@@ -117,10 +120,10 @@ TEST_CASE("bundled demo presets are valid fixed-seed snapshots") {
 
     REQUIRE(midgame.status == pixel_town::DemoPresetStatus::ok);
     CHECK(midgame.session.day() == 5);
-    CHECK(midgame.session.current_day_context().seed == 20260707);
+    CHECK(midgame.session.snapshot().seed == 20260707);
 
     REQUIRE(ending_eve.status == pixel_town::DemoPresetStatus::ok);
     CHECK(ending_eve.session.day() == 10);
     CHECK(ending_eve.session.phase() == pixel_town::GamePhase::night_choice);
-    CHECK(ending_eve.session.current_day_context().seed == 20260707);
+    CHECK(ending_eve.session.snapshot().seed == 20260707);
 }
