@@ -1,372 +1,430 @@
 #include "app/tavern_runtime.hpp"
 
 #include <algorithm>
+#include <cmath>
+#include <utility>
 
-#include "app/location_result_adapter.hpp"
-#include "app/ui_primitives.hpp"
+#include "app/tavern_layout.hpp"
 #include "ui/ui_metrics.hpp"
 
 namespace pixel_town {
 namespace {
 
-constexpr const char* lobby_background_path =
-    "assets/textures/ui/tavern/tavern_lobby.png";
-constexpr const char* bartender_sheet_path =
-    "assets/textures/ui/tavern/npc/bartender_idle_sheet.png";
-
-Vector2 design_mouse(Vector2 logical_mouse) {
-    return Vector2{logical_mouse.x / ui::design_to_canvas_scale,
-                   logical_mouse.y / ui::design_to_canvas_scale};
+bool clicked(const TavernRect& bounds, const TavernFrameInput& input) {
+    if (!input.primary_pressed || !input.pointer.valid) {
+        return false;
+    }
+    const float x = input.pointer.x / ui::design_to_canvas_scale;
+    const float y = input.pointer.y / ui::design_to_canvas_scale;
+    return x >= bounds.x && x <= bounds.x + bounds.width &&
+           y >= bounds.y && y <= bounds.y + bounds.height;
 }
 
-int board_index(float mouse_position, float origin, float cell_size) {
-    return static_cast<int>((mouse_position - origin + cell_size * 0.5F) / cell_size);
+int board_index(float canvas_position, float origin, float cell_size) {
+    const float design_position = canvas_position / ui::design_to_canvas_scale;
+    return static_cast<int>((design_position - origin + cell_size * 0.5F) /
+                            cell_size);
 }
 
-void settle_tavern(GameSession& session, TavernRuntimeState& runtime,
-                   ChallengeOutcome outcome, std::string& notice) {
-    const auto result = tavern_action_result(session, runtime.selected_challenge,
-                                             runtime.selected_bet, outcome,
-                                             TavernChallengeConfig{});
-    const auto applied = session.apply_action_result(result);
-    notice = applied.message;
-    runtime.screen = TavernScreen::lobby;
-}
-
-void abandon_tavern(GameSession& session, TavernRuntimeState& runtime,
-                    std::string& notice) {
-    const auto applied = session.apply_action_result(session.abandon_current_location());
-    notice = applied.message;
-    runtime.screen = TavernScreen::lobby;
-}
-
-bool update_lobby(GameSession& session, TavernRuntimeState& runtime,
-                  std::string& notice, Vector2 mouse) {
-    const TavernLayout layout = tavern_layout();
-    runtime.npc_animation_timer += GetFrameTime();
-
-    if (session.location_started()) {
-        if (clicked(layout.back_button, mouse) || IsKeyPressed(KEY_ESCAPE)) {
-            abandon_tavern(session, runtime, notice);
-        }
-        return true;
-    }
-    if (clicked(layout.npc_hotspot, mouse)) {
-        runtime.screen = TavernScreen::npc_dialog;
-        return true;
-    }
-    if (clicked(layout.gomoku_hotspot, mouse)) {
-        runtime.selected_challenge = ChallengeType::gomoku;
-        runtime.screen = TavernScreen::challenge_select;
-        return true;
-    }
-    if (clicked(layout.dice_hotspot, mouse)) {
-        runtime.selected_challenge = ChallengeType::liars_dice;
-        runtime.screen = TavernScreen::challenge_select;
-        return true;
-    }
-    if (clicked(layout.select_button, mouse) || IsKeyPressed(KEY_SPACE)) {
-        runtime.screen = TavernScreen::challenge_select;
-        return true;
-    }
-    if (clicked(layout.back_button, mouse) || IsKeyPressed(KEY_ESCAPE)) {
-        if (session.return_to_map()) {
-            notice = "已返回地图：阶段未消耗。";
-            prepare_tavern_runtime(runtime);
-        }
-        return true;
-    }
-    return true;
-}
-
-bool update_selection(GameSession& session, TavernRuntimeState& runtime,
-                      std::string& notice, Vector2 mouse) {
-    const TavernLayout layout = tavern_layout();
-    if (clicked(layout.gomoku_card, mouse) || IsKeyPressed(KEY_ONE)) {
-        runtime.selected_challenge = ChallengeType::gomoku;
-    }
-    if (clicked(layout.dice_card, mouse) || IsKeyPressed(KEY_TWO)) {
-        runtime.selected_challenge = ChallengeType::liars_dice;
-    }
-    if (clicked(layout.low_bet_button, mouse) || IsKeyPressed(KEY_THREE)) {
-        runtime.selected_bet = BetTier::low;
-        runtime.feedback.clear();
-    }
-    if (clicked(layout.medium_bet_button, mouse) || IsKeyPressed(KEY_FOUR)) {
-        runtime.selected_bet = BetTier::medium;
-        runtime.feedback.clear();
-    }
-    if (clicked(layout.high_bet_button, mouse) || IsKeyPressed(KEY_FIVE)) {
-        runtime.selected_bet = BetTier::high;
-        runtime.feedback.clear();
-    }
-    if (clicked(layout.cancel_button, mouse) || IsKeyPressed(KEY_ESCAPE)) {
-        runtime.screen = TavernScreen::lobby;
-        return true;
-    }
-    if (!clicked(layout.start_button, mouse) && !IsKeyPressed(KEY_SPACE)) {
-        return true;
-    }
-
-    const TavernChallengeConfig config;
-    if (!can_afford_tavern_bet(session.player(), runtime.selected_bet, config)) {
-        notice = "金钱不足，无法选择该赌注档位。";
-        runtime.feedback = notice;
-        return true;
-    }
-    if (session.start_location() == 0) {
-        notice = "酒馆挑战启动失败，请返回地图后重试。";
-        runtime.feedback = notice;
-        return true;
-    }
-
-    runtime.computer_timer = 0.0F;
-    runtime.feedback.clear();
-    if (runtime.selected_challenge == ChallengeType::gomoku) {
-        runtime.gomoku = GomokuGame{};
-        runtime.screen = TavernScreen::gomoku;
-        notice = "五子棋开始：点击棋盘交叉点落下黑子。";
-    } else {
-        runtime.liars_dice = LiarsDiceGame{session.location_seed(
-            Location::tavern, static_cast<unsigned int>(session.active_result_id()))};
-        runtime.bid_count = 1;
-        runtime.bid_face = 1;
-        runtime.screen = TavernScreen::liars_dice;
-        notice = "骗子骰子开始：提高叫点或质疑电脑。";
-    }
-    return true;
-}
-
-bool update_gomoku(GameSession& session, TavernRuntimeState& runtime,
-                   std::string& notice, Vector2 mouse) {
-    const TavernLayout layout = tavern_layout();
-    auto& game = runtime.gomoku;
-
-    if (game.state() != GomokuState::playing) {
-        if (clicked(layout.gomoku_confirm_button, mouse) || IsKeyPressed(KEY_ENTER) ||
-            IsKeyPressed(KEY_SPACE)) {
-            ChallengeOutcome outcome = ChallengeOutcome::draw;
-            if (game.state() == GomokuState::player_wins) {
-                outcome = ChallengeOutcome::win;
-            } else if (game.state() == GomokuState::computer_wins) {
-                outcome = ChallengeOutcome::loss;
-            }
-            settle_tavern(session, runtime, outcome, notice);
-        }
-        return true;
-    }
-
-    if (clicked(layout.gomoku_abandon_button, mouse) || IsKeyPressed(KEY_ESCAPE)) {
-        abandon_tavern(session, runtime, notice);
-        return true;
-    }
-
-    if (game.current_turn() == GomokuTurn::computer) {
-        runtime.computer_timer += GetFrameTime();
-        if (runtime.computer_timer >= 0.35F) {
-            (void)game.computer_play();
-            runtime.computer_timer = 0.0F;
-        }
-        return true;
-    }
-
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        const Vector2 mouse_design = design_mouse(mouse);
-        const int col = board_index(mouse_design.x, layout.gomoku_board_x,
-                                    layout.gomoku_cell_size);
-        const int row = board_index(mouse_design.y, layout.gomoku_board_y,
-                                    layout.gomoku_cell_size);
-        (void)game.play(row, col);
-    }
-    return true;
-}
-
-bool update_liars_dice(GameSession& session, TavernRuntimeState& runtime,
-                       std::string& notice, Vector2 mouse) {
-    const TavernLayout layout = tavern_layout();
-    auto& game = runtime.liars_dice;
-
-    if (game.is_round_over()) {
-        if (clicked(layout.round_confirm_button, mouse) || IsKeyPressed(KEY_ENTER) ||
-            IsKeyPressed(KEY_SPACE)) {
-            if (game.is_game_over()) {
-                settle_tavern(session, runtime,
-                              game.player_won() ? ChallengeOutcome::win
-                                                : ChallengeOutcome::loss,
-                              notice);
-            } else if (game.start_next_round()) {
-                runtime.computer_timer = 0.0F;
-                runtime.feedback.clear();
-                if (const auto bid = game.minimum_legal_bid(); bid.has_value()) {
-                    runtime.bid_count = bid->count;
-                    runtime.bid_face = bid->face;
-                }
-            }
-        }
-        return true;
-    }
-
-    if (clicked(layout.dice_abandon_button, mouse) || IsKeyPressed(KEY_ESCAPE)) {
-        abandon_tavern(session, runtime, notice);
-        return true;
-    }
-
-    if (!game.is_player_turn()) {
-        runtime.computer_timer += GetFrameTime();
-        if (runtime.computer_timer >= 0.5F) {
-            (void)game.computer_act();
-            runtime.computer_timer = 0.0F;
-            if (const auto bid = game.minimum_legal_bid(); bid.has_value()) {
-                runtime.bid_count = bid->count;
-                runtime.bid_face = bid->face;
-            }
-        }
-        return true;
-    }
-
-    const int total_dice = game.player_dice_count() + game.computer_dice_count();
-    if (clicked(layout.count_down, mouse)) {
-        runtime.bid_count = std::max(1, runtime.bid_count - 1);
-        runtime.feedback.clear();
-    }
-    if (clicked(layout.count_up, mouse)) {
-        runtime.bid_count = std::min(total_dice, runtime.bid_count + 1);
-        runtime.feedback.clear();
-    }
-    if (clicked(layout.face_down, mouse)) {
-        runtime.bid_face = std::max(1, runtime.bid_face - 1);
-        runtime.feedback.clear();
-    }
-    if (clicked(layout.face_up, mouse)) {
-        runtime.bid_face = std::min(6, runtime.bid_face + 1);
-        runtime.feedback.clear();
-    }
-    if (clicked(layout.bid_button, mouse)) {
-        if (game.player_bid(runtime.bid_count, runtime.bid_face)) {
-            runtime.feedback.clear();
-        } else if (const auto bid = game.minimum_legal_bid(); bid.has_value()) {
-            runtime.bid_count = bid->count;
-            runtime.bid_face = bid->face;
-            runtime.feedback = "已调整为最小合法叫点，请再次确认。";
-        } else {
-            runtime.feedback = "已经无法继续加价，请选择质疑。";
-        }
-    }
-    if (clicked(layout.challenge_button, mouse) && game.bid_count() > 0) {
-        (void)game.player_challenge();
-    }
-    return true;
+TavernStepResult step_result(TavernStepStatus status,
+                             std::optional<std::string> notice = std::nullopt) {
+    return TavernStepResult{status, std::move(notice)};
 }
 
 }  // namespace
 
-TavernLayout tavern_layout() {
-    TavernLayout layout{};
-    layout.npc_hotspot = Rectangle{42, 88, 66, 82};
-    layout.gomoku_hotspot = Rectangle{70, 292, 168, 48};
-    layout.dice_hotspot = Rectangle{390, 198, 198, 112};
-    layout.select_button = Rectangle{470, 310, 92, 32};
-    layout.back_button = Rectangle{570, 310, 58, 32};
+TavernRuntime::TavernRuntime()
+    : settlement_(config_) {}
 
-    layout.overlay_panel = Rectangle{108, 52, 424, 286};
-    layout.gomoku_card = Rectangle{132, 86, 180, 90};
-    layout.dice_card = Rectangle{328, 86, 180, 90};
-    layout.low_bet_button = Rectangle{154, 210, 96, 30};
-    layout.medium_bet_button = Rectangle{272, 210, 96, 30};
-    layout.high_bet_button = Rectangle{390, 210, 96, 30};
-    layout.start_button = Rectangle{154, 270, 154, 38};
-    layout.cancel_button = Rectangle{332, 270, 154, 38};
-
-    layout.dialog_panel = Rectangle{100, 224, 440, 122};
-    layout.dialog_close_button = Rectangle{456, 306, 64, 28};
-
-    layout.gomoku_board_x = 78.0F;
-    layout.gomoku_board_y = 66.0F;
-    layout.gomoku_cell_size = 18.0F;
-    layout.gomoku_confirm_button = Rectangle{420, 238, 140, 36};
-    layout.gomoku_abandon_button = Rectangle{420, 286, 140, 34};
-
-    layout.dice_panel = Rectangle{52, 64, 536, 282};
-    for (int index = 0; index < 5; ++index) {
-        layout.computer_dice[index] =
-            Rectangle{84.0F + static_cast<float>(index) * 48.0F, 126, 38, 38};
-        layout.player_dice[index] =
-            Rectangle{84.0F + static_cast<float>(index) * 48.0F, 270, 38, 38};
-    }
-    layout.count_down = Rectangle{372, 154, 28, 28};
-    layout.count_value = Rectangle{404, 154, 42, 28};
-    layout.count_up = Rectangle{450, 154, 28, 28};
-    layout.face_down = Rectangle{372, 190, 28, 28};
-    layout.face_value = Rectangle{404, 190, 42, 28};
-    layout.face_up = Rectangle{450, 190, 28, 28};
-    layout.bid_button = Rectangle{372, 234, 92, 34};
-    layout.challenge_button = Rectangle{474, 234, 92, 34};
-    layout.dice_abandon_button = Rectangle{474, 286, 92, 32};
-    layout.round_result_panel = Rectangle{150, 118, 340, 190};
-    layout.round_confirm_button = Rectangle{270, 266, 100, 30};
-    return layout;
+void TavernRuntime::reset() {
+    active_ = false;
+    screen_ = TavernScreen::lobby;
+    selected_challenge_ = ChallengeType::gomoku;
+    selected_bet_ = BetTier::medium;
+    gomoku_ = GomokuGame{};
+    liars_dice_ = LiarsDiceGame{0U};
+    computer_timer_ = 0.0F;
+    bid_count_ = 1;
+    bid_face_ = 1;
+    feedback_.clear();
+    npc_animation_timer_ = 0.0F;
+    active_result_id_ = 0;
+    player_at_start_ = PlayerState{};
+    pending_settlement_.reset();
 }
 
-void prepare_tavern_runtime(TavernRuntimeState& runtime) {
-    runtime.screen = TavernScreen::lobby;
-    runtime.selected_challenge = ChallengeType::gomoku;
-    runtime.selected_bet = BetTier::medium;
-    runtime.gomoku = GomokuGame{};
-    runtime.liars_dice = LiarsDiceGame{0U};
-    runtime.computer_timer = 0.0F;
-    runtime.bid_count = 1;
-    runtime.bid_face = 1;
-    runtime.feedback.clear();
-    runtime.npc_animation_timer = 0.0F;
+TavernOpenResult TavernRuntime::open(GameSession& session) {
+    if (active_) {
+        return {TavernOpenStatus::already_active, "酒馆会话已经打开。"};
+    }
+    const auto permission = session.can_enter(Location::tavern);
+    if (!permission.allowed) {
+        return {TavernOpenStatus::denied, permission.reason};
+    }
+    if (!session.enter_location(Location::tavern)) {
+        return {TavernOpenStatus::denied, "酒馆入口状态发生变化，请重试。"};
+    }
+    reset();
+    active_ = true;
+    return {TavernOpenStatus::opened, "已进入酒馆，选择挑战和赌注。"};
 }
 
-void ensure_tavern_assets_loaded(TavernRuntimeState& runtime) {
-    if (runtime.assets_attempted) {
-        return;
+TavernStepResult TavernRuntime::step(GameSession& session,
+                                     const TavernFrameInput& input) {
+    if (!active_) {
+        return step_result(TavernStepStatus::rejected, "酒馆会话尚未打开。");
     }
-    runtime.assets_attempted = true;
-    runtime.lobby_background = LoadTexture(lobby_background_path);
-    runtime.bartender_sheet = LoadTexture(bartender_sheet_path);
-    if (runtime.lobby_background.id != 0) {
-        SetTextureFilter(runtime.lobby_background, TEXTURE_FILTER_POINT);
+    if (session.phase() != GamePhase::night_location ||
+        !session.has_pending_location() ||
+        session.pending_location() != Location::tavern) {
+        return step_result(TavernStepStatus::rejected,
+                           "当前游戏阶段与酒馆会话不一致。");
     }
-    if (runtime.bartender_sheet.id != 0) {
-        SetTextureFilter(runtime.bartender_sheet, TEXTURE_FILTER_POINT);
+    if (!input.updates_enabled) {
+        return step_result(TavernStepStatus::unchanged);
     }
-}
 
-void unload_tavern_assets(TavernRuntimeState& runtime) {
-    if (runtime.lobby_background.id != 0) {
-        UnloadTexture(runtime.lobby_background);
-        runtime.lobby_background = {};
+    float elapsed = input.elapsed_seconds;
+    std::optional<std::string> frame_notice;
+    if (!std::isfinite(elapsed) || elapsed < 0.0F) {
+        elapsed = 0.0F;
+        frame_notice = "忽略了非法的酒馆帧时间。";
     }
-    if (runtime.bartender_sheet.id != 0) {
-        UnloadTexture(runtime.bartender_sheet);
-        runtime.bartender_sheet = {};
-    }
-    runtime.assets_attempted = false;
-}
 
-bool update_tavern_runtime(GameSession& session, TavernRuntimeState& runtime,
-                           std::string& notice, Vector2 logical_mouse) {
-    ensure_tavern_assets_loaded(runtime);
-    switch (runtime.screen) {
-        case TavernScreen::lobby:
-            return update_lobby(session, runtime, notice, logical_mouse);
-        case TavernScreen::challenge_select:
-            return update_selection(session, runtime, notice, logical_mouse);
-        case TavernScreen::npc_dialog:
-            if (clicked(tavern_layout().dialog_close_button, logical_mouse) ||
-                IsKeyPressed(KEY_ESCAPE)) {
-                runtime.screen = TavernScreen::lobby;
+    const TavernLayout layout = tavern_layout();
+    if (screen_ == TavernScreen::lobby) {
+        npc_animation_timer_ += elapsed;
+        if (session.location_started()) {
+            if (clicked(layout.back_button, input) || input.escape_pressed) {
+                const auto applied =
+                    session.apply_action_result(session.abandon_current_location());
+                feedback_ = applied.message;
+                if (!applied.accepted) {
+                    return step_result(TavernStepStatus::rejected, applied.message);
+                }
+                active_ = false;
+                return step_result(TavernStepStatus::settled, applied.message);
             }
-            return true;
-        case TavernScreen::gomoku:
-            return update_gomoku(session, runtime, notice, logical_mouse);
-        case TavernScreen::liars_dice:
-            return update_liars_dice(session, runtime, notice, logical_mouse);
+            return step_result(TavernStepStatus::unchanged, frame_notice);
+        }
+        if (clicked(layout.npc_hotspot, input)) {
+            screen_ = TavernScreen::npc_dialog;
+            return step_result(TavernStepStatus::changed, frame_notice);
+        }
+        if (clicked(layout.gomoku_hotspot, input)) {
+            selected_challenge_ = ChallengeType::gomoku;
+            screen_ = TavernScreen::challenge_select;
+            return step_result(TavernStepStatus::changed, frame_notice);
+        }
+        if (clicked(layout.dice_hotspot, input)) {
+            selected_challenge_ = ChallengeType::liars_dice;
+            screen_ = TavernScreen::challenge_select;
+            return step_result(TavernStepStatus::changed, frame_notice);
+        }
+        if (clicked(layout.select_button, input) || input.space_pressed) {
+            screen_ = TavernScreen::challenge_select;
+            return step_result(TavernStepStatus::changed, frame_notice);
+        }
+        if (clicked(layout.back_button, input) || input.escape_pressed) {
+            if (!session.return_to_map()) {
+                feedback_ = "当前无法返回地图。";
+                return step_result(TavernStepStatus::rejected, feedback_);
+            }
+            active_ = false;
+            return step_result(TavernStepStatus::returned_to_map,
+                               "已返回地图：阶段未消耗。");
+        }
+        return step_result(TavernStepStatus::unchanged, frame_notice);
     }
-    return true;
+
+    if (screen_ == TavernScreen::npc_dialog) {
+        if (clicked(layout.dialog_close_button, input) || input.escape_pressed) {
+            screen_ = TavernScreen::lobby;
+            return step_result(TavernStepStatus::changed, frame_notice);
+        }
+        return step_result(TavernStepStatus::unchanged, frame_notice);
+    }
+
+    if (screen_ == TavernScreen::challenge_select) {
+        bool changed = false;
+        if (clicked(layout.gomoku_card, input) || input.digit_pressed == 1) {
+            selected_challenge_ = ChallengeType::gomoku;
+            changed = true;
+        } else if (clicked(layout.dice_card, input) || input.digit_pressed == 2) {
+            selected_challenge_ = ChallengeType::liars_dice;
+            changed = true;
+        } else if (clicked(layout.low_bet_button, input) || input.digit_pressed == 3) {
+            selected_bet_ = BetTier::low;
+            feedback_.clear();
+            changed = true;
+        } else if (clicked(layout.medium_bet_button, input) || input.digit_pressed == 4) {
+            selected_bet_ = BetTier::medium;
+            feedback_.clear();
+            changed = true;
+        } else if (clicked(layout.high_bet_button, input) || input.digit_pressed == 5) {
+            selected_bet_ = BetTier::high;
+            feedback_.clear();
+            changed = true;
+        }
+        if (clicked(layout.cancel_button, input) || input.escape_pressed) {
+            screen_ = TavernScreen::lobby;
+            return step_result(TavernStepStatus::changed, frame_notice);
+        }
+        if (!clicked(layout.start_button, input) && !input.space_pressed) {
+            return step_result(changed ? TavernStepStatus::changed
+                                       : TavernStepStatus::unchanged,
+                               frame_notice);
+        }
+        if (bet_amount(config_, selected_bet_) > session.player().money) {
+            feedback_ = "金钱不足，无法选择该赌注档位。";
+            return step_result(TavernStepStatus::rejected, feedback_);
+        }
+        player_at_start_ = session.player();
+        active_result_id_ = session.start_location();
+        if (active_result_id_ == 0) {
+            feedback_ = "酒馆挑战启动失败，请返回地图后重试。";
+            return step_result(TavernStepStatus::rejected, feedback_);
+        }
+        computer_timer_ = 0.0F;
+        pending_settlement_.reset();
+        feedback_.clear();
+        if (selected_challenge_ == ChallengeType::gomoku) {
+            gomoku_ = GomokuGame{};
+            screen_ = TavernScreen::gomoku;
+            return step_result(TavernStepStatus::changed,
+                               "五子棋开始：点击棋盘交叉点落下黑子。");
+        }
+        liars_dice_ = LiarsDiceGame{session.location_seed(
+            Location::tavern, static_cast<unsigned int>(active_result_id_))};
+        bid_count_ = 1;
+        bid_face_ = 1;
+        screen_ = TavernScreen::liars_dice;
+        return step_result(TavernStepStatus::changed,
+                           "骗子骰子开始：提高叫点或质疑电脑。");
+    }
+
+    if (screen_ == TavernScreen::gomoku) {
+        if (gomoku_.state() != GomokuState::playing) {
+            if (!clicked(layout.gomoku_confirm_button, input) &&
+                !input.enter_pressed && !input.space_pressed) {
+                return step_result(TavernStepStatus::unchanged, frame_notice);
+            }
+            if (!pending_settlement_.has_value()) {
+                const auto build = settlement_.build(
+                    gomoku_, player_at_start_, selected_bet_, active_result_id_);
+                if (!build.accepted()) {
+                    feedback_ = build.message;
+                    return step_result(TavernStepStatus::rejected, build.message);
+                }
+                pending_settlement_ = build.result;
+            }
+            const auto applied =
+                session.apply_action_result(*pending_settlement_);
+            feedback_ = applied.message;
+            if (!applied.accepted) {
+                return step_result(TavernStepStatus::rejected, applied.message);
+            }
+            active_ = false;
+            return step_result(TavernStepStatus::settled, applied.message);
+        }
+        if (clicked(layout.gomoku_abandon_button, input) || input.escape_pressed) {
+            const auto applied =
+                session.apply_action_result(session.abandon_current_location());
+            feedback_ = applied.message;
+            if (!applied.accepted) {
+                return step_result(TavernStepStatus::rejected, applied.message);
+            }
+            active_ = false;
+            return step_result(TavernStepStatus::settled, applied.message);
+        }
+        if (gomoku_.current_turn() == GomokuTurn::computer) {
+            computer_timer_ += elapsed;
+            if (computer_timer_ >= 0.35F) {
+                (void)gomoku_.computer_play();
+                computer_timer_ = 0.0F;
+                return step_result(TavernStepStatus::changed, frame_notice);
+            }
+            return step_result(TavernStepStatus::unchanged, frame_notice);
+        }
+        if (input.primary_pressed && input.pointer.valid) {
+            const int col = board_index(input.pointer.x, layout.gomoku_board_x,
+                                        layout.gomoku_cell_size);
+            const int row = board_index(input.pointer.y, layout.gomoku_board_y,
+                                        layout.gomoku_cell_size);
+            if (gomoku_.play(row, col)) {
+                return step_result(TavernStepStatus::changed, frame_notice);
+            }
+        }
+        return step_result(TavernStepStatus::unchanged, frame_notice);
+    }
+
+    if (liars_dice_.is_round_over()) {
+        if (!clicked(layout.round_confirm_button, input) &&
+            !input.enter_pressed && !input.space_pressed) {
+            return step_result(TavernStepStatus::unchanged, frame_notice);
+        }
+        if (liars_dice_.is_game_over()) {
+            if (!pending_settlement_.has_value()) {
+                const auto build = settlement_.build(
+                    liars_dice_, player_at_start_, selected_bet_, active_result_id_);
+                if (!build.accepted()) {
+                    feedback_ = build.message;
+                    return step_result(TavernStepStatus::rejected, build.message);
+                }
+                pending_settlement_ = build.result;
+            }
+            const auto applied =
+                session.apply_action_result(*pending_settlement_);
+            feedback_ = applied.message;
+            if (!applied.accepted) {
+                return step_result(TavernStepStatus::rejected, applied.message);
+            }
+            active_ = false;
+            return step_result(TavernStepStatus::settled, applied.message);
+        }
+        if (liars_dice_.start_next_round()) {
+            computer_timer_ = 0.0F;
+            feedback_.clear();
+            if (const auto bid = liars_dice_.minimum_legal_bid(); bid.has_value()) {
+                bid_count_ = bid->count;
+                bid_face_ = bid->face;
+            }
+            return step_result(TavernStepStatus::changed, frame_notice);
+        }
+        return step_result(TavernStepStatus::rejected,
+                           "骗子骰子下一轮启动失败。");
+    }
+    if (clicked(layout.dice_abandon_button, input) || input.escape_pressed) {
+        const auto applied =
+            session.apply_action_result(session.abandon_current_location());
+        feedback_ = applied.message;
+        if (!applied.accepted) {
+            return step_result(TavernStepStatus::rejected, applied.message);
+        }
+        active_ = false;
+        return step_result(TavernStepStatus::settled, applied.message);
+    }
+    if (!liars_dice_.is_player_turn()) {
+        computer_timer_ += elapsed;
+        if (computer_timer_ >= 0.5F) {
+            (void)liars_dice_.computer_act();
+            computer_timer_ = 0.0F;
+            if (const auto bid = liars_dice_.minimum_legal_bid(); bid.has_value()) {
+                bid_count_ = bid->count;
+                bid_face_ = bid->face;
+            }
+            return step_result(TavernStepStatus::changed, frame_notice);
+        }
+        return step_result(TavernStepStatus::unchanged, frame_notice);
+    }
+
+    const int total_dice =
+        liars_dice_.player_dice_count() + liars_dice_.computer_dice_count();
+    bool changed = false;
+    if (clicked(layout.count_down, input)) {
+        bid_count_ = std::max(1, bid_count_ - 1);
+        feedback_.clear();
+        changed = true;
+    } else if (clicked(layout.count_up, input)) {
+        bid_count_ = std::min(total_dice, bid_count_ + 1);
+        feedback_.clear();
+        changed = true;
+    } else if (clicked(layout.face_down, input)) {
+        bid_face_ = std::max(1, bid_face_ - 1);
+        feedback_.clear();
+        changed = true;
+    } else if (clicked(layout.face_up, input)) {
+        bid_face_ = std::min(6, bid_face_ + 1);
+        feedback_.clear();
+        changed = true;
+    } else if (clicked(layout.bid_button, input)) {
+        if (liars_dice_.player_bid(bid_count_, bid_face_)) {
+            feedback_.clear();
+        } else if (const auto bid = liars_dice_.minimum_legal_bid(); bid.has_value()) {
+            bid_count_ = bid->count;
+            bid_face_ = bid->face;
+            feedback_ = "已调整为最小合法叫点，请再次确认。";
+        } else {
+            feedback_ = "已经无法继续加价，请选择质疑。";
+        }
+        changed = true;
+    } else if (clicked(layout.challenge_button, input) &&
+               liars_dice_.bid_count() > 0) {
+        changed = liars_dice_.player_challenge();
+    }
+    return step_result(changed ? TavernStepStatus::changed
+                               : TavernStepStatus::unchanged,
+                       frame_notice);
+}
+
+TavernPresentation TavernRuntime::presentation() const {
+    TavernPresentation view;
+    view.screen = screen_;
+    view.selected_challenge = selected_challenge_;
+    view.selected_bet = selected_bet_;
+    view.selected_bet_amount = bet_amount(config_, selected_bet_);
+    view.bet_amounts = {bet_amount(config_, BetTier::low),
+                        bet_amount(config_, BetTier::medium),
+                        bet_amount(config_, BetTier::high)};
+    view.bartender_animation_seconds = npc_animation_timer_;
+    view.feedback = feedback_;
+    view.challenge_started = active_result_id_ > 0;
+
+    if (screen_ == TavernScreen::gomoku) {
+        TavernGomokuPresentation gomoku_view;
+        for (int row = 0; row < GomokuGame::kSize; ++row) {
+            for (int col = 0; col < GomokuGame::kSize; ++col) {
+                gomoku_view.board[row][col] = gomoku_.cell(row, col);
+            }
+        }
+        gomoku_view.turn = gomoku_.current_turn();
+        gomoku_view.state = gomoku_.state();
+        view.gomoku = gomoku_view;
+    } else if (screen_ == TavernScreen::liars_dice) {
+        TavernLiarsDicePresentation dice_view;
+        dice_view.player_dice_count = liars_dice_.player_dice_count();
+        dice_view.computer_dice_count = liars_dice_.computer_dice_count();
+        const int revealed_player_dice_count =
+            dice_view.player_dice_count +
+            (liars_dice_.is_round_over() &&
+                     liars_dice_.round_loser() == LiarsDiceParticipant::player
+                 ? 1
+                 : 0);
+        const int revealed_computer_dice_count =
+            dice_view.computer_dice_count +
+            (liars_dice_.is_round_over() &&
+                     liars_dice_.round_loser() == LiarsDiceParticipant::computer
+                 ? 1
+                 : 0);
+        for (int index = 0; index < LiarsDiceGame::kDiceCount; ++index) {
+            dice_view.player_dice[index].active =
+                index < revealed_player_dice_count;
+            if (dice_view.player_dice[index].active) {
+                dice_view.player_dice[index].visible_face =
+                    liars_dice_.player_dice()[index];
+            }
+            dice_view.computer_dice[index].active =
+                index < revealed_computer_dice_count;
+            if (dice_view.computer_dice[index].active &&
+                liars_dice_.dice_revealed()) {
+                dice_view.computer_dice[index].visible_face =
+                    liars_dice_.computer_dice()[index];
+            }
+        }
+        dice_view.current_bid_count = liars_dice_.bid_count();
+        dice_view.current_bid_face = liars_dice_.bid_face();
+        dice_view.proposed_bid_count = bid_count_;
+        dice_view.proposed_bid_face = bid_face_;
+        dice_view.player_turn = liars_dice_.is_player_turn();
+        dice_view.round_over = liars_dice_.is_round_over();
+        dice_view.game_over = liars_dice_.is_game_over();
+        dice_view.player_won = liars_dice_.player_won();
+        dice_view.actual_count = liars_dice_.actual_count();
+        dice_view.bid_was_valid = liars_dice_.bid_was_valid();
+        dice_view.round_loser = liars_dice_.round_loser();
+        view.liars_dice = dice_view;
+    }
+    return view;
 }
 
 const char* tavern_ui_glyphs() {

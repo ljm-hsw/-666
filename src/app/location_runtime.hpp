@@ -8,6 +8,7 @@
 #include "core/game_session.hpp"
 #include "core/tavern_rules.hpp"
 #include "app/tavern_runtime.hpp"
+#include "app/tavern_view.hpp"
 #include "locations/convenience_store.hpp"
 #include "locations/library_data.hpp"
 #include "locations/library_rules.hpp"
@@ -20,7 +21,8 @@ namespace pixel_town {
 struct LocationRuntimeState {
     std::unique_ptr<RestaurantSession> restaurant;
     float restaurant_timer{0.0F};
-    TavernRuntimeState tavern;
+    TavernRuntime tavern;
+    TavernVisualAssets tavern_assets;
     store::PurchasePlan store_purchase_plan;
     store::PricePlan store_price_plan;
     int store_selected_product_index{0};

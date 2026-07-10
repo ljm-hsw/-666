@@ -33,3 +33,4 @@ User stories: 32-34, 38, 54, 61
 - 2026-07-10：以 `origin/dev-ckz@6ebaddd` 的玩法实现为输入，规则移植到 `src/locations/liars_dice_rules.*`；随机种子统一由 `GameSession::location_seed()` 提供，没有保留队友分支的重复种子派生函数。
 - UI 未揭示时只显示 `?`，质疑后才读取并展示电脑骰子；完整淘汰赛结果通过现有酒馆 Adapter 应用一次。
 - macOS Debug 构建、CTest、固定种子规则/集成测试和 `--capture-ui-diagnostics` 酒馆截图通过；Windows 结果由后续 CI 验证。
+- 2026-07-10：Issue 22 通过 `TavernRuntime` 的 public Interface 驱动完整淘汰赛，`TavernPresentation` 在揭晓前不提供电脑骰面，并由独立 Settlement Module 生成既有 `ActionResult`；骗子骰子规则和数值行为未改变。

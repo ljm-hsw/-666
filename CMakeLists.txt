@@ -35,9 +35,17 @@ add_library(pixel_town_locations
   src/locations/liars_dice_rules.cpp
   src/locations/library_data.cpp
   src/locations/library_rules.cpp
+  src/locations/tavern_challenge_settlement.cpp
 )
 target_include_directories(pixel_town_locations PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(pixel_town_locations PUBLIC pixel_town_core)
+
+add_library(pixel_town_tavern_logic
+  src/app/tavern_layout.cpp
+  src/app/tavern_runtime.cpp
+)
+target_include_directories(pixel_town_tavern_logic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(pixel_town_tavern_logic PUBLIC pixel_town_locations)
 
 add_library(pixel_town_location_scene
   src/locations/library_npc.cpp
@@ -51,12 +59,12 @@ add_library(pixel_town_app_logic
   src/app/location_result_adapter.cpp
   src/app/location_runtime.cpp
   src/app/restaurant_ui_model.cpp
-  src/app/tavern_runtime.cpp
   src/app/tavern_view.cpp
   src/app/ui_primitives.cpp
 )
 target_include_directories(pixel_town_app_logic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
-target_link_libraries(pixel_town_app_logic PUBLIC pixel_town_core pixel_town_location_scene)
+target_link_libraries(pixel_town_app_logic PUBLIC pixel_town_core pixel_town_location_scene
+                                           pixel_town_tavern_logic)
 
 add_executable(pixel_town
   src/app/game_flow.cpp
@@ -85,6 +93,8 @@ add_executable(pixel_town_tests
   tests/save_game_test.cpp
   tests/restaurant_test.cpp
   tests/story_text_test.cpp
+  tests/tavern_challenge_settlement_test.cpp
+  tests/tavern_runtime_test.cpp
   tests/test_library.cpp
 )
 target_link_libraries(pixel_town_tests PRIVATE pixel_town_io pixel_town_app_logic)
@@ -98,6 +108,7 @@ if(MSVC)
   target_compile_options(pixel_town_core PRIVATE /W4 /permissive-)
   target_compile_options(pixel_town_io PRIVATE /W4 /permissive-)
   target_compile_options(pixel_town_locations PRIVATE /W4 /permissive-)
+  target_compile_options(pixel_town_tavern_logic PRIVATE /W4 /permissive-)
   target_compile_options(pixel_town_location_scene PRIVATE /W4 /permissive-)
   target_compile_options(pixel_town_app_logic PRIVATE /W4 /permissive-)
   target_compile_options(pixel_town_tests PRIVATE /W4 /permissive-)
@@ -106,6 +117,7 @@ else()
   target_compile_options(pixel_town_core PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(pixel_town_io PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(pixel_town_locations PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(pixel_town_tavern_logic PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(pixel_town_location_scene PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(pixel_town_app_logic PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(pixel_town_tests PRIVATE -Wall -Wextra -Wpedantic)

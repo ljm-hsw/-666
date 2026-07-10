@@ -33,3 +33,4 @@ User stories: 30, 31, 34, 38, 54, 61
 - 2026-07-10：以 `origin/dev-ckz@6ebaddd` 的玩法实现为输入，规则移植到无 raylib 的 `src/locations/gomoku_rules.*`，运行期接入现有 `LocationRuntimeState` 和统一 `ActionResult` 结算。
 - 使用当前 640×360 设计网格映射到 960×540 逻辑画布，修正队友分支背景与热点缩放不一致的问题。
 - macOS Debug 构建、CTest、规则/集成测试和 `--capture-ui-diagnostics` 酒馆截图通过；Windows 结果由后续 CI 验证。
+- 2026-07-10：Issue 22 通过 `TavernRuntime` 的 public Interface 驱动完整棋局，并由独立 Settlement Module 生成既有 `ActionResult`；五子棋规则、电脑决策和数值行为未改变。

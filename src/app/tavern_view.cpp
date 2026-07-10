@@ -1,7 +1,9 @@
 #include "app/tavern_view.hpp"
 
+#include <cstddef>
 #include <string>
 
+#include "app/tavern_layout.hpp"
 #include "app/ui_primitives.hpp"
 #include "ui/ui_metrics.hpp"
 
@@ -15,6 +17,36 @@ constexpr int bartender_frame_count = 6;
 constexpr int bartender_frame_width = 64;
 constexpr int bartender_frame_height = 64;
 constexpr float bartender_frame_duration = 0.15F;
+constexpr const char* lobby_background_path =
+    "assets/textures/ui/tavern/tavern_lobby.png";
+constexpr const char* bartender_sheet_path =
+    "assets/textures/ui/tavern/npc/bartender_idle_sheet.png";
+
+Rectangle to_rectangle(TavernRect bounds) {
+    return Rectangle{bounds.x, bounds.y, bounds.width, bounds.height};
+}
+
+void panel(Rectangle bounds, Color fill, Color border = ink) {
+    pixel_town::panel(bounds, fill, border);
+}
+
+void panel(TavernRect bounds, Color fill, Color border = ink) {
+    pixel_town::panel(to_rectangle(bounds), fill, border);
+}
+
+bool hovered(TavernRect bounds, Vector2 mouse) {
+    return pixel_town::hovered(to_rectangle(bounds), mouse);
+}
+
+void centered_text(const Font& font, const char* value, Rectangle bounds,
+                   float size, Color color = ink) {
+    pixel_town::centered_text(font, value, bounds, size, color);
+}
+
+void centered_text(const Font& font, const char* value, TavernRect bounds,
+                   float size, Color color = ink) {
+    pixel_town::centered_text(font, value, to_rectangle(bounds), size, color);
+}
 
 void draw_dim_overlay() {
     DrawRectangle(0, 0, ui::canvas_width, ui::canvas_height, Color{10, 8, 6, 170});
@@ -34,9 +66,10 @@ void draw_lobby_fallback() {
                          Color{196, 139, 80, 255});
 }
 
-void draw_bartender(const TavernRuntimeState& runtime) {
+void draw_bartender(const TavernPresentation& presentation,
+                    const TavernVisualAssets& assets) {
     const Rectangle destination = scaled_rect(Rectangle{42, 91, 66, 76});
-    if (runtime.bartender_sheet.id == 0) {
+    if (assets.bartender_sheet.id == 0) {
         DrawCircleV(Vector2{destination.x + destination.width * 0.5F,
                             destination.y + destination.height * 0.23F},
                     destination.width * 0.18F, Color{222, 188, 146, 255});
@@ -47,17 +80,17 @@ void draw_bartender(const TavernRuntimeState& runtime) {
                          Color{55, 49, 45, 255});
         return;
     }
-    const int frame = static_cast<int>(runtime.npc_animation_timer /
+    const int frame = static_cast<int>(presentation.bartender_animation_seconds /
                                        bartender_frame_duration) %
                       bartender_frame_count;
     const Rectangle source{static_cast<float>(frame * bartender_frame_width), 0.0F,
                            static_cast<float>(bartender_frame_width),
                            static_cast<float>(bartender_frame_height)};
-    DrawTexturePro(runtime.bartender_sheet, source, destination, Vector2{0, 0}, 0.0F,
+    DrawTexturePro(assets.bartender_sheet, source, destination, Vector2{0, 0}, 0.0F,
                    WHITE);
 }
 
-void draw_labeled_hotspot(const Font& font, Rectangle bounds, const char* label,
+void draw_labeled_hotspot(const Font& font, TavernRect bounds, const char* label,
                           Vector2 mouse) {
     const bool is_hovered = hovered(bounds, mouse);
     const Rectangle label_bounds{bounds.x + 4.0F, bounds.y + bounds.height - 26.0F,
@@ -67,20 +100,20 @@ void draw_labeled_hotspot(const Font& font, Rectangle bounds, const char* label,
     centered_text(font, label, label_bounds, 13, is_hovered ? ink : RAYWHITE);
 }
 
-void draw_lobby(const Font& font, const GameSession& session,
-                const TavernRuntimeState& runtime, Vector2 mouse) {
-    if (runtime.lobby_background.id != 0) {
+void draw_lobby(const Font& font, const TavernPresentation& presentation,
+                const TavernVisualAssets& assets, Vector2 mouse) {
+    if (assets.lobby_background.id != 0) {
         const Rectangle source{0.0F, 1.0F,
-                               static_cast<float>(runtime.lobby_background.width),
-                               static_cast<float>(runtime.lobby_background.height - 2)};
-        DrawTexturePro(runtime.lobby_background, source,
+                               static_cast<float>(assets.lobby_background.width),
+                               static_cast<float>(assets.lobby_background.height - 2)};
+        DrawTexturePro(assets.lobby_background, source,
                        scaled_rect(Rectangle{0, 0, 640, 360}), Vector2{0, 0}, 0.0F,
                        WHITE);
     } else {
         draw_lobby_fallback();
     }
 
-    draw_bartender(runtime);
+    draw_bartender(presentation, assets);
     const TavernLayout layout = tavern_layout();
     draw_labeled_hotspot(font, layout.npc_hotspot, "和酒保交谈", mouse);
     draw_labeled_hotspot(font, layout.gomoku_hotspot, "五子棋桌", mouse);
@@ -93,14 +126,14 @@ void draw_lobby(const Font& font, const GameSession& session,
           Color{219, 181, 119, 255});
     centered_text(font, "返回", layout.back_button, 13, RAYWHITE);
 
-    if (session.location_started()) {
+    if (presentation.challenge_started) {
         panel(Rectangle{452, 274, 176, 30}, Color{150, 69, 59, 245});
         centered_text(font, "未完成挑战：Esc 放弃", Rectangle{452, 274, 176, 30},
                       12, RAYWHITE);
     }
 }
 
-void draw_selection(const Font& font, const TavernRuntimeState& runtime,
+void draw_selection(const Font& font, const TavernPresentation& presentation,
                     Vector2 mouse) {
     draw_dim_overlay();
     const TavernLayout layout = tavern_layout();
@@ -109,9 +142,9 @@ void draw_selection(const Font& font, const TavernRuntimeState& runtime,
     text(font, "一晚只能完成一局，结算后直接进入每日总结。", 132, 184, 13,
          muted_text);
 
-    const auto draw_card = [&](Rectangle bounds, ChallengeType challenge,
+    const auto draw_card = [&](TavernRect bounds, ChallengeType challenge,
                                const char* title, const char* description) {
-        const bool selected = runtime.selected_challenge == challenge;
+        const bool selected = presentation.selected_challenge == challenge;
         panel(bounds, selected ? Color{255, 239, 194, 255} : paper,
               selected ? gold : Color{157, 143, 124, 255});
         text(font, title, bounds.x + 14, bounds.y + 14, 18, selected ? red : ink);
@@ -123,10 +156,13 @@ void draw_selection(const Font& font, const TavernRuntimeState& runtime,
               "提高叫点 · 判断何时质疑");
 
     text(font, "选择赌注", 132, 212, 14, ink);
-    const auto draw_bet = [&](Rectangle bounds, BetTier tier) {
-        const bool selected = runtime.selected_bet == tier;
+    const auto draw_bet = [&](TavernRect bounds, BetTier tier) {
+        const bool selected = presentation.selected_bet == tier;
+        const std::size_t index = tier == BetTier::low ? 0U
+                                  : tier == BetTier::medium ? 1U
+                                                           : 2U;
         const std::string label = std::string{bet_tier_label(tier)} + " " +
-                                  std::to_string(bet_amount(TavernChallengeConfig{}, tier)) +
+                                  std::to_string(presentation.bet_amounts[index]) +
                                   "金币";
         panel(bounds, selected ? gold : Color{226, 216, 193, 255},
               selected ? ink : Color{157, 143, 124, 255});
@@ -135,8 +171,8 @@ void draw_selection(const Font& font, const TavernRuntimeState& runtime,
     draw_bet(layout.low_bet_button, BetTier::low);
     draw_bet(layout.medium_bet_button, BetTier::medium);
     draw_bet(layout.high_bet_button, BetTier::high);
-    if (!runtime.feedback.empty()) {
-        text(font, runtime.feedback, 154, 248, 12, red);
+    if (!presentation.feedback.empty()) {
+        text(font, presentation.feedback, 154, 248, 12, red);
     }
 
     panel(layout.start_button, hovered(layout.start_button, mouse) ? paper : green);
@@ -165,9 +201,13 @@ float board_point(int index, float origin, float cell_size) {
     return origin + static_cast<float>(index) * cell_size;
 }
 
-void draw_gomoku(const Font& font, const TavernRuntimeState& runtime,
+void draw_gomoku(const Font& font, const TavernPresentation& presentation,
                  Vector2 mouse) {
     ClearBackground(Color{56, 43, 38, 255});
+    if (!presentation.gomoku.has_value()) {
+        return;
+    }
+    const TavernGomokuPresentation& game = *presentation.gomoku;
     const TavernLayout layout = tavern_layout();
     const float board_pixels = 14.0F * layout.gomoku_cell_size;
     const Rectangle board_background{layout.gomoku_board_x - 14.0F,
@@ -190,7 +230,7 @@ void draw_gomoku(const Font& font, const TavernRuntimeState& runtime,
 
     for (int row = 0; row < GomokuGame::kSize; ++row) {
         for (int col = 0; col < GomokuGame::kSize; ++col) {
-            const GomokuCell cell = runtime.gomoku.cell(row, col);
+            const GomokuCell cell = game.board[row][col];
             if (cell == GomokuCell::empty) {
                 continue;
             }
@@ -207,29 +247,28 @@ void draw_gomoku(const Font& font, const TavernRuntimeState& runtime,
 
     panel(Rectangle{392, 66, 196, 266}, cream);
     text(font, "五子棋", 414, 82, 22, red);
-    const std::string bet = std::string{bet_tier_label(runtime.selected_bet)} +
+    const std::string bet = std::string{bet_tier_label(presentation.selected_bet)} +
                             "赌注 · " +
-                            std::to_string(bet_amount(TavernChallengeConfig{},
-                                                      runtime.selected_bet)) +
+                            std::to_string(presentation.selected_bet_amount) +
                             "金币";
     text(font, bet, 414, 118, 14, ink);
     text(font, "你执黑子，点击交叉点落子。", 414, 148, 12, muted_text);
     text(font, "先连成五子的一方获胜。", 414, 174, 12, muted_text);
 
     const char* status = "你的回合";
-    if (runtime.gomoku.state() == GomokuState::player_wins) {
+    if (game.state == GomokuState::player_wins) {
         status = "你赢了！";
-    } else if (runtime.gomoku.state() == GomokuState::computer_wins) {
+    } else if (game.state == GomokuState::computer_wins) {
         status = "电脑获胜。";
-    } else if (runtime.gomoku.state() == GomokuState::draw) {
+    } else if (game.state == GomokuState::draw) {
         status = "棋盘已满，平局。";
-    } else if (runtime.gomoku.current_turn() == GomokuTurn::computer) {
+    } else if (game.turn == GomokuTurn::computer) {
         status = "电脑思考中……";
     }
     text(font, status, 414, 206, 17,
-         runtime.gomoku.state() == GomokuState::playing ? ink : red);
+         game.state == GomokuState::playing ? ink : red);
 
-    if (runtime.gomoku.state() == GomokuState::playing) {
+    if (game.state == GomokuState::playing) {
         panel(layout.gomoku_abandon_button,
               hovered(layout.gomoku_abandon_button, mouse) ? paper : red);
         centered_text(font, "主动放弃 (Esc)", layout.gomoku_abandon_button, 14,
@@ -238,10 +277,13 @@ void draw_gomoku(const Font& font, const TavernRuntimeState& runtime,
         panel(layout.gomoku_confirm_button,
               hovered(layout.gomoku_confirm_button, mouse) ? paper : green);
         centered_text(font, "确认结算", layout.gomoku_confirm_button, 14, RAYWHITE);
+        if (!presentation.feedback.empty()) {
+            text(font, presentation.feedback, 414, 286, 11, red);
+        }
     }
 }
 
-void draw_die(const Font& font, Rectangle bounds, const char* value, bool active,
+void draw_die(const Font& font, TavernRect bounds, const char* value, bool active,
               bool hidden) {
     panel(bounds, active ? (hidden ? tavern_dark : paper)
                          : Color{194, 188, 176, 255},
@@ -250,40 +292,43 @@ void draw_die(const Font& font, Rectangle bounds, const char* value, bool active
                   hidden ? RAYWHITE : ink);
 }
 
-void draw_round_result(const Font& font, const LiarsDiceGame& game,
+void draw_round_result(const Font& font, const TavernLiarsDicePresentation& game,
                        Vector2 mouse) {
     draw_dim_overlay();
     const TavernLayout layout = tavern_layout();
     panel(layout.round_result_panel, cream);
     text(font, "揭晓这一轮", 174, 132, 20, red);
-    const std::string bid = "叫点 " + std::to_string(game.bid_count()) + " 个 " +
-                            std::to_string(game.bid_face()) + "，实际 " +
-                            std::to_string(game.actual_count()) + " 个。";
+    const std::string bid = "叫点 " + std::to_string(game.current_bid_count) + " 个 " +
+                            std::to_string(game.current_bid_face) + "，实际 " +
+                            std::to_string(game.actual_count) + " 个。";
     text(font, bid, 174, 170, 14, ink);
-    text(font, game.bid_was_valid() ? "叫点成立。" : "叫点不成立。", 174, 198,
-         15, game.bid_was_valid() ? green : red);
-    const bool player_lost = game.round_loser() == LiarsDiceParticipant::player;
-    const char* outcome = game.is_game_over()
-                              ? (game.player_won() ? "你赢下整场比赛。" : "你输掉了整场比赛。")
+    text(font, game.bid_was_valid ? "叫点成立。" : "叫点不成立。", 174, 198,
+         15, game.bid_was_valid ? green : red);
+    const bool player_lost = game.round_loser == LiarsDiceParticipant::player;
+    const char* outcome = game.game_over
+                              ? (game.player_won ? "你赢下整场比赛。" : "你输掉了整场比赛。")
                               : (player_lost ? "你失去一枚骰子。"
                                              : "电脑失去一枚骰子。");
     text(font, outcome, 174, 226, 15, player_lost ? red : green);
     const std::string remaining = "剩余骰子：你 " +
-                                  std::to_string(game.player_dice_count()) +
+                                  std::to_string(game.player_dice_count) +
                                   " / 电脑 " +
-                                  std::to_string(game.computer_dice_count());
+                                  std::to_string(game.computer_dice_count);
     text(font, remaining, 174, 250, 13, muted_text);
     panel(layout.round_confirm_button,
           hovered(layout.round_confirm_button, mouse) ? paper : green);
-    centered_text(font, game.is_game_over() ? "确认结算" : "下一轮",
+    centered_text(font, game.game_over ? "确认结算" : "下一轮",
                   layout.round_confirm_button, 13, RAYWHITE);
 }
 
-void draw_liars_dice(const Font& font, const TavernRuntimeState& runtime,
+void draw_liars_dice(const Font& font, const TavernPresentation& presentation,
                      Vector2 mouse) {
     ClearBackground(Color{54, 38, 33, 255});
+    if (!presentation.liars_dice.has_value()) {
+        return;
+    }
     const TavernLayout layout = tavern_layout();
-    const LiarsDiceGame& game = runtime.liars_dice;
+    const TavernLiarsDicePresentation& game = *presentation.liars_dice;
     panel(layout.dice_panel, cream);
     text(font, "骗子骰子", 74, 76, 22, red);
     text(font, "一点可代替其他点数；叫一点时只计算一点。", 226, 82, 12,
@@ -291,25 +336,25 @@ void draw_liars_dice(const Font& font, const TavernRuntimeState& runtime,
 
     text(font, "电脑骰子", 74, 104, 14, ink);
     for (int index = 0; index < LiarsDiceGame::kDiceCount; ++index) {
-        const bool active = index < game.computer_dice_count();
-        const bool hidden = active && !game.dice_revealed();
-        const std::string value = hidden ? "?" : std::to_string(game.computer_dice()[index]);
-        draw_die(font, layout.computer_dice[index], value.c_str(), active, hidden);
+        const TavernDiePresentation& die = game.computer_dice[index];
+        const bool hidden = die.active && !die.visible_face.has_value();
+        const std::string value = hidden ? "?" : std::to_string(die.visible_face.value_or(0));
+        draw_die(font, layout.computer_dice[index], value.c_str(), die.active, hidden);
     }
 
     text(font, "你的骰子", 74, 248, 14, ink);
     for (int index = 0; index < LiarsDiceGame::kDiceCount; ++index) {
-        const bool active = index < game.player_dice_count();
-        const std::string value = std::to_string(game.player_dice()[index]);
-        draw_die(font, layout.player_dice[index], value.c_str(), active, false);
+        const TavernDiePresentation& die = game.player_dice[index];
+        const std::string value = std::to_string(die.visible_face.value_or(0));
+        draw_die(font, layout.player_dice[index], value.c_str(), die.active, false);
     }
 
-    const std::string current_bid = game.bid_count() == 0
+    const std::string current_bid = game.current_bid_count == 0
                                         ? "当前：尚无叫点"
-                                        : "当前：" + std::to_string(game.bid_count()) +
-                                              " 个 " + std::to_string(game.bid_face());
+                                        : "当前：" + std::to_string(game.current_bid_count) +
+                                              " 个 " + std::to_string(game.current_bid_face);
     text(font, current_bid, 366, 118, 15, gold);
-    text(font, game.is_player_turn() ? "轮到你行动" : "电脑思考中……", 366, 140,
+    text(font, game.player_turn ? "轮到你行动" : "电脑思考中……", 366, 140,
          13, ink);
 
     text(font, "数量", 326, 160, 13, ink);
@@ -317,7 +362,7 @@ void draw_liars_dice(const Font& font, const TavernRuntimeState& runtime,
                                                                : Color{225, 215, 194, 255});
     centered_text(font, "-", layout.count_down, 16, ink);
     panel(layout.count_value, paper);
-    centered_text(font, std::to_string(runtime.bid_count).c_str(), layout.count_value,
+    centered_text(font, std::to_string(game.proposed_bid_count).c_str(), layout.count_value,
                   16, ink);
     panel(layout.count_up, hovered(layout.count_up, mouse) ? paper
                                                            : Color{225, 215, 194, 255});
@@ -328,7 +373,7 @@ void draw_liars_dice(const Font& font, const TavernRuntimeState& runtime,
                                                              : Color{225, 215, 194, 255});
     centered_text(font, "-", layout.face_down, 16, ink);
     panel(layout.face_value, paper);
-    centered_text(font, std::to_string(runtime.bid_face).c_str(), layout.face_value,
+    centered_text(font, std::to_string(game.proposed_bid_face).c_str(), layout.face_value,
                   16, ink);
     panel(layout.face_up, hovered(layout.face_up, mouse) ? paper
                                                          : Color{225, 215, 194, 255});
@@ -336,7 +381,7 @@ void draw_liars_dice(const Font& font, const TavernRuntimeState& runtime,
 
     panel(layout.bid_button, hovered(layout.bid_button, mouse) ? paper : green);
     centered_text(font, "叫点", layout.bid_button, 14, RAYWHITE);
-    const bool can_challenge = game.bid_count() > 0;
+    const bool can_challenge = game.current_bid_count > 0;
     panel(layout.challenge_button,
           can_challenge ? (hovered(layout.challenge_button, mouse) ? paper : red)
                         : Color{180, 175, 165, 255});
@@ -346,36 +391,63 @@ void draw_liars_dice(const Font& font, const TavernRuntimeState& runtime,
           hovered(layout.dice_abandon_button, mouse) ? paper
                                                       : Color{211, 202, 184, 255});
     centered_text(font, "放弃", layout.dice_abandon_button, 13, ink);
-    if (!runtime.feedback.empty()) {
-        text(font, runtime.feedback, 74, 316, 12, red);
+    if (!presentation.feedback.empty()) {
+        text(font, presentation.feedback, 74, 316, 12, red);
     }
 
-    if (game.is_round_over()) {
+    if (game.round_over) {
         draw_round_result(font, game, mouse);
     }
 }
 
 }  // namespace
 
-void draw_tavern_view(const Font& font, const GameSession& session,
-                      const TavernRuntimeState& runtime, Vector2 logical_mouse) {
-    switch (runtime.screen) {
+void ensure_tavern_assets_loaded(TavernVisualAssets& assets) {
+    if (assets.attempted) {
+        return;
+    }
+    assets.attempted = true;
+    assets.lobby_background = LoadTexture(lobby_background_path);
+    assets.bartender_sheet = LoadTexture(bartender_sheet_path);
+    if (assets.lobby_background.id != 0) {
+        SetTextureFilter(assets.lobby_background, TEXTURE_FILTER_POINT);
+    }
+    if (assets.bartender_sheet.id != 0) {
+        SetTextureFilter(assets.bartender_sheet, TEXTURE_FILTER_POINT);
+    }
+}
+
+void unload_tavern_assets(TavernVisualAssets& assets) {
+    if (assets.lobby_background.id != 0) {
+        UnloadTexture(assets.lobby_background);
+        assets.lobby_background = {};
+    }
+    if (assets.bartender_sheet.id != 0) {
+        UnloadTexture(assets.bartender_sheet);
+        assets.bartender_sheet = {};
+    }
+    assets.attempted = false;
+}
+
+void draw_tavern_view(const Font& font, const TavernPresentation& presentation,
+                      const TavernVisualAssets& assets, Vector2 logical_mouse) {
+    switch (presentation.screen) {
         case TavernScreen::lobby:
-            draw_lobby(font, session, runtime, logical_mouse);
+            draw_lobby(font, presentation, assets, logical_mouse);
             break;
         case TavernScreen::challenge_select:
-            draw_lobby(font, session, runtime, logical_mouse);
-            draw_selection(font, runtime, logical_mouse);
+            draw_lobby(font, presentation, assets, logical_mouse);
+            draw_selection(font, presentation, logical_mouse);
             break;
         case TavernScreen::npc_dialog:
-            draw_lobby(font, session, runtime, logical_mouse);
+            draw_lobby(font, presentation, assets, logical_mouse);
             draw_npc_dialog(font, logical_mouse);
             break;
         case TavernScreen::gomoku:
-            draw_gomoku(font, runtime, logical_mouse);
+            draw_gomoku(font, presentation, logical_mouse);
             break;
         case TavernScreen::liars_dice:
-            draw_liars_dice(font, runtime, logical_mouse);
+            draw_liars_dice(font, presentation, logical_mouse);
             break;
     }
 }

@@ -41,19 +41,4 @@ ActionResult library_action_result(const library::ActionResult& result,
     return game_result;
 }
 
-bool can_afford_tavern_bet(const PlayerState& player,
-                           BetTier bet_tier,
-                           const TavernChallengeConfig& config) {
-    return bet_amount(config, bet_tier) <= player.money;
-}
-
-ActionResult tavern_action_result(const GameSession& session,
-                                  ChallengeType challenge,
-                                  BetTier bet_tier,
-                                  ChallengeOutcome outcome,
-                                  const TavernChallengeConfig& config) {
-    return simulate_tavern_challenge(
-        session.player(), config, challenge, bet_tier, outcome, session.active_result_id());
-}
-
 }  // namespace pixel_town

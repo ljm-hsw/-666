@@ -16,6 +16,25 @@ constexpr std::array<Location, 5> map_locations{
     Location::restaurant, Location::convenience_store, Location::library, Location::tavern,
     Location::home};
 
+TavernFrameInput tavern_frame_input(Vector2 logical_mouse) {
+    TavernFrameInput input;
+    input.elapsed_seconds = GetFrameTime();
+    input.pointer = TavernCanvasPoint{logical_mouse.x, logical_mouse.y,
+                                      logical_mouse.x >= 0.0F &&
+                                          logical_mouse.y >= 0.0F};
+    input.primary_pressed = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    input.escape_pressed = IsKeyPressed(KEY_ESCAPE);
+    input.enter_pressed = IsKeyPressed(KEY_ENTER);
+    input.space_pressed = IsKeyPressed(KEY_SPACE);
+    for (int digit = 1; digit <= 5; ++digit) {
+        if (IsKeyPressed(static_cast<KeyboardKey>(KEY_ONE + digit - 1))) {
+            input.digit_pressed = digit;
+            break;
+        }
+    }
+    return input;
+}
+
 constexpr std::array ui_texts{
     "像素小镇",
     "十日经营计划",
@@ -599,7 +618,8 @@ void draw_location(const Font& font, const GameAppState& state, bool audio_enabl
                            location == Location::tavern;
 
     if (is_tavern) {
-        draw_tavern_view(font, state.session, state.locations.tavern, mouse);
+        draw_tavern_view(font, state.locations.tavern.presentation(),
+                         state.locations.tavern_assets, mouse);
         draw_status(font, state.session, audio_enabled);
         return;
     }
@@ -853,10 +873,9 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 return;
             }
             if (location == Location::tavern) {
-                if (state.session.enter_location(location)) {
-                    prepare_tavern_runtime(state.locations.tavern);
-                    state.notice = "已进入酒馆，选择挑战和赌注。";
-                }
+                ensure_tavern_assets_loaded(state.locations.tavern_assets);
+                const auto opened = state.locations.tavern.open(state.session);
+                state.notice = opened.message;
                 return;
             }
             if (state.session.enter_location(location)) {
@@ -883,8 +902,11 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                                state.session.pending_location() == Location::tavern;
 
         if (is_tavern) {
-            (void)update_tavern_runtime(state.session, state.locations.tavern,
-                                        state.notice, logical_mouse);
+            const auto result = state.locations.tavern.step(
+                state.session, tavern_frame_input(logical_mouse));
+            if (result.notice.has_value()) {
+                state.notice = *result.notice;
+            }
             return;
         }
         if (state.session.pending_location() == Location::convenience_store &&

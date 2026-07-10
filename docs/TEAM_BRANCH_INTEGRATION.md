@@ -38,16 +38,22 @@ The following baseline behavior is intentionally preserved:
 - Restaurant result construction now uses explicit field assignment to remain stable after tavern
   fields were added to `ActionResult`.
 - Follow-up architecture pass split location runtime responsibilities out of `game_flow.cpp`:
-  `location_result_adapter` maps module-local results into core `ActionResult`, while
-  `location_runtime` owns restaurant/tavern/library start, update, and completion flow.
+  `location_result_adapter` now owns library result/context mapping, while `location_runtime`
+  owns restaurant/library/store UI flow and the lifetime of tavern visual assets.
 - CMake now keeps `pixel_town_locations` as the headless location-rules target; raylib-backed
   library scene/NPC support is isolated in `pixel_town_location_scene`.
 - `ui_primitives` centralizes 960×540 logical-canvas drawing helpers and hit testing so scene code
   does not duplicate scaling, text, panel, click, and hover rules.
 - The rewritten `dev-ckz` branch was not merged wholesale because it was based on an older `main`.
-  Gomoku and Liar's Dice rules were moved into the headless locations target; tavern input state and
-  drawing were split into `tavern_runtime` and `tavern_view`, preserving the current save, story,
-  inventory, location-seed, and action-validation contracts.
+  Gomoku and Liar's Dice rules were moved into the headless locations target. Tavern input is now
+  converted into explicit `TavernFrameInput`; the raylib-free `TavernRuntime` exposes only
+  `open / step / presentation / active`, while `tavern_view` owns drawing and `TavernVisualAssets`.
+- Tavern terminal outcomes pass through the raylib-free `TavernChallengeSettlement` module in
+  `src/locations/` before the existing `GameSession::apply_action_result()` gate. Settlement accepts
+  the real Gomoku or Liar's Dice state, rejects a non-terminal game, and derives the challenge and
+  outcome from that state. Runtime caches the first terminal `ActionResult`; a rejected core result
+  keeps that same candidate and the terminal board/dice state visible. Save, story, inventory, seed,
+  action-result, and balance contracts remain unchanged.
 
 ## Current risks and follow-up
 
@@ -70,16 +76,20 @@ The following baseline behavior is intentionally preserved:
 The first post-merge architecture pass applied the `improve-codebase-architecture` deepening rule:
 move repeated ordering and mapping knowledge behind small Interfaces.
 
-- `location_result_adapter` is the Seam for translating location-specific results into unified
-  `ActionResult` values.
-- `location_runtime` is the Seam for app-layer location runtime state and input ordering. It keeps
-  restaurant, library, and tavern UI state out of the top-level `GameAppState` Interface.
+- `location_result_adapter` is the Seam for translating library-specific results and daily context
+  into the unified core flow.
+- `location_runtime` is the Seam for app-layer daytime location state and input ordering; it also
+  owns `TavernVisualAssets` without mixing those raylib resources into gameplay state.
+- `TavernRuntime` is the raylib-free Seam for tavern ordering and hidden presentation state;
+  `TavernChallengeSettlement` is the raylib-free Seam for proving a real game is terminal, deriving
+  its result, and constructing the existing night `ActionResult`. Runtime keeps that candidate
+  stable until the core accepts it.
 - `ui_primitives` is the Seam for logical-canvas drawing and input hit testing.
 - `game_flow.cpp` now stays closer to scene routing. Its line count dropped from about 1017 lines
   after the team merge to about 760 lines after the first refactor.
 
-This pass did not change `GameSession`, save format, player-state semantics, or location rule
-contracts.
+This pass did not change `GameSession`, save format, `ActionResult`, player-state semantics,
+balance values, or location rule contracts.
 
 ## Validation on integration branch
 

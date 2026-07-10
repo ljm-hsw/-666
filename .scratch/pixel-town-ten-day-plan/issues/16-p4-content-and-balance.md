@@ -33,6 +33,7 @@ User stories: 37, 38, 62
 - [13 P3：接入自由五子棋和启发式电脑对手](13-p3-gomoku.md)
 - [14 P3：接入 1v1 骗子骰子](14-p3-liars-dice.md)
 - [15 P3：完成库存清算与七种主结局](15-p3-endings.md)
+- [22 P3：深化酒馆运行期与挑战结算架构](22-p3-tavern-runtime-and-settlement-architecture.md)
 
 ## Comments
 

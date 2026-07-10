@@ -224,7 +224,7 @@ void setup_library_diagnostic(pixel_town::GameAppState& state,
 
 void setup_tavern_diagnostic(pixel_town::GameAppState& state,
                              pixel_town::TavernScreen screen) {
-    pixel_town::unload_tavern_assets(state.locations.tavern);
+    pixel_town::unload_tavern_assets(state.locations.tavern_assets);
     state = pixel_town::GameAppState{};
     state.has_session = true;
     state.session = pixel_town::GameSession::new_game(20260710U);
@@ -237,19 +237,21 @@ void setup_tavern_diagnostic(pixel_town::GameAppState& state,
     day_result.outcome = pixel_town::ActionOutcome::completed;
     day_result.summary = "诊断截图快速推进白天行动。";
     (void)state.session.apply_action_result(day_result);
-    (void)state.session.enter_location(pixel_town::Location::tavern);
-    pixel_town::prepare_tavern_runtime(state.locations.tavern);
-    pixel_town::ensure_tavern_assets_loaded(state.locations.tavern);
-    state.locations.tavern.screen = screen;
-    if (screen == pixel_town::TavernScreen::gomoku ||
-        screen == pixel_town::TavernScreen::liars_dice) {
-        (void)state.session.start_location();
-    }
-    if (screen == pixel_town::TavernScreen::liars_dice) {
-        state.locations.tavern.selected_challenge = pixel_town::ChallengeType::liars_dice;
-        state.locations.tavern.liars_dice = pixel_town::LiarsDiceGame{
-            state.session.location_seed(pixel_town::Location::tavern,
-                                        static_cast<unsigned int>(state.session.active_result_id()))};
+    (void)state.locations.tavern.open(state.session);
+    pixel_town::ensure_tavern_assets_loaded(state.locations.tavern_assets);
+    if (screen != pixel_town::TavernScreen::lobby) {
+        pixel_town::TavernFrameInput input;
+        input.space_pressed = true;
+        (void)state.locations.tavern.step(state.session, input);
+        if (screen == pixel_town::TavernScreen::gomoku ||
+            screen == pixel_town::TavernScreen::liars_dice) {
+            input = {};
+            input.digit_pressed = screen == pixel_town::TavernScreen::gomoku ? 1 : 2;
+            (void)state.locations.tavern.step(state.session, input);
+            input = {};
+            input.space_pressed = true;
+            (void)state.locations.tavern.step(state.session, input);
+        }
     }
     state.notice = "诊断：酒馆页面。";
 }
@@ -552,7 +554,7 @@ int main(int argc, char* argv[]) {
         "ui-diagnostics-captures/tavern-liars-dice.png",
     };
     auto unload_resources = [&]() {
-        pixel_town::unload_tavern_assets(game_flow.locations.tavern);
+        pixel_town::unload_tavern_assets(game_flow.locations.tavern_assets);
         if (town_marker.id != 0) {
             UnloadTexture(town_marker);
         }

@@ -9,7 +9,7 @@
 项目已进入 **P3 夜晚玩法与结局接入阶段**：
 
 - 产品范围、领域语言和核心设计已确认。
-- P0-P4 已拆分为 19 个本地实施 issue。
+- P0-P4 已拆分为 22 个本地实施 issue。
 - C++17/CMake 应用、raylib 6.0、doctest 2.5.2 和跨平台 CI 已初始化。
 - Issue 01 的 macOS 本地配置、构建、CTest，以及 GitHub Actions 上的 Windows 2022/MSVC 与 macOS/Apple Clang 矩阵验证已通过。
 - Issue 02 已接入启动资源诊断、本地 `logs/latest.log` 和可选音频静音降级。
@@ -21,6 +21,7 @@
 - Issue 19 已接入 P1 MVP 主线剧情骨架：标题开场、十天每日提示、占位地点摘要、第十天评议会和占位结局文案；P2/P3 地点逻辑由组员在占位 UI 下并行推进。
 - 聚合分支 `codex/integrate-team-branches` 已合入餐馆、图书馆和酒馆模块，保留标题页、960×540 画布、StoryText 和 v1 存档兼容基线。集成说明见 [`docs/TEAM_BRANCH_INTEGRATION.md`](docs/TEAM_BRANCH_INTEGRATION.md)。
 - Issue 13/14 已接入可完整游玩的五子棋和 1v1 骗子骰子：两套规则支持固定状态/种子测试，酒馆 UI 完成玩法与赌注选择、真实胜负和统一夜晚结算。
+- Issue 22 已将酒馆流程收口为显式帧输入、只读 presentation、窄 `TavernRuntime` Interface 和独立 Settlement Module；玩法逻辑可无窗口测试，Settlement 从真实终局推导胜负，电脑骰在揭晓前不会进入展示数据，核心拒绝时保留同一候选结果供稳定重试。
 
 当前不应把文档中的临时数值视为最终平衡承诺。
 
@@ -52,7 +53,7 @@
 | [`docs/DESIGN.md`](docs/DESIGN.md) | 核心架构、状态机、模块契约和数据流 |
 | [`docs/VISUAL_PROTOTYPE.md`](docs/VISUAL_PROTOTYPE.md) | P0 三套视觉原型、候选调色板和资源规范 |
 | [PRD](.scratch/pixel-town-ten-day-plan/PRD.md) | 产品范围、70 条用户故事和验收方向 |
-| [实施 Issues](.scratch/pixel-town-ten-day-plan/issues/) | 19 个依赖有序的本地 Markdown issue |
+| [实施 Issues](.scratch/pixel-town-ten-day-plan/issues/) | 22 个依赖有序的本地 Markdown issue |
 
 ## 技术基线
 
@@ -64,7 +65,7 @@
 - 目标平台：Windows 10/11 x64
 - 开发支持：macOS
 
-raylib 和 doctest 以锁定版本随仓库保存在 [`third_party/`](third_party/)，确保首次构建不依赖网络或用户全局安装。具体约束见 [ADR-0001](docs/adr/0001-adopt-raylib-and-doctest.md)。
+raylib 和 doctest 以锁定版本随仓库保存在 [`third_party/`](third_party/)，确保首次构建不依赖网络或用户全局安装。具体约束见 [ADR-0001](docs/adr/0001-adopt-raylib-and-doctest.md)；酒馆运行期与结算边界见 [ADR-0002](docs/adr/0002-use-explicit-tavern-runtime-and-settlement-modules.md)。
 
 ## 开始协作
 

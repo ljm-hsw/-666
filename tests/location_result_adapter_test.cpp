@@ -1,7 +1,6 @@
 #include <doctest/doctest.h>
 
 #include "app/location_result_adapter.hpp"
-#include "test_game_session_helpers.hpp"
 
 TEST_CASE("library action result maps location result into core action result") {
     pixel_town::library::ActionResult library_result;
@@ -93,28 +92,4 @@ TEST_CASE("library daily context is deterministic from session and visit count")
     CHECK(first.current_knowledge == 0);
     CHECK(first.random_seed == second.random_seed);
     CHECK(first.random_seed != next_visit.random_seed);
-}
-
-TEST_CASE("tavern adapter checks bet affordability and uses active result id") {
-    auto session = pixel_town::GameSession::new_game();
-    REQUIRE(session.enter_location(pixel_town::Location::restaurant));
-    REQUIRE(session.start_location() != 0);
-    REQUIRE(session.apply_action_result(
-                pixel_town::test_support::completed_location_result(session))
-                .accepted);
-    REQUIRE(session.enter_location(pixel_town::Location::tavern));
-    REQUIRE(session.start_location() != 0);
-
-    const pixel_town::TavernChallengeConfig config;
-    CHECK(pixel_town::can_afford_tavern_bet(
-        session.player(), pixel_town::BetTier::low, config));
-
-    const auto result = pixel_town::tavern_action_result(
-        session, pixel_town::ChallengeType::gomoku, pixel_town::BetTier::low,
-        pixel_town::ChallengeOutcome::win, config);
-
-    CHECK(result.result_id == session.active_result_id());
-    CHECK(result.slot == pixel_town::ActionSlot::night);
-    CHECK(result.location == pixel_town::Location::tavern);
-    CHECK(result.tavern_win_delta == 1);
 }

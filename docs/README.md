@@ -12,7 +12,7 @@
 4. PRD、核心设计和领域上下文。
 5. 阶段计划、运行说明和历史记录。
 
-当前仓库已进入 P1 部分实现：已实现部分以代码、自动化测试和构建配置为准；未实现部分仍以 PRD、`CONTEXT.md`、ADR 和已批准 issue 共同构成执行契约。
+当前仓库已进入 P3 实现：P1 核心闭环、P2 白天地点和 P3 酒馆双玩法已有代码与自动化测试；已实现部分以代码、自动化测试和构建配置为准，未实现与待人工验收部分仍以 PRD、`CONTEXT.md`、ADR 和已批准 issue 共同构成执行契约。
 
 ## 核心文档
 
@@ -28,6 +28,7 @@
 - [`IMAGEGEN_VISUAL_PLAN.md`](IMAGEGEN_VISUAL_PLAN.md)：960×540 画布迁移与 imagegen 页面背景/建筑资产规划。
 - [`TEAM_BRANCH_INTEGRATION.md`](TEAM_BRANCH_INTEGRATION.md)：同学分支聚合、冲突处理、保留基线和后续风险。
 - [`adr/0001-adopt-raylib-and-doctest.md`](adr/0001-adopt-raylib-and-doctest.md)：raylib、doctest 与离线依赖策略。
+- [`adr/0002-use-explicit-tavern-runtime-and-settlement-modules.md`](adr/0002-use-explicit-tavern-runtime-and-settlement-modules.md)：酒馆显式运行期 Interface、隐藏信息 presentation 与独立结算边界。
 - [`../CREDITS.md`](../CREDITS.md)：第三方字体、贴图和许可证来源登记。
 
 ## 工作流文档

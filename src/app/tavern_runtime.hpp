@@ -1,13 +1,14 @@
 #pragma once
 
+#include <array>
+#include <optional>
 #include <string>
-
-#include <raylib.h>
 
 #include "core/game_session.hpp"
 #include "core/tavern_rules.hpp"
 #include "locations/gomoku_rules.hpp"
 #include "locations/liars_dice_rules.hpp"
+#include "locations/tavern_challenge_settlement.hpp"
 
 namespace pixel_town {
 
@@ -19,73 +20,119 @@ enum class TavernScreen {
     liars_dice,
 };
 
-struct TavernLayout {
-    Rectangle npc_hotspot;
-    Rectangle gomoku_hotspot;
-    Rectangle dice_hotspot;
-    Rectangle select_button;
-    Rectangle back_button;
-
-    Rectangle overlay_panel;
-    Rectangle gomoku_card;
-    Rectangle dice_card;
-    Rectangle low_bet_button;
-    Rectangle medium_bet_button;
-    Rectangle high_bet_button;
-    Rectangle start_button;
-    Rectangle cancel_button;
-
-    Rectangle dialog_panel;
-    Rectangle dialog_close_button;
-
-    float gomoku_board_x{0.0F};
-    float gomoku_board_y{0.0F};
-    float gomoku_cell_size{0.0F};
-    Rectangle gomoku_confirm_button;
-    Rectangle gomoku_abandon_button;
-
-    Rectangle dice_panel;
-    Rectangle player_dice[5];
-    Rectangle computer_dice[5];
-    Rectangle count_down;
-    Rectangle count_value;
-    Rectangle count_up;
-    Rectangle face_down;
-    Rectangle face_value;
-    Rectangle face_up;
-    Rectangle bid_button;
-    Rectangle challenge_button;
-    Rectangle dice_abandon_button;
-    Rectangle round_result_panel;
-    Rectangle round_confirm_button;
+struct TavernCanvasPoint {
+    float x{0.0F};
+    float y{0.0F};
+    bool valid{false};
 };
 
-[[nodiscard]] TavernLayout tavern_layout();
+struct TavernFrameInput {
+    float elapsed_seconds{0.0F};
+    bool updates_enabled{true};
+    TavernCanvasPoint pointer;
+    bool primary_pressed{false};
+    bool escape_pressed{false};
+    bool enter_pressed{false};
+    bool space_pressed{false};
+    int digit_pressed{0};
+};
 
-struct TavernRuntimeState {
+struct TavernGomokuPresentation {
+    GomokuBoard board{};
+    GomokuTurn turn{GomokuTurn::player};
+    GomokuState state{GomokuState::playing};
+};
+
+struct TavernDiePresentation {
+    bool active{false};
+    std::optional<int> visible_face;
+};
+
+struct TavernLiarsDicePresentation {
+    std::array<TavernDiePresentation, LiarsDiceGame::kDiceCount> player_dice;
+    std::array<TavernDiePresentation, LiarsDiceGame::kDiceCount> computer_dice;
+    int player_dice_count{LiarsDiceGame::kDiceCount};
+    int computer_dice_count{LiarsDiceGame::kDiceCount};
+    int current_bid_count{0};
+    int current_bid_face{1};
+    int proposed_bid_count{1};
+    int proposed_bid_face{1};
+    bool player_turn{true};
+    bool round_over{false};
+    bool game_over{false};
+    bool player_won{false};
+    int actual_count{0};
+    bool bid_was_valid{false};
+    LiarsDiceParticipant round_loser{LiarsDiceParticipant::none};
+};
+
+struct TavernPresentation {
     TavernScreen screen{TavernScreen::lobby};
     ChallengeType selected_challenge{ChallengeType::gomoku};
     BetTier selected_bet{BetTier::medium};
-    GomokuGame gomoku{};
-    LiarsDiceGame liars_dice{0U};
-    float computer_timer{0.0F};
-    int bid_count{1};
-    int bid_face{1};
+    int selected_bet_amount{0};
+    std::array<int, 3> bet_amounts{};
+    float bartender_animation_seconds{0.0F};
     std::string feedback;
-    float npc_animation_timer{0.0F};
-    Texture2D lobby_background{};
-    Texture2D bartender_sheet{};
-    bool assets_attempted{false};
+    bool challenge_started{false};
+    std::optional<TavernGomokuPresentation> gomoku;
+    std::optional<TavernLiarsDicePresentation> liars_dice;
 };
 
-void prepare_tavern_runtime(TavernRuntimeState& runtime);
-void ensure_tavern_assets_loaded(TavernRuntimeState& runtime);
-void unload_tavern_assets(TavernRuntimeState& runtime);
+enum class TavernOpenStatus {
+    opened,
+    denied,
+    already_active,
+};
 
-[[nodiscard]] bool update_tavern_runtime(GameSession& session,
-                                         TavernRuntimeState& runtime,
-                                         std::string& notice,
-                                         Vector2 logical_mouse);
+struct TavernOpenResult {
+    TavernOpenStatus status{TavernOpenStatus::denied};
+    std::string message;
+};
+
+enum class TavernStepStatus {
+    unchanged,
+    changed,
+    returned_to_map,
+    settled,
+    rejected,
+};
+
+struct TavernStepResult {
+    TavernStepStatus status{TavernStepStatus::unchanged};
+    std::optional<std::string> notice;
+};
+
+class TavernRuntime {
+public:
+    TavernRuntime();
+
+    [[nodiscard]] TavernOpenResult open(GameSession& session);
+    [[nodiscard]] TavernStepResult step(GameSession& session,
+                                        const TavernFrameInput& input);
+    [[nodiscard]] TavernPresentation presentation() const;
+    [[nodiscard]] bool active() const noexcept { return active_; }
+
+private:
+    bool active_{false};
+    TavernScreen screen_{TavernScreen::lobby};
+    ChallengeType selected_challenge_{ChallengeType::gomoku};
+    BetTier selected_bet_{BetTier::medium};
+    GomokuGame gomoku_{};
+    LiarsDiceGame liars_dice_{0U};
+    float computer_timer_{0.0F};
+    int bid_count_{1};
+    int bid_face_{1};
+    std::string feedback_;
+    float npc_animation_timer_{0.0F};
+    int active_result_id_{0};
+    PlayerState player_at_start_{};
+    std::optional<ActionResult> pending_settlement_;
+    TavernChallengeConfig config_{};
+    TavernChallengeSettlement settlement_;
+
+    void reset();
+};
 
 [[nodiscard]] const char* tavern_ui_glyphs();
 

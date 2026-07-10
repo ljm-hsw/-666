@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 
+#include "app/tavern_layout.hpp"
 #include "app/location_runtime.hpp"
 #include "app/ui_primitives.hpp"
 #include "ui/ui_metrics.hpp"
@@ -19,7 +20,7 @@ TEST_CASE("restaurant layout stays inside the 960 by 540 canvas") {
 
 TEST_CASE("tavern hotspots and controls stay inside the logical canvas") {
     const auto layout = pixel_town::tavern_layout();
-    const Rectangle bounds[] = {
+    const pixel_town::TavernRect bounds[] = {
         layout.npc_hotspot,
         layout.gomoku_hotspot,
         layout.dice_hotspot,
@@ -34,15 +35,20 @@ TEST_CASE("tavern hotspots and controls stay inside the logical canvas") {
         layout.round_result_panel,
     };
 
-    for (const Rectangle design_bounds : bounds) {
-        const Rectangle canvas_bounds = pixel_town::scaled_rect(design_bounds);
+    const auto as_rectangle = [](pixel_town::TavernRect bounds) {
+        return Rectangle{bounds.x, bounds.y, bounds.width, bounds.height};
+    };
+    for (const pixel_town::TavernRect design_bounds : bounds) {
+        const Rectangle canvas_bounds =
+            pixel_town::scaled_rect(as_rectangle(design_bounds));
         CHECK(canvas_bounds.x >= 0.0F);
         CHECK(canvas_bounds.y >= 0.0F);
         CHECK(canvas_bounds.x + canvas_bounds.width <= pixel_town::ui::canvas_width);
         CHECK(canvas_bounds.y + canvas_bounds.height <= pixel_town::ui::canvas_height);
     }
-    CHECK_FALSE(CheckCollisionRecs(pixel_town::scaled_rect(layout.gomoku_hotspot),
-                                   pixel_town::scaled_rect(layout.dice_hotspot)));
+    CHECK_FALSE(CheckCollisionRecs(
+        pixel_town::scaled_rect(as_rectangle(layout.gomoku_hotspot)),
+        pixel_town::scaled_rect(as_rectangle(layout.dice_hotspot))));
 }
 
 TEST_CASE("store start rejects an over-budget plan without rewriting it") {
