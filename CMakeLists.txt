@@ -8,6 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(pixel_town_core
   src/core/game_session.cpp
+  src/core/gomoku_rules.cpp
+  src/core/liars_dice_rules.cpp
   src/core/tavern_rules.cpp
 )
 target_include_directories(pixel_town_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -30,6 +32,7 @@ add_subdirectory(third_party/raylib EXCLUDE_FROM_ALL)
 add_executable(pixel_town
   src/app/game_flow.cpp
   src/app/main.cpp
+  src/app/tavern_ui.cpp
   src/app/visual_prototype.cpp
 )
 target_link_libraries(pixel_town PRIVATE pixel_town_io raylib)
@@ -39,6 +42,8 @@ enable_testing()
 
 add_executable(pixel_town_tests
   tests/display_config_test.cpp
+  tests/gomoku_rules_test.cpp
+  tests/liars_dice_rules_test.cpp
   tests/tavern_rules_test.cpp
   tests/demo_preset_test.cpp
   tests/game_session_test.cpp

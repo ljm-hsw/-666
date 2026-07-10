@@ -422,34 +422,36 @@ void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
                            location == Location::tavern;
 
     if (is_tavern) {
-        panel(Rectangle{64, 70, 512, 230}, cream);
-        text(font, location_label(location), 126, 90, 30, red);
-
-        const std::string challenge_text = std::string{"挑战："} +
-            challenge_type_label(state.tavern_challenge) + " / 骗子骰子";
-        const std::string bet_text = std::string{"赌注："} +
-            bet_tier_label(state.tavern_bet) + "赌注（" +
-            std::to_string(bet_amount(TavernChallengeConfig{}, state.tavern_bet)) + "金币）";
-        text(font, challenge_text, 126, 136, 18, ink);
-        text(font, bet_text, 126, 160, 18, ink);
-
-        const char* status_text = state.session.location_started()
-            ? "地点已开始：按空格完成模拟。"
-            : "尚未开始：现在返回地图不会消耗本阶段。";
-        text(font, status_text, 126, 190, 16, ink);
-
-        text(font, "[1/2] 选择挑战    [3/4/5] 选择赌注    空格开始/完成    Esc返回",
-             90, 220, 16, Color{78, 78, 72, 255});
-    } else {
-        panel(Rectangle{96, 78, 448, 210}, cream);
-        text(font, location_label(location), 126, 106, 30, red);
-        text(font,
-             state.session.location_started() ? "地点已开始：完成模拟或主动放弃都会消耗本阶段。"
-                                              : "尚未开始：现在返回地图不会消耗本阶段。",
-             126, 154, 16, ink);
+        switch (state.tavern_ui.screen) {
+            case TavernUiScreen::lobby:
+                draw_tavern_lobby(font, state, mouse);
+                break;
+            case TavernUiScreen::game_select:
+                draw_tavern_lobby(font, state, mouse);
+                draw_tavern_game_select(font, state.tavern_ui, mouse);
+                break;
+            case TavernUiScreen::npc_dialog:
+                draw_tavern_lobby(font, state, mouse);
+                draw_tavern_npc_dialog(font, state.tavern_ui, mouse);
+                break;
+            case TavernUiScreen::gomoku:
+                draw_tavern_gomoku(font, state.tavern_ui, mouse);
+                break;
+            case TavernUiScreen::liars_dice:
+                draw_tavern_liars_dice(font, state.tavern_ui, mouse);
+                break;
+        }
+        return;
     }
 
-    const float location_btn_y = is_tavern ? 252.0F : 228.0F;
+    panel(Rectangle{96, 78, 448, 210}, cream);
+    text(font, location_label(location), 126, 106, 30, red);
+    text(font,
+         state.session.location_started() ? "地点已开始：完成模拟或主动放弃都会消耗本阶段。"
+                                          : "尚未开始：现在返回地图不会消耗本阶段。",
+         126, 154, 16, ink);
+
+    const float location_btn_y = 228.0F;
     const Rectangle back_button{126, location_btn_y, 112, 34};
     const Rectangle start_button{264, location_btn_y, 112, 34};
     const Rectangle abandon_button{402, location_btn_y, 112, 34};
@@ -515,7 +517,7 @@ const char* game_flow_glyphs() {
     static const std::string glyphs = [] {
         std::string result =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 "
-            "·/：，。；“”+-";
+            "·/：，。；“”+-:?!().";
         for (const char* value : ui_texts) {
             result += value;
         }
@@ -532,7 +534,17 @@ const char* game_flow_glyphs() {
             "五子棋骗子骰子低赌注中赌注高赌注挑战金币选择空格开始完成Esc返回"
             "已进入酒馆选择和赌注金钱不足无法选择该档位"
             "赌注不足当前金钱不足以支付获胜赢得失败损失平局退还酒馆挑战"
-            "已选择按空格完成模拟！（，）";
+            "已选择按空格开始！（，）"
+            "你的回合点击棋盘落子电脑思考中你赢了按Esc返回你输了平局"
+            "五子棋开始返回将放弃本局并消耗阶段思考"
+            "酒保五子棋桌骗子骰子桌玩法选择选择挑战策略对弈与对局"
+            "运气博弈看穿谎言开始挑战返回大厅关闭点击或Esc牌桌"
+            "欢迎来到像素小镇酒馆想试试手气吗左边是右边选好玩法后告诉我"
+            "骗子骰子电脑你的骰子尚无叫点当前叫点个数点数叫点质疑确认结算"
+            "你赢了质疑成功你输了叫点成立点击继续思考中"
+            "你质疑了电脑质疑了你实际叫点不成立无法叫点请先或调整Enter"
+            "本局尚未结算结束本局已调到最小合法叫点请确认已无法加价请选择质疑"
+            "剩余失去一枚下一轮一点可代替其他点数时只数整场本场赢下结束";
         return result;
     }();
     return glyphs.c_str();
@@ -600,15 +612,28 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
         const bool is_tavern = state.session.phase() == GamePhase::night_location &&
                                state.session.pending_location() == Location::tavern;
 
-        if (is_tavern && !state.session.location_started()) {
-            if (IsKeyPressed(KEY_ONE)) state.tavern_challenge = ChallengeType::gomoku;
-            if (IsKeyPressed(KEY_TWO)) state.tavern_challenge = ChallengeType::liars_dice;
-            if (IsKeyPressed(KEY_THREE)) state.tavern_bet = BetTier::low;
-            if (IsKeyPressed(KEY_FOUR)) state.tavern_bet = BetTier::medium;
-            if (IsKeyPressed(KEY_FIVE)) state.tavern_bet = BetTier::high;
+        if (is_tavern) {
+            switch (state.tavern_ui.screen) {
+                case TavernUiScreen::lobby:
+                    update_tavern_lobby(state, logical_mouse);
+                    break;
+                case TavernUiScreen::game_select:
+                    update_tavern_game_select(state, logical_mouse);
+                    break;
+                case TavernUiScreen::npc_dialog:
+                    update_tavern_npc_dialog(state, logical_mouse);
+                    break;
+                case TavernUiScreen::gomoku:
+                    update_tavern_gomoku(state, logical_mouse);
+                    break;
+                case TavernUiScreen::liars_dice:
+                    update_tavern_liars_dice(state, logical_mouse);
+                    break;
+            }
+            return;
         }
 
-        const float btn_y = is_tavern ? 252.0F : 228.0F;
+        const float btn_y = 228.0F;
         const Rectangle back_button{126, btn_y, 112, 34};
         const Rectangle start_button_location{264, btn_y, 112, 34};
         const Rectangle abandon_button{402, btn_y, 112, 34};
@@ -620,42 +645,16 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 return;
             }
             if (activated(start_button_location, logical_mouse, KEY_SPACE)) {
-                if (is_tavern) {
-                    const TavernChallengeConfig config;
-                    const int bet = bet_amount(config, state.tavern_bet);
-                    if (bet > state.session.player().money) {
-                        state.notice = "金钱不足，无法选择该赌注档位。";
-                        return;
-                    }
-                }
                 if (state.session.start_location() != 0) {
-                    if (is_tavern) {
-                        state.notice = std::string{"已选择"} +
-                                       challenge_type_label(state.tavern_challenge) + "、" +
-                                       bet_tier_label(state.tavern_bet) + "赌注：按空格完成模拟。";
-                    } else {
-                        state.notice = "地点已开始：完成或放弃都会消耗本阶段。";
-                    }
+                    state.notice = "地点已开始：完成或放弃都会消耗本阶段。";
                 }
                 return;
             }
         } else {
             if (activated(start_button_location, logical_mouse, KEY_SPACE)) {
-                if (is_tavern) {
-                    const TavernChallengeConfig config;
-                    const auto result = simulate_tavern_challenge(
-                        state.session.player(), config, state.tavern_challenge,
-                        state.tavern_bet, ChallengeOutcome::win,
-                        state.session.active_result_id());
-                    if (result.result_id != 0) {
-                        const auto applied = state.session.apply_action_result(result);
-                        state.notice = applied.message;
-                    }
-                } else {
-                    const auto applied =
-                        state.session.apply_action_result(state.session.simulated_success_result());
-                    state.notice = applied.message;
-                }
+                const auto applied =
+                    state.session.apply_action_result(state.session.simulated_success_result());
+                state.notice = applied.message;
                 return;
             }
             if (clicked(abandon_button, logical_mouse)) {
@@ -707,8 +706,13 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
         draw_ending(font, state);
     }
 
-    if (!audio_enabled && state.has_session) {
-        text(font, "静音", 586, 330, 18, red);
+    {
+        const bool in_tavern =
+            state.session.phase() == GamePhase::night_location &&
+            state.session.pending_location() == Location::tavern;
+        if (!audio_enabled && state.has_session && !in_tavern) {
+            text(font, "静音", 586, 330, 18, red);
+        }
     }
     if (paused) {
         draw_pause_overlay(font, audio_enabled);

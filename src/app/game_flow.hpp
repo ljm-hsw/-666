@@ -6,6 +6,7 @@
 
 #include "core/game_session.hpp"
 #include "core/tavern_rules.hpp"
+#include "app/tavern_ui.hpp"
 
 namespace pixel_town {
 
@@ -15,8 +16,8 @@ struct GameAppState {
     bool save_present{false};
     bool confirm_new_game_overwrite{false};
     std::string notice{"点击\"新游戏\"开始第一天。"};
-    ChallengeType tavern_challenge{ChallengeType::gomoku};
-    BetTier tavern_bet{BetTier::medium};
+    TavernUiState tavern_ui{};
+    TavernUiAssets tavern_assets{};
 };
 
 [[nodiscard]] const char* game_flow_glyphs();
