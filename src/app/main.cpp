@@ -549,6 +549,7 @@ int main(int argc, char* argv[]) {
     if (generated_buildings.id != 0) {
         UnloadTexture(generated_buildings);
     }
+    game_flow.tavern_assets.unload();
     if (canvas_loaded) {
         UnloadRenderTexture(canvas);
     }

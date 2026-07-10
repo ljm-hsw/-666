@@ -10,6 +10,7 @@ P0 基线包含资源诊断与视觉原型所需的最小资源：
 - `textures/imagegen_buildings/p1_building_sprites.png`：由候选原图本地处理得到的 5-cell 透明建筑 sprite sheet，当前用于 P1 地图房屋 UI 替换尝试。该资源未获得最终美术批准。
 - `textures/imagegen_backgrounds/title_screen_background.png`：使用内置 imagegen 生成并处理得到的 P1 标题/进入页背景，当前已接入运行时。该资源未获得最终美术批准。
 - `textures/imagegen_backgrounds/town_map_full_scene.png`：使用内置 imagegen 生成并处理得到的 P1 地图页完整场景背景，当前已接入运行时。该资源未获得最终美术批准。
+- `textures/ui/`：按模块存放 UI 贴图候选资源，例如酒馆大厅、NPC、玩法卡片和面板素材。草稿资源可以先放入对应模块目录，最终合入前需要补充来源、作者、许可证或项目自制说明。酒馆 NPC 候选资源的第三方条款随模块目录保留。
 - `data/baseline.txt`：启动数据标记，用于证明数据资源验证路径。
 - `audio/theme.ogg`：可选路径，P0 默认不提供；缺失时记录诊断并静音继续。
 
