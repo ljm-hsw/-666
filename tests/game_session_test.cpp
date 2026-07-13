@@ -94,8 +94,8 @@ TEST_CASE("ten-day path ends with one placeholder ending") {
     CHECK(session.day() == 10);
     CHECK(session.phase() == pixel_town::GamePhase::ending);
     CHECK(session.is_ended());
-    CHECK(session.main_ending() == std::string{"平凡小镇新人"});
-    CHECK(session.final_summary().find("最终状态") != std::string::npos);
+    CHECK(session.main_ending() == std::string{"Ordinary Town Newcomer"});
+    CHECK(session.final_summary().find("Final status") != std::string::npos);
     CHECK_FALSE(session.can_enter(pixel_town::Location::restaurant).allowed);
     CHECK_FALSE(session.finish_day_summary());
 }

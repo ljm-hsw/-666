@@ -332,12 +332,12 @@ void GameSession::apply_delta(const StatDelta& delta) {
 }
 
 void GameSession::create_placeholder_ending() {
-    main_ending_ = "平凡小镇新人";
-    final_summary_ = "最终状态：金钱 " + std::to_string(player_.money) + "，体力 " +
-                     std::to_string(player_.stamina) + "，声望 " +
-                     std::to_string(player_.reputation) + "，知识 " +
-                     std::to_string(player_.knowledge) + "，心情 " +
-                     std::to_string(player_.mood) + "。成长路线摘要：均衡体验小镇生活。";
+    main_ending_ = "Ordinary Town Newcomer";
+    final_summary_ = "Final status: Money " + std::to_string(player_.money) + ", Stamina " +
+                     std::to_string(player_.stamina) + ", Reputation " +
+                     std::to_string(player_.reputation) + ", Knowledge " +
+                     std::to_string(player_.knowledge) + ", Mood " +
+                     std::to_string(player_.mood) + ". Growth summary: Balanced town life experience.";
 }
 
 }  // namespace pixel_town
