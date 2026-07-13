@@ -42,17 +42,17 @@ DayContext make_day_context(int day, unsigned int seed) {
 std::string completed_summary(Location location) {
     switch (location) {
         case Location::restaurant:
-            return "餐馆模拟工作完成：服务了午餐客流，获得金钱与声望。";
+            return "Restaurant work completed: served lunch customers, earned money and reputation.";
         case Location::convenience_store:
-            return "便利店模拟经营完成：完成一次进货与销售结算。";
+            return "Convenience store work completed: finished restocking and sales settlement.";
         case Location::library:
-            return "图书馆模拟工作完成：帮助读者找书并提升知识。";
+            return "Library work completed: helped readers find books and improved knowledge.";
         case Location::home:
-            return "回家休息：恢复体力并结束今天。";
+            return "Returned home to rest: restored stamina and ended the day.";
         case Location::tavern:
             break;
     }
-    return "行动完成。";
+    return "Action completed.";
 }
 
 }  // namespace

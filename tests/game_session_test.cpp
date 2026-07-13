@@ -74,7 +74,7 @@ TEST_CASE("full one-day path reaches day two") {
     const auto night_result = session.home_rest_result();
     REQUIRE(session.apply_action_result(night_result).accepted);
     CHECK(session.phase() == pixel_town::GamePhase::day_summary);
-    CHECK(session.last_summary().find("回家休息") != std::string::npos);
+    CHECK(session.last_summary().find("Returned home to rest") != std::string::npos);
 
     REQUIRE(session.finish_day_summary());
     CHECK(session.day() == 2);
@@ -243,7 +243,7 @@ TEST_CASE("tavern apply action result transitions to day_summary and updates rec
     CHECK(session.phase() == pixel_town::GamePhase::day_summary);
     CHECK(session.tavern_wins() == 1);
     CHECK(session.tavern_losses() == 0);
-    CHECK(session.last_summary().find("\u9152\u9986\u6311\u6218") != std::string::npos);
+    CHECK(session.last_summary().find("Tavern challenge") != std::string::npos);
 }
 
 TEST_CASE("tavern and home are mutually exclusive per night") {
@@ -278,7 +278,7 @@ TEST_CASE("home rest path is unchanged after tavern is added") {
     CHECK(session.phase() == pixel_town::GamePhase::day_summary);
     CHECK(session.player().stamina == before.stamina - 8 + 15);
     CHECK(session.player().mood == before.mood + 2 + 5);
-    CHECK(session.last_summary().find("\u56de\u5bb6\u4f11\u606f") != std::string::npos);
+    CHECK(session.last_summary().find("Returned home to rest") != std::string::npos);
     CHECK(session.tavern_wins() == 0);
     CHECK(session.tavern_losses() == 0);
 

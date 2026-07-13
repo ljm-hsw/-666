@@ -84,24 +84,24 @@ ActionResult simulate_tavern_challenge(
             money_delta = static_cast<int>(bet * config.net_win_factor);
             mood_delta = config.win_mood_delta;
             win_delta = 1;
-            result_text = std::string{"获胜！赢得"} + std::to_string(money_delta) + "金币。";
+            result_text = std::string{"Win! Earned "} + std::to_string(money_delta) + " coins.";
             break;
         case ChallengeOutcome::loss:
             money_delta = static_cast<int>(bet * config.net_loss_factor);
             mood_delta = config.loss_mood_delta;
             loss_delta = 1;
-            result_text = std::string{"失败，损失"} +
-                          std::to_string(money_delta >= 0 ? money_delta : -money_delta) + "金币。";
+            result_text = std::string{"Loss, lost "} +
+                          std::to_string(money_delta >= 0 ? money_delta : -money_delta) + " coins.";
             break;
         case ChallengeOutcome::draw:
             money_delta = static_cast<int>(bet * config.net_draw_factor);
             mood_delta = config.draw_mood_delta;
-            result_text = "平局，赌注退还。";
+            result_text = "Draw, bet refunded.";
             break;
     }
 
-    const std::string summary = std::string{"酒馆挑战（"} + type_str + "/" + tier_str +
-                                "赌注）：" + result_text;
+    const std::string summary = std::string{"Tavern challenge ("} + type_str + "/" + tier_str +
+                                " bet): " + result_text;
 
     ActionResult result;
     result.result_id = result_id;
