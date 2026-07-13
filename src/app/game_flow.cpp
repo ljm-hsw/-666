@@ -1,6 +1,7 @@
 #include "app/game_flow.hpp"
 
 #include "app/tavern_view.hpp"
+#include "app/tavern_layout.hpp"
 
 #include <array>
 #include <string>
@@ -8,8 +9,10 @@
 #include "app/restaurant_ui_model.hpp"
 #include "app/ui_primitives.hpp"
 #include "core/ending_rules.hpp"
+#include "core/location_lobby.hpp"
 #include "core/scene_collision.hpp"
 #include "core/story_text.hpp"
+#include "ui/scene_viewport.hpp"
 
 namespace pixel_town {
 namespace {
@@ -18,12 +21,49 @@ constexpr std::array<Location, 5> map_locations{
     Location::restaurant, Location::convenience_store, Location::library, Location::tavern,
     Location::home};
 
-TavernFrameInput tavern_frame_input(Vector2 logical_mouse) {
+Rectangle scene_viewport_rectangle() {
+    const auto viewport = ui::indoor_scene_viewport();
+    return Rectangle{viewport.x, viewport.y, viewport.width, viewport.height};
+}
+
+Rectangle scene_canvas_rectangle(Rectangle bounds) {
+    const auto transformed = ui::scene_canvas_to_viewport(
+        {bounds.x, bounds.y, bounds.width, bounds.height});
+    return Rectangle{transformed.x, transformed.y, transformed.width,
+                     transformed.height};
+}
+
+Rectangle scene_design_rectangle(Rectangle bounds) {
+    const auto transformed = ui::scene_design_to_screen_design(
+        {bounds.x, bounds.y, bounds.width, bounds.height});
+    return Rectangle{transformed.x, transformed.y, transformed.width,
+                     transformed.height};
+}
+
+bool canvas_point_in_tavern_rect(Vector2 point, TavernRect bounds) {
+    return point.x >= bounds.x * ui::design_to_canvas_scale &&
+           point.x <= (bounds.x + bounds.width) * ui::design_to_canvas_scale &&
+           point.y >= bounds.y * ui::design_to_canvas_scale &&
+           point.y <= (bounds.y + bounds.height) * ui::design_to_canvas_scale;
+}
+
+TavernFrameInput tavern_frame_input(Vector2 logical_mouse, TavernScreen screen) {
     TavernFrameInput input;
     input.elapsed_seconds = GetFrameTime();
-    input.pointer = TavernCanvasPoint{logical_mouse.x, logical_mouse.y,
-                                      logical_mouse.x >= 0.0F &&
-                                          logical_mouse.y >= 0.0F};
+    Vector2 runtime_pointer = logical_mouse;
+    if (screen == TavernScreen::lobby) {
+        const TavernLayout layout = tavern_layout();
+        const bool over_fixed_button =
+            canvas_point_in_tavern_rect(logical_mouse, layout.select_button) ||
+            canvas_point_in_tavern_rect(logical_mouse, layout.back_button);
+        if (!over_fixed_button) {
+            const auto scene_point = ui::viewport_to_scene_canvas(
+                {logical_mouse.x, logical_mouse.y});
+            runtime_pointer = Vector2{scene_point.x, scene_point.y};
+        }
+    }
+    input.pointer = TavernCanvasPoint{runtime_pointer.x, runtime_pointer.y,
+                                      logical_mouse.x >= 0.0F && logical_mouse.y >= 0.0F};
     input.primary_pressed = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
     input.escape_pressed = IsKeyPressed(KEY_ESCAPE);
     input.enter_pressed = IsKeyPressed(KEY_ENTER);
@@ -70,6 +110,24 @@ constexpr std::array ui_texts{
     "今晚要休息吗？",
     "确认休息",
     "F3 显示或隐藏碰撞箱",
+    "餐馆大厅",
+    "便利店大厅",
+    "图书馆大厅",
+    "餐馆老板（预留）",
+    "便利店店主（预留）",
+    "图书馆管理员（预留）",
+    "访客互动位（预留）",
+    "进入餐馆工作",
+    "开始经营",
+    "开始图书馆工作",
+    "准备休息",
+    "对话接口已预留，后续接入正式 NPC 内容。",
+    "诊断：场景大厅与 NPC 预留热点。",
+    "已进入大厅；可先查看场景或尝试 NPC 预留互动。",
+    "地点大厅配置缺失，已返回地图。",
+    "无法进入该地点，请返回地图重试。",
+    "已进入餐馆工作准备。",
+    "已进入便利店经营：请设置进货数量和价格档。",
     "继续到下一天",
     "十日计划完成",
     "主结局",
@@ -171,6 +229,10 @@ Rectangle home_preview_rest_button() {
     return Rectangle{390, 310, 132, 32};
 }
 
+Rectangle lobby_rectangle(LobbyRect value) {
+    return Rectangle{value.x, value.y, value.width, value.height};
+}
+
 Rectangle generated_sprite_destination(Location location) {
     switch (location) {
         case Location::restaurant:
@@ -227,18 +289,18 @@ Rectangle generated_building_source(std::size_t index) {
 
 void draw_status(const Font& font, const GameSession& session, bool audio_enabled) {
     const auto& player = session.player();
-    DrawRectangle(0, 0, 960, 84, slate);
-    text(font, "像素小镇", 16, 9, 22, RAYWHITE);
+    DrawRectangle(0, 0, 960, static_cast<int>(ui::scene_header_height), slate);
+    text(font, "像素小镇", 16, 7, 22, RAYWHITE);
     text(font, std::string{"第 "} + std::to_string(session.day()) + " 天 · " +
                    phase_label(session.phase()),
-         132, 16, 18, Color{255, 224, 154, 255});
-    text(font, std::string{"金钱 "} + std::to_string(player.money), 316, 6, 18, RAYWHITE);
-    text(font, std::string{"体力 "} + std::to_string(player.stamina), 410, 6, 18, RAYWHITE);
-    text(font, std::string{"声望 "} + std::to_string(player.reputation), 504, 6, 18, RAYWHITE);
-    text(font, std::string{"知识 "} + std::to_string(player.knowledge), 316, 30, 18, RAYWHITE);
-    text(font, std::string{"心情 "} + std::to_string(player.mood), 410, 30, 18, RAYWHITE);
+         132, 11, 18, Color{255, 224, 154, 255});
+    text(font, std::string{"金钱 "} + std::to_string(player.money), 316, 1, 18, RAYWHITE);
+    text(font, std::string{"体力 "} + std::to_string(player.stamina), 410, 1, 18, RAYWHITE);
+    text(font, std::string{"声望 "} + std::to_string(player.reputation), 504, 1, 18, RAYWHITE);
+    text(font, std::string{"知识 "} + std::to_string(player.knowledge), 316, 20, 18, RAYWHITE);
+    text(font, std::string{"心情 "} + std::to_string(player.mood), 410, 20, 18, RAYWHITE);
     if (!audio_enabled) {
-        text(font, "静音", 548, 30, 18, Color{255, 208, 166, 255});
+        text(font, "静音", 548, 20, 18, Color{255, 208, 166, 255});
     }
 }
 
@@ -390,10 +452,13 @@ void draw_home_plot_decoration() {
 }
 
 void draw_scene_texture(const Texture2D& texture) {
+    DrawRectangle(0, static_cast<int>(ui::scene_header_height), ui::canvas_width,
+                  ui::canvas_height - static_cast<int>(ui::scene_header_height),
+                  Color{34, 39, 40, 255});
     DrawTexturePro(texture,
                    Rectangle{0.0F, 0.0F, static_cast<float>(texture.width),
                              static_cast<float>(texture.height)},
-                   Rectangle{0.0F, 0.0F, 960.0F, 540.0F}, Vector2{0.0F, 0.0F},
+                   scene_viewport_rectangle(), Vector2{0.0F, 0.0F},
                    0.0F, WHITE);
 }
 
@@ -645,10 +710,15 @@ void draw_location(const Font& font, const GameAppState& state, bool audio_enabl
         return;
     }
 
-    ClearBackground(Color{215, 221, 194, 255});
+    if (location == Location::convenience_store &&
+        scene_assets.convenience_store_interior.id != 0) {
+        draw_scene_texture(scene_assets.convenience_store_interior);
+    } else {
+        ClearBackground(Color{215, 221, 194, 255});
+    }
     draw_status(font, state.session, audio_enabled);
     if (location == Location::convenience_store) {
-        panel(Rectangle{72, 70, 496, 240}, cream);
+        panel(Rectangle{72, 70, 496, 240}, Color{255, 248, 226, 244});
         text(font, location_label(location), 96, 82, 28, red);
         const auto context = state.session.current_day_context();
         text(font, std::string{"今日提示："} + context.weather + " / " + context.event,
@@ -753,7 +823,8 @@ void draw_collision_debug(Location location) {
     }
 
     const auto to_rectangle = [](SceneRect value) {
-        return Rectangle{value.x, value.y, value.width, value.height};
+        return scene_canvas_rectangle(
+            Rectangle{value.x, value.y, value.width, value.height});
     };
     DrawRectangleLinesEx(to_rectangle(layout->walkable_bounds), 3.0F,
                          Color{75, 255, 120, 255});
@@ -769,6 +840,66 @@ void draw_collision_debug(Location location) {
         scene_actor_bounds(layout->player_spawn, SceneSize{24.0F, 24.0F}));
     DrawRectangleRec(spawn, Color{255, 225, 60, 150});
     DrawRectangleLinesEx(spawn, 2.0F, Color{255, 235, 80, 255});
+}
+
+void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets,
+                         const GameAppState& state, bool audio_enabled,
+                         Vector2 mouse) {
+    if (!state.location_lobby.has_value()) {
+        return;
+    }
+    const Location location = *state.location_lobby;
+    const LocationLobbySpec* spec = find_location_lobby_spec(location);
+    if (spec == nullptr) {
+        return;
+    }
+
+    const Texture2D& background = scene_interior_texture(scene_assets, location);
+    if (background.id != 0) {
+        draw_scene_texture(background);
+    } else {
+        ClearBackground(Color{117, 91, 70, 255});
+    }
+    draw_status(font, state.session, audio_enabled);
+
+    panel(Rectangle{18, 62, 176, 34}, Color{46, 58, 57, 232});
+    centered_text(font, spec->title.c_str(), Rectangle{18, 62, 176, 34}, 18,
+                  Color{255, 224, 154, 255});
+
+    const Rectangle npc_hotspot =
+        scene_design_rectangle(lobby_rectangle(spec->npc_hotspot));
+    const bool npc_hovered = hovered(npc_hotspot, mouse);
+    if (npc_hovered) {
+        DrawRectangleRec(scaled_rect(npc_hotspot), Color{255, 224, 154, 55});
+        DrawRectangleLinesEx(scaled_rect(npc_hotspot), 3.0F, gold);
+    }
+    const float npc_center_x = npc_hotspot.x + npc_hotspot.width * 0.5F;
+    const float npc_base_y = npc_hotspot.y + npc_hotspot.height - 28.0F;
+    DrawCircleV(scaled_point(Vector2{npc_center_x, npc_base_y - 18.0F}),
+                scaled(7.0F), Color{242, 207, 159, 220});
+    DrawRectangleRec(scaled_rect(Rectangle{npc_center_x - 7.0F, npc_base_y - 11.0F,
+                                           14.0F, 18.0F}),
+                     Color{67, 78, 74, 220});
+    const Rectangle npc_label{npc_hotspot.x, npc_hotspot.y + npc_hotspot.height - 22.0F,
+                              npc_hotspot.width, 24.0F};
+    panel(npc_label, npc_hovered ? Color{250, 238, 203, 248}
+                                 : Color{46, 58, 57, 230});
+    centered_text(font, spec->npc_label.c_str(), npc_label, 13,
+                  npc_hovered ? ink : RAYWHITE);
+
+    panel(Rectangle{18, 288, 330, 58}, Color{46, 58, 57, 232});
+    const auto notice_lines = wrap_text_lines(state.notice, 22, 2);
+    for (std::size_t index = 0; index < notice_lines.size(); ++index) {
+        text(font, notice_lines[index], 32, 299.0F + static_cast<float>(index) * 19.0F,
+             14, RAYWHITE);
+    }
+
+    const Rectangle back = lobby_rectangle(spec->back_button);
+    const Rectangle action = lobby_rectangle(spec->action_button);
+    panel(back, hovered(back, mouse) ? paper : Color{211, 202, 174, 245});
+    centered_text(font, "返回地图", back, 15, ink);
+    panel(action, hovered(action, mouse) ? paper : green);
+    centered_text(font, spec->action_label.c_str(), action, 14, RAYWHITE);
 }
 
 void draw_home_preview(const Font& font, const Texture2D& background,
@@ -953,6 +1084,64 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
         state.collision_debug_visible = !state.collision_debug_visible;
     }
 
+    if (state.location_lobby.has_value()) {
+        const Location location = *state.location_lobby;
+        const LocationLobbySpec* spec = find_location_lobby_spec(location);
+        if (spec == nullptr) {
+            state.location_lobby.reset();
+            state.notice = "地点大厅配置缺失，已返回地图。";
+            return;
+        }
+        const Rectangle back = lobby_rectangle(spec->back_button);
+        const Rectangle action = lobby_rectangle(spec->action_button);
+        const Rectangle npc =
+            scene_design_rectangle(lobby_rectangle(spec->npc_hotspot));
+        if (activated(back, logical_mouse, KEY_ESCAPE)) {
+            state.location_lobby.reset();
+            state.notice = "已返回地图：阶段未消耗。";
+            return;
+        }
+        if (clicked(npc, logical_mouse)) {
+            state.notice = spec->npc_label + "：对话接口已预留，后续接入正式 NPC 内容。";
+            return;
+        }
+        if (activated(action, logical_mouse, KEY_SPACE) || IsKeyPressed(KEY_ENTER)) {
+            if (location == Location::home) {
+                state.location_lobby.reset();
+                state.home_preview_open = true;
+                state.notice = "已回到家中；确认休息后才会消耗夜晚阶段。";
+                return;
+            }
+            if (!state.session.enter_location(location)) {
+                state.notice = "无法进入该地点，请返回地图重试。";
+                return;
+            }
+            if (location == Location::restaurant) {
+                prepare_restaurant_runtime(
+                    state.locations,
+                    state.session.location_seed(Location::restaurant));
+                state.notice = "已进入餐馆工作准备。";
+                state.location_lobby.reset();
+                return;
+            }
+            if (location == Location::convenience_store) {
+                prepare_store_runtime(state.locations);
+                state.notice = "已进入便利店经营：请设置进货数量和价格档。";
+                state.location_lobby.reset();
+                return;
+            }
+            if (location == Location::library) {
+                if (start_pending_location(state.session, state.locations, state.notice)) {
+                    state.location_lobby.reset();
+                } else {
+                    (void)state.session.return_to_map();
+                }
+                return;
+            }
+        }
+        return;
+    }
+
     if (state.home_preview_open) {
         if (activated(home_preview_back_button(), logical_mouse, KEY_ESCAPE)) {
             state.home_preview_open = false;
@@ -989,30 +1178,15 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 state.notice = permission.reason;
                 return;
             }
-            if (location == Location::home) {
-                state.home_preview_open = true;
-                state.notice = "已回到家中；确认休息后才会消耗夜晚阶段。";
-                return;
-            }
             if (location == Location::tavern) {
                 ensure_tavern_assets_loaded(state.locations.tavern_assets);
                 const auto opened = state.locations.tavern.open(state.session);
                 state.notice = opened.message;
                 return;
             }
-            if (state.session.enter_location(location)) {
-                if (location == Location::restaurant) {
-                    prepare_restaurant_runtime(state.locations,
-                                               state.session.location_seed(Location::restaurant));
-                    state.notice = "已进入餐馆";
-                } else if (location == Location::convenience_store) {
-                    prepare_store_runtime(state.locations);
-                    state.notice = "已进入便利店，选择每种商品的进货数量和价格档。";
-                } else {
-                    state.notice =
-                        std::string{"已进入"} + location_label(location) + "，开始前可返回地图。";
-                }
-            }
+            state.location_lobby = location;
+            state.notice = std::string{"已进入"} + location_label(location) +
+                           "大厅；可先查看场景或尝试 NPC 预留互动。";
             return;
         }
         return;
@@ -1025,7 +1199,9 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
 
         if (is_tavern) {
             const auto result = state.locations.tavern.step(
-                state.session, tavern_frame_input(logical_mouse));
+                state.session,
+                tavern_frame_input(logical_mouse,
+                                   state.locations.tavern.presentation().screen));
             if (result.notice.has_value()) {
                 state.notice = *result.notice;
             }
@@ -1082,6 +1258,17 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
                     bool audio_enabled, bool paused, Vector2 logical_mouse) {
     if (!state.has_session) {
         draw_title(font, title_background, state, logical_mouse);
+        if (paused) {
+            draw_pause_overlay(font, audio_enabled);
+        }
+        return;
+    }
+
+    if (state.location_lobby.has_value()) {
+        draw_location_lobby(font, scene_assets, state, audio_enabled, logical_mouse);
+        if (state.collision_debug_visible) {
+            draw_collision_debug(*state.location_lobby);
+        }
         if (paused) {
             draw_pause_overlay(font, audio_enabled);
         }

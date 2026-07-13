@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include <raylib.h>
@@ -18,6 +19,7 @@ struct GameAppState {
     bool resume_available{false};
     GameSession resume_session{GameSession::new_game()};
     bool confirm_new_game_overwrite{false};
+    std::optional<Location> location_lobby;
     bool home_preview_open{false};
     bool collision_debug_visible{false};
     std::string notice{"点击新游戏开始第一天。"};

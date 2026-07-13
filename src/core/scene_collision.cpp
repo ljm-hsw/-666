@@ -70,6 +70,64 @@ IndoorSceneLayout home_layout() {
     };
 }
 
+IndoorSceneLayout convenience_store_layout() {
+    return IndoorSceneLayout{
+        Location::convenience_store,
+        960,
+        540,
+        SceneRect{14.0F, 106.0F, 930.0F, 420.0F},
+        ScenePoint{466.0F, 474.0F},
+        SceneRect{394.0F, 400.0F, 142.0F, 140.0F},
+        {
+            {"wall_top", {0.0F, 0.0F, 960.0F, 106.0F}},
+            {"wall_left", {0.0F, 0.0F, 14.0F, 540.0F}},
+            {"wall_right", {944.0F, 0.0F, 16.0F, 540.0F}},
+            {"wall_bottom_left", {0.0F, 452.0F, 394.0F, 88.0F}},
+            {"wall_bottom_right", {536.0F, 452.0F, 424.0F, 88.0F}},
+            {"stock_boxes", {38.0F, 48.0F, 274.0F, 112.0F}},
+            {"shelf_left_top", {40.0F, 136.0F, 190.0F, 140.0F}},
+            {"shelf_left_bottom", {40.0F, 272.0F, 190.0F, 148.0F}},
+            {"shelf_middle", {326.0F, 132.0F, 116.0F, 292.0F}},
+            {"basket_left_top", {228.0F, 184.0F, 54.0F, 92.0F}},
+            {"basket_left_bottom", {228.0F, 338.0F, 54.0F, 86.0F}},
+            {"freezer", {572.0F, 102.0F, 154.0F, 80.0F}},
+            {"drink_cabinets", {726.0F, 50.0F, 202.0F, 134.0F}},
+            {"basket_right", {878.0F, 182.0F, 54.0F, 88.0F}},
+            {"checkout_counter", {604.0F, 286.0F, 340.0F, 106.0F}},
+            {"umbrella_stand", {548.0F, 278.0F, 68.0F, 96.0F}},
+        },
+    };
+}
+
+IndoorSceneLayout tavern_layout() {
+    return IndoorSceneLayout{
+        Location::tavern,
+        960,
+        540,
+        SceneRect{8.0F, 146.0F, 944.0F, 380.0F},
+        ScenePoint{182.0F, 474.0F},
+        SceneRect{136.0F, 402.0F, 92.0F, 138.0F},
+        {
+            {"wall_top", {0.0F, 0.0F, 960.0F, 146.0F}},
+            {"wall_left", {0.0F, 0.0F, 8.0F, 540.0F}},
+            {"wall_right", {952.0F, 0.0F, 8.0F, 540.0F}},
+            {"wall_bottom_left", {0.0F, 454.0F, 136.0F, 54.0F}},
+            {"wall_bottom_right", {228.0F, 454.0F, 732.0F, 54.0F}},
+            {"bar_counter", {40.0F, 146.0F, 326.0F, 72.0F}},
+            {"barrel_stack_left", {376.0F, 126.0F, 108.0F, 80.0F}},
+            {"bottle_cabinet", {520.0F, 98.0F, 270.0F, 98.0F}},
+            {"barrel_stack_right", {882.0F, 128.0F, 78.0F, 76.0F}},
+            {"round_table_upper_left", {550.0F, 216.0F, 160.0F, 70.0F}},
+            {"round_table_upper_right", {776.0F, 216.0F, 154.0F, 70.0F}},
+            {"chess_table", {48.0F, 310.0F, 168.0F, 100.0F}},
+            {"dice_table", {234.0F, 306.0F, 194.0F, 102.0F}},
+            {"round_table_lower_left", {550.0F, 320.0F, 160.0F, 88.0F}},
+            {"round_table_lower_right", {776.0F, 318.0F, 156.0F, 92.0F}},
+            {"barrel_bottom_right", {896.0F, 404.0F, 64.0F, 58.0F}},
+        },
+    };
+}
+
 IndoorSceneLayout library_layout() {
     return IndoorSceneLayout{
         Location::library,
@@ -107,6 +165,16 @@ const IndoorSceneLayout& home_scene() {
     return layout;
 }
 
+const IndoorSceneLayout& convenience_store_scene() {
+    static const IndoorSceneLayout layout = convenience_store_layout();
+    return layout;
+}
+
+const IndoorSceneLayout& tavern_scene() {
+    static const IndoorSceneLayout layout = tavern_layout();
+    return layout;
+}
+
 const IndoorSceneLayout& library_scene() {
     static const IndoorSceneLayout layout = library_layout();
     return layout;
@@ -118,13 +186,14 @@ const IndoorSceneLayout* find_indoor_scene_layout(Location location) {
     switch (location) {
         case Location::restaurant:
             return &restaurant_scene();
+        case Location::convenience_store:
+            return &convenience_store_scene();
         case Location::home:
             return &home_scene();
         case Location::library:
             return &library_scene();
-        case Location::convenience_store:
         case Location::tavern:
-            return nullptr;
+            return &tavern_scene();
     }
     return nullptr;
 }

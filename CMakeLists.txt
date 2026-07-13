@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(pixel_town_core
   src/core/ending_rules.cpp
   src/core/game_session.cpp
+  src/core/location_lobby.cpp
   src/core/scene_collision.cpp
   src/core/story_dialogue.cpp
   src/core/story_text.cpp
@@ -92,6 +93,7 @@ add_executable(pixel_town_tests
   tests/game_session_test.cpp
   tests/interaction_runtime_test.cpp
   tests/location_result_adapter_test.cpp
+  tests/location_lobby_test.cpp
   tests/location_runtime_test.cpp
   tests/restaurant_ui_model_test.cpp
   tests/scene_collision_test.cpp

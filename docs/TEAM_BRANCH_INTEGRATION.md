@@ -67,9 +67,10 @@ The following baseline behavior is intentionally preserved:
 - Convenience store is integrated with P2 placeholder UI: rule tests, product-specific keyboard
   purchase/price decisions, inventory updates, and save/load round-trip are covered. Mouse-first
   convenience-store controls and final convenience-store visuals remain polish work.
-- The current Cozy Tavern lobby is licensed only for non-commercial projects and remains a P3
-  candidate. A commercial-capable final release must replace it with project-authored or generated
-  art; the bartender candidate has separate Pixel Crawler terms recorded in `CREDITS.md`.
+- The archived Cozy Tavern lobby is licensed only for non-commercial projects and is no longer the
+  runtime background. Its license evidence remains under the tavern asset directory; the current
+  team-provided lobby has a separate unresolved component-license boundary recorded in `CREDITS.md`.
+  The bartender candidate has separate Pixel Crawler terms.
 
 ## Architecture refactor on 2026-07-09
 

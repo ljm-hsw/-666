@@ -1,5 +1,6 @@
 #include "locations/library_ui.hpp"
 
+#include "ui/scene_viewport.hpp"
 #include "ui/ui_metrics.hpp"
 
 #include <algorithm>
@@ -60,6 +61,27 @@ Vector2 scaled_point(Vector2 value) {
 
 Rectangle scaled_rect(Rectangle value) {
     return Rectangle{scaled(value.x), scaled(value.y), scaled(value.width), scaled(value.height)};
+}
+
+Rectangle indoor_scene_rectangle() {
+    const auto viewport = ::pixel_town::ui::indoor_scene_viewport();
+    return Rectangle{viewport.x, viewport.y, viewport.width, viewport.height};
+}
+
+Camera2D indoor_scene_camera() {
+    const auto viewport = ::pixel_town::ui::indoor_scene_viewport();
+    Camera2D camera{};
+    camera.offset = Vector2{viewport.x, viewport.y};
+    camera.target = Vector2{0.0F, 0.0F};
+    camera.rotation = 0.0F;
+    camera.zoom = ::pixel_town::ui::scene_viewport_scale;
+    return camera;
+}
+
+Vector2 scene_design_mouse(Vector2 logical_mouse) {
+    const auto transformed = ::pixel_town::ui::viewport_to_scene_design(
+        {logical_mouse.x, logical_mouse.y});
+    return Vector2{transformed.x, transformed.y};
 }
 
 void panel(Rectangle bounds, Color fill, Color border = ink) {
@@ -186,8 +208,7 @@ void draw_library_backdrop(const LibraryRenderConfig& config) {
         config.background,
         Rectangle{0.0F, 0.0F, static_cast<float>(config.background.width),
                   static_cast<float>(config.background.height)},
-        Rectangle{0.0F, 0.0F, scaled(static_cast<float>(config.logical_width)),
-                  scaled(static_cast<float>(config.logical_height))},
+        indoor_scene_rectangle(),
         Vector2{0.0F, 0.0F}, 0.0F, WHITE);
 }
 
@@ -352,7 +373,7 @@ void draw_npc_sprite(const NpcState& state, const NpcData& data, bool is_hovered
 }
 
 void draw_room_ui(const LibraryRenderConfig& config, const Font& font) {
-    DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
+    DrawRectangle(0, 0, scaled(config.logical_width), scaled(40), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
     
@@ -370,7 +391,7 @@ void draw_intro_screen(const LibraryRuleEngine& engine, const LibraryRenderConfi
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height),
                   config.background.id == 0 ? slate : Color{37, 50, 57, 78});
-    DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
+    DrawRectangle(0, 0, scaled(config.logical_width), scaled(40), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
 
@@ -411,7 +432,7 @@ void draw_npc_talk_screen(const LibraryRuleEngine& engine, const LibraryRenderCo
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height),
                   config.background.id == 0 ? slate : Color{37, 50, 57, 78});
-    DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
+    DrawRectangle(0, 0, scaled(config.logical_width), scaled(40), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
 
@@ -450,7 +471,7 @@ void draw_plot_event_screen(const LibraryRuleEngine& engine, const LibraryRender
     draw_library_backdrop(config);
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height), slate);
-    DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
+    DrawRectangle(0, 0, scaled(config.logical_width), scaled(40), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
 
@@ -486,7 +507,7 @@ void draw_map_reveal_screen(const LibraryRuleEngine& engine, const LibraryRender
     draw_library_backdrop(config);
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height), slate);
-    DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
+    DrawRectangle(0, 0, scaled(config.logical_width), scaled(40), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
 
@@ -537,7 +558,7 @@ void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState
                            const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
     draw_library_backdrop(config);
 
-    DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
+    DrawRectangle(0, 0, scaled(config.logical_width), scaled(40), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
 
@@ -614,7 +635,7 @@ void draw_feedback_screen(const LibraryRuleEngine& /*engine*/, const LibraryUISt
     (void)logical_mouse;
     draw_library_backdrop(config);
 
-    DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
+    DrawRectangle(0, 0, scaled(config.logical_width), scaled(40), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
 
@@ -649,7 +670,7 @@ void draw_feedback_screen(const LibraryRuleEngine& /*engine*/, const LibraryUISt
 void draw_summary_screen(const ActionResult& result, const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
     draw_library_backdrop(config);
 
-    DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
+    DrawRectangle(0, 0, scaled(config.logical_width), scaled(40), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
 
@@ -715,11 +736,10 @@ void draw_summary_screen(const ActionResult& result, const LibraryRenderConfig& 
 
 void draw_library_room_scene(const LibraryScene& scene, const LibraryUIState& ui_state,
                              const LibraryRenderConfig& render_config, const Font& font, Vector2 logical_mouse) {
-    const Vector2 library_mouse = {
-        logical_mouse.x / ::pixel_town::ui::design_to_canvas_scale,
-        logical_mouse.y / ::pixel_town::ui::design_to_canvas_scale};
+    const Vector2 library_mouse = scene_design_mouse(logical_mouse);
 
     draw_library_backdrop(render_config);
+    BeginMode2D(indoor_scene_camera());
     if (render_config.background.id == 0) {
         draw_library_floor(render_config);
         draw_library_walls(render_config);
@@ -740,6 +760,7 @@ void draw_library_room_scene(const LibraryScene& scene, const LibraryUIState& ui
 
         draw_npc_sprite(state, *data, is_hovered, font);
     }
+    EndMode2D();
 
     draw_room_ui(render_config, font);
 
@@ -822,9 +843,13 @@ void update_library_ui(LibraryRuleEngine& engine, LibraryUIState& ui_state, Libr
 
 bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state, 
                           LibraryScene& scene, Vector2 logical_mouse) {
-    const Vector2 library_mouse = {
-        logical_mouse.x / ::pixel_town::ui::design_to_canvas_scale,
-        logical_mouse.y / ::pixel_town::ui::design_to_canvas_scale};
+    const Vector2 library_mouse =
+        ui_state.scene_state == LibrarySceneState::room_view
+            ? scene_design_mouse(logical_mouse)
+            : Vector2{logical_mouse.x /
+                          ::pixel_town::ui::design_to_canvas_scale,
+                      logical_mouse.y /
+                          ::pixel_town::ui::design_to_canvas_scale};
 
     if (ui_state.is_transitioning) {
         return false;

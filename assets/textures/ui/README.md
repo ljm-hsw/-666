@@ -10,7 +10,9 @@ This directory stores runtime UI texture candidates grouped by module.
 - `restaurant/restaurant_interior.png`: 960×540 restaurant runtime background.
 - `home/home_interior.png`: 960×540 home runtime background used by the rest confirmation scene.
 - `library/library_interior.png`: 960×540 library runtime background used behind the existing library flow.
-- Sources and processing records for these three team-provided composites live under
+- `convenience_store/convenience_store_interior.png`: 960×540 convenience-store runtime background.
+- `tavern/tavern_lobby.png`: 960×540 team-provided tavern runtime background.
+- Sources and processing records for these five team-provided composites live under
   `assets/art_sources/manual_composites/`.
 - Future imagegen scene kits place processed runtime pieces under `<module>/pieces/` and manual 960×540 composites under `<module>/composites/`. Raw imagegen sources belong under `assets/art_sources/imagegen/scene_kits/`, not in this runtime directory.
 

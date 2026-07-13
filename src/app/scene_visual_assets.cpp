@@ -30,6 +30,10 @@ void load_scene_visual_assets(SceneVisualAssets& assets) {
         assets.restaurant_interior =
             load_optional_texture("assets/textures/ui/restaurant/restaurant_interior.png");
     }
+    if (assets.convenience_store_interior.id == 0) {
+        assets.convenience_store_interior = load_optional_texture(
+            "assets/textures/ui/convenience_store/convenience_store_interior.png");
+    }
     if (assets.home_interior.id == 0) {
         assets.home_interior =
             load_optional_texture("assets/textures/ui/home/home_interior.png");
@@ -42,6 +46,7 @@ void load_scene_visual_assets(SceneVisualAssets& assets) {
 
 void unload_scene_visual_assets(SceneVisualAssets& assets) {
     unload_texture(assets.restaurant_interior);
+    unload_texture(assets.convenience_store_interior);
     unload_texture(assets.home_interior);
     unload_texture(assets.library_interior);
 }
@@ -51,11 +56,12 @@ const Texture2D& scene_interior_texture(const SceneVisualAssets& assets,
     switch (location) {
         case Location::restaurant:
             return assets.restaurant_interior;
+        case Location::convenience_store:
+            return assets.convenience_store_interior;
         case Location::home:
             return assets.home_interior;
         case Location::library:
             return assets.library_interior;
-        case Location::convenience_store:
         case Location::tavern:
             break;
     }

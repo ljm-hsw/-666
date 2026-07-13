@@ -13,8 +13,10 @@ constexpr pixel_town::SceneSize player_size{24.0F, 24.0F};
 TEST_CASE("approved indoor scene layouts are valid and have free player spawns") {
     const std::array locations{
         pixel_town::Location::restaurant,
+        pixel_town::Location::convenience_store,
         pixel_town::Location::home,
         pixel_town::Location::library,
+        pixel_town::Location::tavern,
     };
 
     for (const auto location : locations) {
@@ -29,10 +31,16 @@ TEST_CASE("approved indoor scene layouts are valid and have free player spawns")
     }
 }
 
-TEST_CASE("locations without an approved composite do not expose a collision layout") {
-    CHECK(pixel_town::find_indoor_scene_layout(
-              pixel_town::Location::convenience_store) == nullptr);
-    CHECK(pixel_town::find_indoor_scene_layout(pixel_town::Location::tavern) == nullptr);
+TEST_CASE("every supplied indoor composite exposes named furniture colliders") {
+    const auto* store = pixel_town::find_indoor_scene_layout(
+        pixel_town::Location::convenience_store);
+    const auto* tavern = pixel_town::find_indoor_scene_layout(
+        pixel_town::Location::tavern);
+
+    REQUIRE(store != nullptr);
+    REQUIRE(tavern != nullptr);
+    CHECK(store->static_colliders.size() >= 10);
+    CHECK(tavern->static_colliders.size() >= 10);
 }
 
 TEST_CASE("scene collision uses strict overlap and permits edge contact") {
@@ -82,8 +90,10 @@ TEST_CASE("movement is clamped to walkable bounds") {
 TEST_CASE("door corridors remain free and lead into exit triggers") {
     const std::array locations{
         pixel_town::Location::restaurant,
+        pixel_town::Location::convenience_store,
         pixel_town::Location::home,
         pixel_town::Location::library,
+        pixel_town::Location::tavern,
     };
     for (const auto location : locations) {
         const auto* layout = pixel_town::find_indoor_scene_layout(location);

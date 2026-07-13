@@ -1,6 +1,6 @@
 # P4：接入酒馆室内移动、静态碰撞与常客轨迹
 
-Status: needs-info
+Status: ready-for-agent
 Milestone: P4
 Type: AFK
 User stories: 29, 30, 32, 54, 57, 58, 71, 72
@@ -37,3 +37,4 @@ User stories: 29, 30, 32, 54, 57, 58, 71, 72
 <!-- 在此行下方追加实现与验证记录。 -->
 
 - 2026-07-11：暂缓实施，等待酒馆人工拼接稿、阻挡物清单、碰撞审查图和互动坐标草案获得人工确认。满足 `docs/SCENE_ASSET_PRODUCTION_PLAN.md` 恢复门槛且 Issue 27 恢复后，再改回 `ready-for-agent`。
+- 2026-07-13：用户提供更新后的酒馆合成稿；已归档并替换为 960×540 运行时背景，重新对齐酒保、五子棋桌与骗子骰子桌热点，并在 `src/core/scene_collision.cpp` 登记吧台、酒柜、酒桶、桌组、墙体、出生点和出口。F3 诊断图已核对。主角/常客移动、邻近互动和路点仍由本 Issue 实现；状态恢复为 `ready-for-agent`，但继续受 Issue 27 完成状态阻塞。

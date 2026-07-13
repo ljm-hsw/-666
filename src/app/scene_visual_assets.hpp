@@ -8,6 +8,7 @@ namespace pixel_town {
 
 struct SceneVisualAssets {
     Texture2D restaurant_interior{};
+    Texture2D convenience_store_interior{};
     Texture2D home_interior{};
     Texture2D library_interior{};
 };

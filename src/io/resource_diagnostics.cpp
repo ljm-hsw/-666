@@ -77,6 +77,8 @@ std::vector<ResourceSpec> baseline_resource_manifest() {
         {"textures/kenney_tiny_farm/Tilemap/tilemap_packed.png", ResourceKind::texture, false},
         {"textures/imagegen_buildings/p1_building_sprites.png", ResourceKind::texture, false},
         {"textures/ui/tavern/tavern_lobby.png", ResourceKind::texture, false},
+        {"textures/ui/convenience_store/convenience_store_interior.png",
+         ResourceKind::texture, false},
         {"textures/ui/tavern/npc/bartender_idle_sheet.png", ResourceKind::texture, false},
         {"textures/ui/restaurant/restaurant_interior.png", ResourceKind::texture, false},
         {"textures/ui/home/home_interior.png", ResourceKind::texture, false},

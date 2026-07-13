@@ -5,6 +5,7 @@
 
 #include "app/tavern_layout.hpp"
 #include "app/ui_primitives.hpp"
+#include "ui/scene_viewport.hpp"
 #include "ui/ui_metrics.hpp"
 
 namespace pixel_town {
@@ -52,8 +53,25 @@ void draw_dim_overlay() {
     DrawRectangle(0, 0, ui::canvas_width, ui::canvas_height, Color{10, 8, 6, 170});
 }
 
+Camera2D indoor_scene_camera() {
+    const auto viewport = ui::indoor_scene_viewport();
+    Camera2D camera{};
+    camera.offset = Vector2{viewport.x, viewport.y};
+    camera.target = Vector2{0.0F, 0.0F};
+    camera.rotation = 0.0F;
+    camera.zoom = ui::scene_viewport_scale;
+    return camera;
+}
+
+Vector2 scene_canvas_mouse(Vector2 mouse) {
+    const auto transformed =
+        ui::viewport_to_scene_canvas({mouse.x, mouse.y});
+    return Vector2{transformed.x, transformed.y};
+}
+
 void draw_lobby_fallback() {
-    ClearBackground(Color{54, 38, 32, 255});
+    DrawRectangle(0, 0, ui::canvas_width, ui::canvas_height,
+                  Color{54, 38, 32, 255});
     DrawRectangleRec(scaled_rect(Rectangle{0, 54, 640, 306}), Color{92, 58, 41, 255});
     DrawRectangleRec(scaled_rect(Rectangle{0, 224, 640, 136}), Color{126, 84, 52, 255});
     for (int index = 0; index < 8; ++index) {
@@ -102,10 +120,13 @@ void draw_labeled_hotspot(const Font& font, TavernRect bounds, const char* label
 
 void draw_lobby(const Font& font, const TavernPresentation& presentation,
                 const TavernVisualAssets& assets, Vector2 mouse) {
+    ClearBackground(Color{34, 39, 40, 255});
+    const Vector2 transformed_mouse = scene_canvas_mouse(mouse);
+    BeginMode2D(indoor_scene_camera());
     if (assets.lobby_background.id != 0) {
-        const Rectangle source{0.0F, 1.0F,
+        const Rectangle source{0.0F, 0.0F,
                                static_cast<float>(assets.lobby_background.width),
-                               static_cast<float>(assets.lobby_background.height - 2)};
+                               static_cast<float>(assets.lobby_background.height)};
         DrawTexturePro(assets.lobby_background, source,
                        scaled_rect(Rectangle{0, 0, 640, 360}), Vector2{0, 0}, 0.0F,
                        WHITE);
@@ -115,9 +136,10 @@ void draw_lobby(const Font& font, const TavernPresentation& presentation,
 
     draw_bartender(presentation, assets);
     const TavernLayout layout = tavern_layout();
-    draw_labeled_hotspot(font, layout.npc_hotspot, "和酒保交谈", mouse);
-    draw_labeled_hotspot(font, layout.gomoku_hotspot, "五子棋桌", mouse);
-    draw_labeled_hotspot(font, layout.dice_hotspot, "骗子骰子桌", mouse);
+    draw_labeled_hotspot(font, layout.npc_hotspot, "和酒保交谈", transformed_mouse);
+    draw_labeled_hotspot(font, layout.gomoku_hotspot, "五子棋桌", transformed_mouse);
+    draw_labeled_hotspot(font, layout.dice_hotspot, "骗子骰子桌", transformed_mouse);
+    EndMode2D();
 
     panel(layout.select_button, hovered(layout.select_button, mouse) ? paper : tavern_warm,
           Color{219, 181, 119, 255});

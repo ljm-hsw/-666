@@ -274,6 +274,21 @@ void setup_home_diagnostic(pixel_town::GameAppState& state) {
     state.notice = "诊断：家的场景与碰撞箱。";
 }
 
+void setup_location_lobby_diagnostic(pixel_town::GameAppState& state,
+                                     pixel_town::Location location) {
+    if (location == pixel_town::Location::home) {
+        setup_home_diagnostic(state);
+        state.home_preview_open = false;
+        state.collision_debug_visible = false;
+    } else {
+        state = pixel_town::GameAppState{};
+        state.has_session = true;
+        state.session = pixel_town::GameSession::new_game(20260713U);
+    }
+    state.location_lobby = location;
+    state.notice = "诊断：场景大厅与 NPC 预留热点。";
+}
+
 void setup_tavern_diagnostic(pixel_town::GameAppState& state,
                              pixel_town::TavernScreen screen,
                              int dialogue_line = 0,
@@ -393,10 +408,31 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
         case 18:
             setup_home_diagnostic(state);
             break;
-        default:
+        case 19:
             setup_library_diagnostic(
                 state, pixel_town::library::ui::LibrarySceneState::room_view);
             state.collision_debug_visible = true;
+            break;
+        case 20:
+            setup_store_diagnostic(state, false);
+            state.collision_debug_visible = true;
+            break;
+        case 21:
+            setup_tavern_diagnostic(state, pixel_town::TavernScreen::lobby);
+            state.collision_debug_visible = true;
+            break;
+        case 22:
+            setup_location_lobby_diagnostic(state, pixel_town::Location::restaurant);
+            break;
+        case 23:
+            setup_location_lobby_diagnostic(state,
+                                            pixel_town::Location::convenience_store);
+            break;
+        case 24:
+            setup_location_lobby_diagnostic(state, pixel_town::Location::library);
+            break;
+        default:
+            setup_location_lobby_diagnostic(state, pixel_town::Location::home);
             break;
     }
 }
@@ -644,7 +680,7 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 20> ui_diagnostic_capture_paths{
+    const std::array<const char*, 26> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/store-prepare.png",
@@ -665,6 +701,12 @@ int main(int argc, char* argv[]) {
         "ui-diagnostics-captures/restaurant-colliders.png",
         "ui-diagnostics-captures/home-colliders.png",
         "ui-diagnostics-captures/library-colliders.png",
+        "ui-diagnostics-captures/store-colliders.png",
+        "ui-diagnostics-captures/tavern-colliders.png",
+        "ui-diagnostics-captures/restaurant-lobby.png",
+        "ui-diagnostics-captures/store-lobby.png",
+        "ui-diagnostics-captures/library-lobby.png",
+        "ui-diagnostics-captures/home-lobby.png",
     };
     auto unload_resources = [&]() {
         pixel_town::unload_tavern_assets(game_flow.locations.tavern_assets);

@@ -1,15 +1,15 @@
 # 第三方资源署名
 
-## 团队提供的餐馆、家与图书馆场景候选
+## 团队提供的餐馆、家、图书馆、酒馆与便利店场景候选
 
 - 接入日期：2026-07-13
 - 来源：团队成员提供的人工合成 PNG；仓库内源图位于 [`assets/art_sources/manual_composites/`](assets/art_sources/manual_composites/)
-- 运行时路径：[`assets/textures/ui/restaurant/restaurant_interior.png`](assets/textures/ui/restaurant/restaurant_interior.png)、[`assets/textures/ui/home/home_interior.png`](assets/textures/ui/home/home_interior.png)、[`assets/textures/ui/library/library_interior.png`](assets/textures/ui/library/library_interior.png)
-- 处理：垂直居中裁切；餐馆和家使用最近邻放大到 960×540；图书馆裁为 960×540
+- 运行时路径：[`assets/textures/ui/restaurant/restaurant_interior.png`](assets/textures/ui/restaurant/restaurant_interior.png)、[`assets/textures/ui/home/home_interior.png`](assets/textures/ui/home/home_interior.png)、[`assets/textures/ui/library/library_interior.png`](assets/textures/ui/library/library_interior.png)、[`assets/textures/ui/tavern/tavern_lobby.png`](assets/textures/ui/tavern/tavern_lobby.png)、[`assets/textures/ui/convenience_store/convenience_store_interior.png`](assets/textures/ui/convenience_store/convenience_store_interior.png)
+- 处理：垂直居中裁切；480×272 源图使用最近邻放大到 960×540；图书馆裁为 960×540
 - 完整尺寸、SHA-256 与转换记录：[`assets/art_sources/manual_composites/README.md`](assets/art_sources/manual_composites/README.md)
 - 许可状态：组成素材的作者、来源与许可证尚未随图片提供；当前仅作为内部开发和教学演示候选，不作商业可用结论
 
-进入最终发布包前，必须补齐三张合成稿所用素材的来源与许可，或替换为许可证明确的项目自制/imagegen 资源。本节记录的是接入事实，不是第三方授权声明。
+进入最终发布包前，必须补齐五张合成稿所用素材的来源与许可，或替换为许可证明确的项目自制/imagegen 资源。本节记录的是接入事实，不是第三方授权声明。
 
 ## Fusion Pixel Font
 
@@ -136,8 +136,8 @@
 - 许可证/条款：仅允许在非商业项目中使用和修改
 - 条款文件：[`assets/textures/ui/tavern/LICENSES/cozy_tavern_free_readme.txt`](assets/textures/ui/tavern/LICENSES/cozy_tavern_free_readme.txt)
 - 条款文件 SHA-256：`9a94205492bd7f8dd66f1c83c5a358b0529cf5f14c8807d808f1ade223866873`
-- 仓库路径：[`assets/textures/ui/tavern/tavern_lobby.png`](assets/textures/ui/tavern/tavern_lobby.png)
+- 历史归档路径：[`assets/art_sources/legacy/tavern/tavern_lobby_cozy_tavern_source.png`](assets/art_sources/legacy/tavern/tavern_lobby_cozy_tavern_source.png)
 - 仓库文件 SHA-256：`2669847c3f89ee4a9d2c6393c634563c25ac2d3c889c97f1947cce11534a8227`
-- 当前用途：P3 酒馆大厅运行时背景候选；缺失时使用程序绘制回退
+- 当前用途：已退出运行时，仅作为旧酒馆背景与许可证据归档；运行时已替换为团队提供的新合成稿
 
-该背景适用于当前非商业教学项目，但不具备商业项目使用许可。P4 最终发布前应确认项目用途；若需要不受非商业限制的交付版本，应替换为项目自制或 imagegen 生成素材并更新本节。
+该背景适用于当前非商业教学项目，但不具备商业项目使用许可，现已退出运行时并仅作历史归档。新酒馆合成稿的组成素材许可仍需按本文件首节补齐。

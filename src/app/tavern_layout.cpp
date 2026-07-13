@@ -5,8 +5,8 @@ namespace pixel_town {
 TavernLayout tavern_layout() {
     TavernLayout layout{};
     layout.npc_hotspot = TavernRect{42, 88, 66, 82};
-    layout.gomoku_hotspot = TavernRect{70, 292, 168, 48};
-    layout.dice_hotspot = TavernRect{390, 198, 198, 112};
+    layout.gomoku_hotspot = TavernRect{32, 206, 112, 68};
+    layout.dice_hotspot = TavernRect{156, 204, 130, 68};
     layout.select_button = TavernRect{470, 310, 92, 32};
     layout.back_button = TavernRect{570, 310, 58, 32};
     layout.overlay_panel = TavernRect{108, 52, 424, 286};
