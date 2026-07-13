@@ -123,18 +123,17 @@ bool LibraryRuleEngine::place_book_on_shelf(const std::string& shelf_id) {
         }
         
         bool was_scattered = false;
-        for (const auto& book : session_state_.scattered_books) {
-            if (book.id == session_state_.selected_book_id) {
+        for (auto it = session_state_.scattered_books.begin(); it != session_state_.scattered_books.end(); ++it) {
+            if (it->id == session_state_.selected_book_id) {
                 was_scattered = true;
+                session_state_.scattered_books.erase(it);
                 break;
             }
         }
         
         if (was_scattered) {
             session_state_.placed_count++;
-            if (session_state_.current_scattered_index < static_cast<int>(session_state_.scattered_books.size()) - 1) {
-                session_state_.current_scattered_index++;
-            }
+            session_state_.current_scattered_index = 0;
         } else {
             session_state_.corrected_count++;
         }

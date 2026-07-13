@@ -763,36 +763,26 @@ void draw_organizing_screen(const LibraryRuleEngine& engine, const LibraryUIStat
         }
     }
 
-    if (!session.scattered_books.empty() && session.current_scattered_index < static_cast<int>(session.scattered_books.size())) {
-        const Book& current_book = session.scattered_books[session.current_scattered_index];
+    if (!session.scattered_books.empty()) {
+        const Book& current_book = session.scattered_books[0];
         const Rectangle bounds = book_bounds(current_book);
         bool hovered = CheckCollisionPointRec(logical_mouse, bounds);
-        
-        DrawRectangle(bounds.x, bounds.y, bounds.width, bounds.height, Color{250, 238, 203, 230});
-        DrawRectangleLinesEx(Rectangle{bounds.x, bounds.y, bounds.width, bounds.height}, 2.0F, ink);
-        
-        float title_width = MeasureTextEx(font, current_book.title.c_str(), 14.0F, 1.0F).x;
-        float title_x = bounds.x + (bounds.width - title_width) / 2.0F;
-        DrawTextEx(font, current_book.title.c_str(), Vector2{title_x, bounds.y - 22.0F}, 14.0F, 1.0F, ink);
         
         int pulse_frame = static_cast<int>(GetTime() * 8.0F) % 4;
         if (pulse_frame < 2) {
             unsigned char alpha = static_cast<unsigned char>(150 + pulse_frame * 50);
-            DrawRectangleLinesEx(Rectangle{bounds.x - 4, bounds.y - 4, bounds.width + 8, bounds.height + 8}, 2.0F, Color{224, 169, 74, alpha});
+            DrawRectangleLinesEx(Rectangle{bounds.x - 4, bounds.y - 4, bounds.width + 8, bounds.height + 8}, 3.0F, Color{224, 169, 74, alpha});
         }
         
-        text(font, "→ 点击捡起", bounds.x + (bounds.width - 60) / 2, bounds.y + bounds.height + 5, 11, gold);
+        float title_width = MeasureTextEx(font, current_book.title.c_str(), 16.0F, 1.0F).x;
+        float title_x = bounds.x + (bounds.width - title_width) / 2.0F;
+        DrawTextEx(font, current_book.title.c_str(), Vector2{title_x, bounds.y - 26.0F}, 16.0F, 1.0F, gold);
+        
+        text(font, "→ 点击捡起", bounds.x + (bounds.width - 60) / 2, bounds.y + bounds.height + 5, 11, ink);
         
         if (hovered) {
             DrawRectangleLinesEx(Rectangle{bounds.x - 3, bounds.y - 3, bounds.width + 6, bounds.height + 6}, 2.0F, gold);
         }
-    }
-
-    for (size_t i = session.current_scattered_index + 1; i < session.scattered_books.size(); ++i) {
-        const Book& book = session.scattered_books[i];
-        const Rectangle bounds = book_bounds(book);
-        DrawRectangle(bounds.x, bounds.y, bounds.width, bounds.height, Color{200, 190, 160, 150});
-        DrawRectangleLinesEx(Rectangle{bounds.x, bounds.y, bounds.width, bounds.height}, 1.0F, Color{150, 140, 120, 150});
     }
 
     if (engine.is_holding_book()) {
@@ -826,8 +816,8 @@ void draw_organizing_screen(const LibraryRuleEngine& engine, const LibraryUIStat
         }
     }
 
-    if (!session.scattered_books.empty() && session.current_scattered_index < static_cast<int>(session.scattered_books.size())) {
-        text(font, "📖 当前目标：将「" + session.scattered_books[session.current_scattered_index].title + "」放到正确的书架", 10, config.logical_height - 35, 11, ink);
+    if (!session.scattered_books.empty()) {
+        text(font, "📖 当前目标：将「" + session.scattered_books[0].title + "」放到正确的书架", 10, config.logical_height - 35, 11, ink);
     } else if (!session.misplaced_books.empty()) {
         text(font, "🔍 当前目标：点击感叹号查看并修正放错的书籍", 10, config.logical_height - 35, 11, ink);
     } else {
