@@ -771,7 +771,7 @@ void draw_organizing_screen(const LibraryRuleEngine& engine, const LibraryUIStat
         int pulse_frame = static_cast<int>(GetTime() * 8.0F) % 4;
         if (pulse_frame < 2) {
             unsigned char alpha = static_cast<unsigned char>(150 + pulse_frame * 50);
-            DrawRectangleLinesEx(Rectangle{bounds.x - 4, bounds.y - 4, bounds.width + 8, bounds.height + 8}, 3.0F, Color{224, 169, 74, alpha});
+            DrawRectangleLinesEx(Rectangle{bounds.x - 25, bounds.y - 6, bounds.width + 50, bounds.height + 12}, 3.0F, Color{224, 169, 74, alpha});
         }
         
         float title_width = MeasureTextEx(font, current_book.title.c_str(), 16.0F, 1.0F).x;
