@@ -41,8 +41,8 @@ TEST_CASE("win produces expected net gain, mood boost, and win record") {
     CHECK(result.result_id == 1);
 
     const std::string& summary = result.summary;
-    CHECK(summary.find("获胜") != std::string::npos);
-    CHECK(summary.find("赢得") != std::string::npos);
+    CHECK(summary.find("Win") != std::string::npos);
+    CHECK(summary.find("Earned") != std::string::npos);
 }
 
 TEST_CASE("loss deducts bet and lowers mood") {
@@ -60,8 +60,8 @@ TEST_CASE("loss deducts bet and lowers mood") {
     CHECK(result.outcome == ActionOutcome::completed);
 
     const std::string& summary = result.summary;
-    CHECK(summary.find("失败") != std::string::npos);
-    CHECK(summary.find("损失") != std::string::npos);
+    CHECK(summary.find("Loss") != std::string::npos);
+    CHECK(summary.find("lost") != std::string::npos);
 }
 
 TEST_CASE("draw refunds bet with small mood gain") {
@@ -79,8 +79,8 @@ TEST_CASE("draw refunds bet with small mood gain") {
     CHECK(result.outcome == ActionOutcome::completed);
 
     const std::string& summary = result.summary;
-    CHECK(summary.find("平局") != std::string::npos);
-    CHECK(summary.find("退还") != std::string::npos);
+    CHECK(summary.find("Draw") != std::string::npos);
+    CHECK(summary.find("refunded") != std::string::npos);
 }
 
 TEST_CASE("bet exceeding player money returns abandoned outcome") {
