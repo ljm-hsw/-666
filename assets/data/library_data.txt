@@ -63,8 +63,8 @@ BOOK geography:城市规划
 BOOK geography:气候环境
 BOOK geography:旅游指南
 
-SCATTERED 物理奥秘:200,400
-SCATTERED 红楼梦:350,420
+SCATTERED 物理奥秘:280,400
+SCATTERED 红楼梦:360,400
 
 MISPLACED 唐诗宋词:shelf_history
 MISPLACED 物理奥秘:shelf_literature
