@@ -122,6 +122,49 @@ TEST_CASE("tavern runtime returns to the night map before a challenge starts") {
     CHECK(session.can_enter(pixel_town::Location::tavern).allowed);
 }
 
+TEST_CASE("bartender dialogue is modal and leaves the game session unchanged") {
+    auto session = session_at_night_choice();
+    pixel_town::TavernRuntime runtime;
+    REQUIRE(runtime.open(session).status == pixel_town::TavernOpenStatus::opened);
+    const auto before_dialogue = session.snapshot();
+    const auto layout = pixel_town::tavern_layout();
+
+    REQUIRE(runtime.step(session, click_input(layout.npc_hotspot)).status ==
+            pixel_town::TavernStepStatus::changed);
+    auto view = runtime.presentation();
+    CHECK(view.screen == pixel_town::TavernScreen::npc_dialog);
+    REQUIRE(view.dialogue.has_value());
+    CHECK(view.dialogue->speaker == "酒保");
+    CHECK(view.dialogue->current_line == 1);
+    CHECK(view.dialogue->total_lines == 3);
+    const float animation_before = view.bartender_animation_seconds;
+
+    pixel_town::TavernFrameInput advance;
+    advance.enter_pressed = true;
+    advance.space_pressed = true;
+    REQUIRE(runtime.step(session, advance).status ==
+            pixel_town::TavernStepStatus::changed);
+    CHECK(runtime.presentation().dialogue->current_line == 2);
+
+    auto blocked_click = click_input(layout.gomoku_hotspot);
+    blocked_click.elapsed_seconds = 5.0F;
+    CHECK(runtime.step(session, blocked_click).status ==
+          pixel_town::TavernStepStatus::unchanged);
+    view = runtime.presentation();
+    REQUIRE(view.dialogue.has_value());
+    CHECK(view.dialogue->current_line == 2);
+    CHECK(view.bartender_animation_seconds == doctest::Approx(animation_before));
+
+    REQUIRE(runtime.step(session, advance).status ==
+            pixel_town::TavernStepStatus::changed);
+    CHECK(runtime.presentation().dialogue->current_line == 3);
+    REQUIRE(runtime.step(session, advance).status ==
+            pixel_town::TavernStepStatus::changed);
+    CHECK(runtime.presentation().screen == pixel_town::TavernScreen::lobby);
+    CHECK_FALSE(runtime.presentation().dialogue.has_value());
+    CHECK(session.snapshot() == before_dialogue);
+}
+
 TEST_CASE("tavern runtime keeps selection open when the bet is unaffordable") {
     auto session = session_at_night_choice();
     auto snapshot = session.snapshot();

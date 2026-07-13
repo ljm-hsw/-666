@@ -27,6 +27,7 @@
 - [`story/README.md`](story/README.md)：主线剧情、文案风格、MVP 文本草案、地点/NPC、结局回声和剧情接入规划。
 - [`VISUAL_PROTOTYPE.md`](VISUAL_PROTOTYPE.md)：P0 待审视觉方案、调色板、像素尺寸与资源命名候选。
 - [`IMAGEGEN_VISUAL_PLAN.md`](IMAGEGEN_VISUAL_PLAN.md)：960×540 画布迁移与 imagegen 页面背景/建筑资产规划。
+- [`SCENE_ASSET_PRODUCTION_PLAN.md`](SCENE_ASSET_PRODUCTION_PLAN.md)：酒馆、图书馆和便利店的 imagegen 分件批次、人工拼接、碰撞交接与恢复 Issue 门槛。
 - [`TEAM_BRANCH_INTEGRATION.md`](TEAM_BRANCH_INTEGRATION.md)：同学分支聚合、冲突处理、保留基线和后续风险。
 - [`adr/0001-adopt-raylib-and-doctest.md`](adr/0001-adopt-raylib-and-doctest.md)：raylib、doctest 与离线依赖策略。
 - [`adr/0002-use-explicit-tavern-runtime-and-settlement-modules.md`](adr/0002-use-explicit-tavern-runtime-and-settlement-modules.md)：酒馆显式运行期 Interface、隐藏信息 presentation 与独立结算边界。

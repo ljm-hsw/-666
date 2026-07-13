@@ -1,6 +1,6 @@
 # P4：接入便利店店主对话切片
 
-Status: ready-for-agent
+Status: needs-info
 Milestone: P4
 Type: AFK
 User stories: 16, 19, 54, 57, 58, 61
@@ -31,3 +31,5 @@ User stories: 16, 19, 54, 57, 58, 61
 ## Comments
 
 <!-- 在此行下方追加实现与验证记录。 -->
+
+- 2026-07-11：按用户决定暂缓实施，等待便利店风格板、分件素材和 960×540 人工拼接稿获得人工确认。恢复时改回 `ready-for-agent`；经营规则和本 issue 验收标准不变。

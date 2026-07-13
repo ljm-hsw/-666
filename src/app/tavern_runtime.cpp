@@ -51,6 +51,7 @@ void TavernRuntime::reset() {
     active_result_id_ = 0;
     player_at_start_ = PlayerState{};
     pending_settlement_.reset();
+    dialogue_ = DialogueRuntime{};
 }
 
 TavernOpenResult TavernRuntime::open(GameSession& session) {
@@ -108,6 +109,12 @@ TavernStepResult TavernRuntime::step(GameSession& session,
             return step_result(TavernStepStatus::unchanged, frame_notice);
         }
         if (clicked(layout.npc_hotspot, input)) {
+            const auto* script = dialogue_catalog_.find(
+                DialogueTrigger::tavern_bartender_intro);
+            if (script == nullptr || !dialogue_.open(*script)) {
+                feedback_ = "酒保对话暂时无法打开。";
+                return step_result(TavernStepStatus::rejected, feedback_);
+            }
             screen_ = TavernScreen::npc_dialog;
             return step_result(TavernStepStatus::changed, frame_notice);
         }
@@ -138,11 +145,20 @@ TavernStepResult TavernRuntime::step(GameSession& session,
     }
 
     if (screen_ == TavernScreen::npc_dialog) {
-        if (clicked(layout.dialog_close_button, input) || input.escape_pressed) {
+        DialogueFrameInput dialogue_input;
+        dialogue_input.advance_pressed =
+            clicked(layout.dialog_close_button, input) || input.enter_pressed ||
+            input.space_pressed;
+        dialogue_input.skip_pressed = input.escape_pressed;
+        const DialogueStepStatus dialogue_status = dialogue_.step(dialogue_input);
+        if (dialogue_status == DialogueStepStatus::closed) {
             screen_ = TavernScreen::lobby;
             return step_result(TavernStepStatus::changed, frame_notice);
         }
-        return step_result(TavernStepStatus::unchanged, frame_notice);
+        return step_result(dialogue_status == DialogueStepStatus::advanced
+                               ? TavernStepStatus::changed
+                               : TavernStepStatus::unchanged,
+                           frame_notice);
     }
 
     if (screen_ == TavernScreen::challenge_select) {
@@ -370,6 +386,10 @@ TavernPresentation TavernRuntime::presentation() const {
     view.feedback = feedback_;
     view.challenge_started = active_result_id_ > 0;
 
+    if (screen_ == TavernScreen::npc_dialog && dialogue_.active()) {
+        view.dialogue = dialogue_.presentation();
+    }
+
     if (screen_ == TavernScreen::gomoku) {
         TavernGomokuPresentation gomoku_view;
         for (int row = 0; row < GomokuGame::kSize; ++row) {
@@ -428,18 +448,24 @@ TavernPresentation TavernRuntime::presentation() const {
 }
 
 const char* tavern_ui_glyphs() {
-    return "酒馆酒保五子棋骗子骰子玩法选择返回和酒保交谈五子棋桌骗子骰子桌"
+    static const std::string glyphs = [] {
+        std::string result =
+           "酒馆酒保五子棋骗子骰子玩法选择返回和酒保交谈五子棋桌骗子骰子桌"
            "未完成挑战Esc放弃选择今晚的挑战一晚只能完成一局结算后直接进入每日总结"
            "黑子先手连成五子获胜提高叫点判断何时质疑选择赌注低中高金币开始挑战返回大厅"
-           "欢迎来到像素小镇酒馆今晚想坐在哪张桌边左边是五子棋右边是骗子骰子"
-           "选好玩法和赌注再开始关闭你执黑子点击交叉点落子先连成五子的一方获胜"
+           "下一句关闭跳过点击继续对话暂时不可用你执黑子点击交叉点落子先连成五子的一方获胜"
            "你的回合你赢了电脑获胜棋盘已满平局电脑思考中主动放弃确认结算"
            "揭晓这一轮个实际叫点成立不成立你赢下整场比赛你输掉了整场比赛"
            "你失去一枚骰子电脑失去一枚骰子剩余骰子下一轮一点可代替其他点数"
            "叫一点时只计算一点电脑骰子你的骰子当前尚无叫点轮到你行动数量点数"
            "已返回地图阶段未消耗金钱不足无法选择该赌注档位酒馆挑战启动失败请返回地图后重试"
+           "酒保对话暂时无法打开"
            "五子棋开始骗子骰子开始提高叫点或质疑电脑已调整为最小合法叫点请再次确认"
            "已经无法继续加价请选择质疑×……?!():";
+        result += StoryDialogueCatalog{}.glyphs();
+        return result;
+    }();
+    return glyphs.c_str();
 }
 
 }  // namespace pixel_town

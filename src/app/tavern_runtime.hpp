@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 
+#include "app/dialogue_runtime.hpp"
 #include "core/game_session.hpp"
 #include "core/tavern_rules.hpp"
 #include "locations/gomoku_rules.hpp"
@@ -77,6 +78,7 @@ struct TavernPresentation {
     bool challenge_started{false};
     std::optional<TavernGomokuPresentation> gomoku;
     std::optional<TavernLiarsDicePresentation> liars_dice;
+    std::optional<DialoguePresentation> dialogue;
 };
 
 enum class TavernOpenStatus {
@@ -130,6 +132,8 @@ private:
     std::optional<ActionResult> pending_settlement_;
     TavernChallengeConfig config_{};
     TavernChallengeSettlement settlement_;
+    StoryDialogueCatalog dialogue_catalog_;
+    DialogueRuntime dialogue_;
 
     void reset();
 };

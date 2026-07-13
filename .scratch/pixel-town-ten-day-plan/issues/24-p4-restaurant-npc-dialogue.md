@@ -1,6 +1,6 @@
 # P4：接入餐馆老板对话切片
 
-Status: ready-for-agent
+Status: needs-info
 Milestone: P4
 Type: AFK
 User stories: 11, 12, 54, 57, 58, 61
@@ -32,3 +32,5 @@ User stories: 11, 12, 54, 57, 58, 61
 ## Comments
 
 <!-- 在此行下方追加实现与验证记录。 -->
+
+- 2026-07-11：按用户决定暂缓实施。当前先完成 `docs/SCENE_ASSET_PRODUCTION_PLAN.md` 的三地点风格板、分件素材与人工拼接；用户明确恢复 Issue 后再改回 `ready-for-agent`。本 issue 的范围和验收标准不变。

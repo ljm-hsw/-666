@@ -8,6 +8,7 @@
 #include "app/restaurant_ui_model.hpp"
 #include "app/ui_primitives.hpp"
 #include "core/ending_rules.hpp"
+#include "core/scene_collision.hpp"
 #include "core/story_text.hpp"
 
 namespace pixel_town {
@@ -66,6 +67,9 @@ constexpr std::array ui_texts{
     "完成模拟",
     "主动放弃",
     "回家休息",
+    "今晚要休息吗？",
+    "确认休息",
+    "F3 显示或隐藏碰撞箱",
     "继续到下一天",
     "十日计划完成",
     "主结局",
@@ -156,6 +160,14 @@ Rectangle restaurant_prepare_back_button() {
 }
 
 Rectangle restaurant_prepare_start_button() {
+    return Rectangle{390, 310, 132, 32};
+}
+
+Rectangle home_preview_back_button() {
+    return Rectangle{118, 310, 132, 32};
+}
+
+Rectangle home_preview_rest_button() {
     return Rectangle{390, 310, 132, 32};
 }
 
@@ -377,7 +389,19 @@ void draw_home_plot_decoration() {
     DrawCircleV(scaled_point(Vector2{418, 258}), scaled(3.0F), Color{255, 205, 214, 255});
 }
 
-void draw_restaurant_background() {
+void draw_scene_texture(const Texture2D& texture) {
+    DrawTexturePro(texture,
+                   Rectangle{0.0F, 0.0F, static_cast<float>(texture.width),
+                             static_cast<float>(texture.height)},
+                   Rectangle{0.0F, 0.0F, 960.0F, 540.0F}, Vector2{0.0F, 0.0F},
+                   0.0F, WHITE);
+}
+
+void draw_restaurant_background(const Texture2D& background) {
+    if (background.id != 0) {
+        draw_scene_texture(background);
+        return;
+    }
     ClearBackground(Color{76, 64, 55, 255});
     DrawRectangleRec(scaled_rect(Rectangle{0, 84, 960, 178}), Color{151, 93, 59, 255});
     DrawRectangleRec(scaled_rect(Rectangle{0, 262, 960, 278}), Color{92, 78, 63, 255});
@@ -495,8 +519,8 @@ void draw_map(const Font& font, const Texture2D& marker, const Texture2D& tiles,
 }
 
 void draw_restaurant_ui(const Font& font, const GameAppState& state, bool audio_enabled,
-                        Vector2 mouse) {
-    draw_restaurant_background();
+                        Vector2 mouse, const Texture2D& background) {
+    draw_restaurant_background(background);
     draw_status(font, state.session, audio_enabled);
     const auto& rest = *state.locations.restaurant;
 
@@ -604,9 +628,10 @@ void draw_restaurant_ui(const Font& font, const GameAppState& state, bool audio_
 
 
 void draw_location(const Font& font, const GameAppState& state, bool audio_enabled,
-                   Vector2 mouse) {
+                   Vector2 mouse, const SceneVisualAssets& scene_assets) {
     if (state.session.pending_location() == Location::restaurant && state.locations.restaurant) {
-        draw_restaurant_ui(font, state, audio_enabled, mouse);
+        draw_restaurant_ui(font, state, audio_enabled, mouse,
+                           scene_assets.restaurant_interior);
         return;
     }
     const Location location = state.session.pending_location();
@@ -719,6 +744,52 @@ void draw_location(const Font& font, const GameAppState& state, bool audio_enabl
         panel(abandon_button, hovered(abandon_button, mouse) ? paper : red);
         centered_text(font, "主动放弃", abandon_button, 16, RAYWHITE);
     }
+}
+
+void draw_collision_debug(Location location) {
+    const IndoorSceneLayout* layout = find_indoor_scene_layout(location);
+    if (layout == nullptr) {
+        return;
+    }
+
+    const auto to_rectangle = [](SceneRect value) {
+        return Rectangle{value.x, value.y, value.width, value.height};
+    };
+    DrawRectangleLinesEx(to_rectangle(layout->walkable_bounds), 3.0F,
+                         Color{75, 255, 120, 255});
+    for (const auto& collider : layout->static_colliders) {
+        const Rectangle bounds = to_rectangle(collider.bounds);
+        DrawRectangleRec(bounds, Color{255, 65, 65, 70});
+        DrawRectangleLinesEx(bounds, 2.0F, Color{255, 80, 80, 255});
+    }
+    DrawRectangleRec(to_rectangle(layout->exit_trigger), Color{70, 150, 255, 85});
+    DrawRectangleLinesEx(to_rectangle(layout->exit_trigger), 3.0F,
+                         Color{80, 170, 255, 255});
+    const Rectangle spawn = to_rectangle(
+        scene_actor_bounds(layout->player_spawn, SceneSize{24.0F, 24.0F}));
+    DrawRectangleRec(spawn, Color{255, 225, 60, 150});
+    DrawRectangleLinesEx(spawn, 2.0F, Color{255, 235, 80, 255});
+}
+
+void draw_home_preview(const Font& font, const Texture2D& background,
+                       const GameAppState& state, bool audio_enabled,
+                       Vector2 mouse) {
+    if (background.id != 0) {
+        draw_scene_texture(background);
+    } else {
+        ClearBackground(Color{117, 91, 70, 255});
+    }
+    draw_status(font, state.session, audio_enabled);
+    panel(Rectangle{72, 250, 496, 96}, Color{46, 58, 57, 235});
+    text(font, "今晚要休息吗？", 96, 266, 22, Color{255, 224, 154, 255});
+    text(font, "确认后将恢复体力并进入每日总结。", 96, 294, 15, RAYWHITE);
+
+    const Rectangle back = home_preview_back_button();
+    const Rectangle rest = home_preview_rest_button();
+    panel(back, hovered(back, mouse) ? paper : Color{211, 202, 174, 255});
+    centered_text(font, "返回地图", back, 16, ink);
+    panel(rest, hovered(rest, mouse) ? paper : green);
+    centered_text(font, "确认休息", rest, 16, RAYWHITE);
 }
 
 void draw_summary(const Font& font, const GameAppState& state, bool audio_enabled,
@@ -878,6 +949,29 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
         return;
     }
 
+    if (IsKeyPressed(KEY_F3)) {
+        state.collision_debug_visible = !state.collision_debug_visible;
+    }
+
+    if (state.home_preview_open) {
+        if (activated(home_preview_back_button(), logical_mouse, KEY_ESCAPE)) {
+            state.home_preview_open = false;
+            state.notice = "已返回地图：夜晚阶段未消耗。";
+            return;
+        }
+        if (activated(home_preview_rest_button(), logical_mouse, KEY_ENTER) ||
+            IsKeyPressed(KEY_SPACE)) {
+            const auto applied = state.session.apply_action_result(
+                state.session.home_rest_result());
+            state.notice = applied.message;
+            if (applied.accepted) {
+                state.home_preview_open = false;
+            }
+            return;
+        }
+        return;
+    }
+
     if (update_active_library(state.session, state.locations, state.notice, logical_mouse)) {
         return;
     }
@@ -896,9 +990,8 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 return;
             }
             if (location == Location::home) {
-                const auto result = state.session.home_rest_result();
-                const auto applied = state.session.apply_action_result(result);
-                state.notice = applied.message;
+                state.home_preview_open = true;
+                state.notice = "已回到家中；确认休息后才会消耗夜晚阶段。";
                 return;
             }
             if (location == Location::tavern) {
@@ -984,7 +1077,8 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
                     const Texture2D& town_marker,
                     const Texture2D& kenney_tiles, const Texture2D& generated_full_map_scene,
                     const Texture2D& generated_map_background,
-                    const Texture2D& generated_buildings, const GameAppState& state,
+                    const Texture2D& generated_buildings,
+                    const SceneVisualAssets& scene_assets, const GameAppState& state,
                     bool audio_enabled, bool paused, Vector2 logical_mouse) {
     if (!state.has_session) {
         draw_title(font, title_background, state, logical_mouse);
@@ -994,8 +1088,24 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
         return;
     }
 
+    if (state.home_preview_open) {
+        draw_home_preview(font, scene_assets.home_interior, state, audio_enabled,
+                          logical_mouse);
+        if (state.collision_debug_visible) {
+            draw_collision_debug(Location::home);
+        }
+        if (paused) {
+            draw_pause_overlay(font, audio_enabled);
+        }
+        return;
+    }
+
     if (state.locations.in_library && state.locations.library_engine) {
-        draw_active_library(font, state.locations, logical_mouse);
+        draw_active_library(font, state.locations, logical_mouse,
+                            scene_assets.library_interior);
+        if (state.collision_debug_visible) {
+            draw_collision_debug(Location::library);
+        }
         if (!audio_enabled) {
             text(font, "静音", 586, 10, 18, Color{255, 208, 166, 255});
         }
@@ -1012,7 +1122,10 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
                  logical_mouse);
     } else if (state.session.phase() == GamePhase::day_location ||
                state.session.phase() == GamePhase::night_location) {
-        draw_location(font, state, audio_enabled, logical_mouse);
+        draw_location(font, state, audio_enabled, logical_mouse, scene_assets);
+        if (state.collision_debug_visible) {
+            draw_collision_debug(state.session.pending_location());
+        }
     } else if (state.session.phase() == GamePhase::day_summary) {
         draw_summary(font, state, audio_enabled, logical_mouse);
     } else {

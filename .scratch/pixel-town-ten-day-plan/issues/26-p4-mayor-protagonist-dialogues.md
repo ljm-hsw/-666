@@ -1,6 +1,6 @@
 # P4：接入镇长与主角生命周期对话
 
-Status: ready-for-agent
+Status: needs-info
 Milestone: P4
 Type: AFK
 User stories: 1, 7, 9, 10, 28, 42, 57, 58
@@ -35,3 +35,5 @@ User stories: 1, 7, 9, 10, 28, 42, 57, 58
 ## Comments
 
 <!-- 在此行下方追加实现与验证记录。 -->
+
+- 2026-07-11：按用户决定随 Issue 24-28 一并暂缓，先完成三地点视觉素材生产和人工拼接。用户明确恢复后改回 `ready-for-agent`；生命周期对话范围和 v1 存档边界不变。

@@ -177,6 +177,20 @@ void draw_library_walls(const LibraryRenderConfig& config) {
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(80), wall_color);
 }
 
+void draw_library_backdrop(const LibraryRenderConfig& config) {
+    ClearBackground(Color{221, 211, 174, 255});
+    if (config.background.id == 0) {
+        return;
+    }
+    DrawTexturePro(
+        config.background,
+        Rectangle{0.0F, 0.0F, static_cast<float>(config.background.width),
+                  static_cast<float>(config.background.height)},
+        Rectangle{0.0F, 0.0F, scaled(static_cast<float>(config.logical_width)),
+                  scaled(static_cast<float>(config.logical_height))},
+        Vector2{0.0F, 0.0F}, 0.0F, WHITE);
+}
+
 void draw_scene_element(const SceneElement& element) {
     const Vector2 pos = scaled_point(element.position);
     const float w = scaled(element.width);
@@ -352,20 +366,23 @@ void draw_transition_effect(float progress, const LibraryRenderConfig& config) {
 }
 
 void draw_intro_screen(const LibraryRuleEngine& engine, const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
-    ClearBackground(Color{221, 211, 174, 255});
+    draw_library_backdrop(config);
 
-    DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height), slate);
+    DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height),
+                  config.background.id == 0 ? slate : Color{37, 50, 57, 78});
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
 
-    draw_pixel_bookshelf(30, 80, 160, 120);
-    draw_pixel_bookshelf(220, 80, 200, 140);
-    draw_pixel_bookshelf(450, 80, 160, 120);
+    if (config.background.id == 0) {
+        draw_pixel_bookshelf(30, 80, 160, 120);
+        draw_pixel_bookshelf(220, 80, 200, 140);
+        draw_pixel_bookshelf(450, 80, 160, 120);
 
-    DrawRectangle(scaled(300), scaled(100), scaled(40), scaled(80), Color{139, 90, 43, 255});
-    DrawRectangle(scaled(295), scaled(175), scaled(50), scaled(10), Color{100, 60, 30, 255});
-    DrawCircle(scaled(320), scaled(115), scaled(12), Color{255, 220, 180, 255});
+        DrawRectangle(scaled(300), scaled(100), scaled(40), scaled(80), Color{139, 90, 43, 255});
+        DrawRectangle(scaled(295), scaled(175), scaled(50), scaled(10), Color{100, 60, 30, 255});
+        DrawCircle(scaled(320), scaled(115), scaled(12), Color{255, 220, 180, 255});
+    }
 
     panel(Rectangle{50, 202, 540, 104}, paper);
     
@@ -390,20 +407,23 @@ void draw_intro_screen(const LibraryRuleEngine& engine, const LibraryRenderConfi
 }
 
 void draw_npc_talk_screen(const LibraryRuleEngine& engine, const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
-    ClearBackground(Color{221, 211, 174, 255});
+    draw_library_backdrop(config);
 
-    DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height), slate);
+    DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height),
+                  config.background.id == 0 ? slate : Color{37, 50, 57, 78});
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
 
-    draw_pixel_bookshelf(30, 80, 160, 120);
-    draw_pixel_bookshelf(220, 80, 200, 140);
-    draw_pixel_bookshelf(450, 80, 160, 120);
+    if (config.background.id == 0) {
+        draw_pixel_bookshelf(30, 80, 160, 120);
+        draw_pixel_bookshelf(220, 80, 200, 140);
+        draw_pixel_bookshelf(450, 80, 160, 120);
 
-    DrawRectangle(scaled(300), scaled(100), scaled(40), scaled(80), Color{139, 90, 43, 255});
-    DrawRectangle(scaled(295), scaled(175), scaled(50), scaled(10), Color{100, 60, 30, 255});
-    DrawCircle(scaled(320), scaled(115), scaled(12), Color{255, 220, 180, 255});
+        DrawRectangle(scaled(300), scaled(100), scaled(40), scaled(80), Color{139, 90, 43, 255});
+        DrawRectangle(scaled(295), scaled(175), scaled(50), scaled(10), Color{100, 60, 30, 255});
+        DrawCircle(scaled(320), scaled(115), scaled(12), Color{255, 220, 180, 255});
+    }
 
     const auto& interaction = engine.get_npc_interaction();
     const std::string& dialogue = interaction.current_dialogue.empty() ? engine.get_dialogue().introduction : interaction.current_dialogue;
@@ -427,15 +447,17 @@ void draw_npc_talk_screen(const LibraryRuleEngine& engine, const LibraryRenderCo
 }
 
 void draw_plot_event_screen(const LibraryRuleEngine& engine, const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
-    ClearBackground(Color{221, 211, 174, 255});
+    draw_library_backdrop(config);
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height), slate);
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
 
-    draw_pixel_bookshelf(30, 80, 160, 120);
-    draw_pixel_bookshelf(450, 80, 160, 120);
+    if (config.background.id == 0) {
+        draw_pixel_bookshelf(30, 80, 160, 120);
+        draw_pixel_bookshelf(450, 80, 160, 120);
+    }
 
     const auto& interaction = engine.get_npc_interaction();
     
@@ -461,15 +483,17 @@ void draw_plot_event_screen(const LibraryRuleEngine& engine, const LibraryRender
 }
 
 void draw_map_reveal_screen(const LibraryRuleEngine& engine, const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
-    ClearBackground(Color{221, 211, 174, 255});
+    draw_library_backdrop(config);
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height), slate);
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
 
-    draw_pixel_bookshelf(30, 80, 160, 120);
-    draw_pixel_bookshelf(450, 80, 160, 120);
+    if (config.background.id == 0) {
+        draw_pixel_bookshelf(30, 80, 160, 120);
+        draw_pixel_bookshelf(450, 80, 160, 120);
+    }
 
     panel(Rectangle{50, 80, 540, 180}, Color{240, 230, 210, 255});
     DrawRectangle(scaled(70), scaled(100), scaled(500), scaled(140), Color{255, 250, 240, 255});
@@ -511,7 +535,7 @@ void draw_map_reveal_screen(const LibraryRuleEngine& engine, const LibraryRender
 
 void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState& ui_state,
                            const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
-    ClearBackground(Color{221, 211, 174, 255});
+    draw_library_backdrop(config);
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
@@ -588,7 +612,7 @@ void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState
 void draw_feedback_screen(const LibraryRuleEngine& /*engine*/, const LibraryUIState& ui_state,
                           const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
     (void)logical_mouse;
-    ClearBackground(Color{221, 211, 174, 255});
+    draw_library_backdrop(config);
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
@@ -623,7 +647,7 @@ void draw_feedback_screen(const LibraryRuleEngine& /*engine*/, const LibraryUISt
 }
 
 void draw_summary_screen(const ActionResult& result, const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
-    ClearBackground(Color{221, 211, 174, 255});
+    draw_library_backdrop(config);
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(60), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
@@ -695,11 +719,14 @@ void draw_library_room_scene(const LibraryScene& scene, const LibraryUIState& ui
         logical_mouse.x / ::pixel_town::ui::design_to_canvas_scale,
         logical_mouse.y / ::pixel_town::ui::design_to_canvas_scale};
 
-    draw_library_floor(render_config);
-    draw_library_walls(render_config);
+    draw_library_backdrop(render_config);
+    if (render_config.background.id == 0) {
+        draw_library_floor(render_config);
+        draw_library_walls(render_config);
 
-    for (const auto& element : scene.get_elements()) {
-        draw_scene_element(element);
+        for (const auto& element : scene.get_elements()) {
+            draw_scene_element(element);
+        }
     }
 
     const auto& npc_states = scene.get_npc_manager().get_npc_states();

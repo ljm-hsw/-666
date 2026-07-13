@@ -492,13 +492,14 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
 }
 
 void draw_active_library(const Font& font, const LocationRuntimeState& runtime,
-                         Vector2 logical_mouse) {
+                         Vector2 logical_mouse, const Texture2D& background) {
     if (!runtime.in_library || !runtime.library_engine) {
         return;
     }
     library::ui::LibraryRenderConfig render_config;
     render_config.logical_width = 640;
     render_config.logical_height = 360;
+    render_config.background = background;
     library::ui::draw_library_scene(*runtime.library_engine, runtime.library_ui_state,
                                     runtime.library_scene, render_config, font, logical_mouse);
 }

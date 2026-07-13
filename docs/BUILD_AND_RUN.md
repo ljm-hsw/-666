@@ -128,7 +128,7 @@ Release：
 .\build\Debug\pixel_town.exe --capture-prototype
 ```
 
-生成餐馆、便利店、图书馆和酒馆地点 UI 诊断截图：
+生成餐馆、家、便利店、图书馆和酒馆地点 UI 诊断截图（包含三张室内碰撞覆盖图）：
 
 ```powershell
 .\build\Debug\pixel_town.exe --capture-ui-diagnostics
@@ -219,7 +219,7 @@ ctest --test-dir build --output-on-failure
 ./build/pixel_town --capture-prototype
 ```
 
-生成餐馆、便利店、图书馆和酒馆地点 UI 诊断截图：
+生成餐馆、家、便利店、图书馆和酒馆地点 UI 诊断截图（包含三张室内碰撞覆盖图）：
 
 ```bash
 ./build/pixel_town --capture-ui-diagnostics
@@ -243,6 +243,7 @@ ctest --test-dir build --output-on-failure
 | 开始 / 完成地点模拟 | `Space` |
 | 暂停 / 继续 | `P` |
 | 切换全局静音 | `M` |
+| 显示 / 隐藏已登记场景碰撞箱 | `F3` |
 
 鼠标是主要操作方式。窗口缩放使用整数倍显示，黑边区域点击不会触发控件。
 

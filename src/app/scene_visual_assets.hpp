@@ -1,0 +1,20 @@
+#pragma once
+
+#include <raylib.h>
+
+#include "core/game_session.hpp"
+
+namespace pixel_town {
+
+struct SceneVisualAssets {
+    Texture2D restaurant_interior{};
+    Texture2D home_interior{};
+    Texture2D library_interior{};
+};
+
+void load_scene_visual_assets(SceneVisualAssets& assets);
+void unload_scene_visual_assets(SceneVisualAssets& assets);
+[[nodiscard]] const Texture2D& scene_interior_texture(
+    const SceneVisualAssets& assets, Location location);
+
+}  // namespace pixel_town

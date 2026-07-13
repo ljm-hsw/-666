@@ -9,6 +9,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(pixel_town_core
   src/core/ending_rules.cpp
   src/core/game_session.cpp
+  src/core/scene_collision.cpp
+  src/core/story_dialogue.cpp
   src/core/story_text.cpp
   src/core/tavern_rules.cpp
 )
@@ -42,6 +44,7 @@ target_include_directories(pixel_town_locations PUBLIC "${CMAKE_CURRENT_SOURCE_D
 target_link_libraries(pixel_town_locations PUBLIC pixel_town_core)
 
 add_library(pixel_town_tavern_logic
+  src/app/dialogue_runtime.cpp
   src/app/tavern_layout.cpp
   src/app/tavern_runtime.cpp
 )
@@ -60,6 +63,7 @@ add_library(pixel_town_app_logic
   src/app/location_result_adapter.cpp
   src/app/location_runtime.cpp
   src/app/restaurant_ui_model.cpp
+  src/app/scene_visual_assets.cpp
   src/app/tavern_view.cpp
   src/app/ui_primitives.cpp
 )
@@ -78,6 +82,7 @@ target_compile_definitions(pixel_town PRIVATE PIXEL_TOWN_VERSION="${PROJECT_VERS
 enable_testing()
 
 add_executable(pixel_town_tests
+  tests/dialogue_runtime_test.cpp
   tests/display_config_test.cpp
   tests/ending_rules_test.cpp
   tests/gomoku_rules_test.cpp
@@ -89,6 +94,7 @@ add_executable(pixel_town_tests
   tests/location_result_adapter_test.cpp
   tests/location_runtime_test.cpp
   tests/restaurant_ui_model_test.cpp
+  tests/scene_collision_test.cpp
   tests/app_settings_test.cpp
   tests/convenience_store_test.cpp
   tests/resource_diagnostics_test.cpp

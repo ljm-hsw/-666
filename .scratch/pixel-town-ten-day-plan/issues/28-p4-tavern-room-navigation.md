@@ -1,6 +1,6 @@
 # P4：接入酒馆室内移动、静态碰撞与常客轨迹
 
-Status: ready-for-agent
+Status: needs-info
 Milestone: P4
 Type: AFK
 User stories: 29, 30, 32, 54, 57, 58, 71, 72
@@ -35,3 +35,5 @@ User stories: 29, 30, 32, 54, 57, 58, 71, 72
 ## Comments
 
 <!-- 在此行下方追加实现与验证记录。 -->
+
+- 2026-07-11：暂缓实施，等待酒馆人工拼接稿、阻挡物清单、碰撞审查图和互动坐标草案获得人工确认。满足 `docs/SCENE_ASSET_PRODUCTION_PLAN.md` 恢复门槛且 Issue 27 恢复后，再改回 `ready-for-agent`。

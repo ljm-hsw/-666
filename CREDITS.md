@@ -1,5 +1,16 @@
 # 第三方资源署名
 
+## 团队提供的餐馆、家与图书馆场景候选
+
+- 接入日期：2026-07-13
+- 来源：团队成员提供的人工合成 PNG；仓库内源图位于 [`assets/art_sources/manual_composites/`](assets/art_sources/manual_composites/)
+- 运行时路径：[`assets/textures/ui/restaurant/restaurant_interior.png`](assets/textures/ui/restaurant/restaurant_interior.png)、[`assets/textures/ui/home/home_interior.png`](assets/textures/ui/home/home_interior.png)、[`assets/textures/ui/library/library_interior.png`](assets/textures/ui/library/library_interior.png)
+- 处理：垂直居中裁切；餐馆和家使用最近邻放大到 960×540；图书馆裁为 960×540
+- 完整尺寸、SHA-256 与转换记录：[`assets/art_sources/manual_composites/README.md`](assets/art_sources/manual_composites/README.md)
+- 许可状态：组成素材的作者、来源与许可证尚未随图片提供；当前仅作为内部开发和教学演示候选，不作商业可用结论
+
+进入最终发布包前，必须补齐三张合成稿所用素材的来源与许可，或替换为许可证明确的项目自制/imagegen 资源。本节记录的是接入事实，不是第三方授权声明。
+
 ## Fusion Pixel Font
 
 - 名称：Fusion Pixel Font 12px Proportional zh_hans

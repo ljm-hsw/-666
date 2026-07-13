@@ -17,8 +17,8 @@ TavernLayout tavern_layout() {
     layout.high_bet_button = TavernRect{390, 210, 96, 30};
     layout.start_button = TavernRect{154, 270, 154, 38};
     layout.cancel_button = TavernRect{332, 270, 154, 38};
-    layout.dialog_panel = TavernRect{100, 224, 440, 122};
-    layout.dialog_close_button = TavernRect{456, 306, 64, 28};
+    layout.dialog_panel = TavernRect{76, 188, 488, 158};
+    layout.dialog_close_button = TavernRect{458, 308, 86, 28};
     layout.gomoku_board_x = 78.0F;
     layout.gomoku_board_y = 66.0F;
     layout.gomoku_cell_size = 18.0F;

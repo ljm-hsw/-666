@@ -62,6 +62,7 @@ inline void advance_from_intro(LibraryUIState& ui_state) {
 struct LibraryRenderConfig {
     int logical_width{640};
     int logical_height{360};
+    Texture2D background{};
 };
 
 void draw_library_scene(const LibraryRuleEngine& engine, const LibraryUIState& ui_state,

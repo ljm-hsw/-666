@@ -25,6 +25,7 @@ constexpr unsigned long MAX_PATH_W = 260;
 #endif
 
 #include "app/game_flow.hpp"
+#include "app/tavern_layout.hpp"
 #include "app/visual_prototype.hpp"
 #include "core/display_config.hpp"
 #include "core/interaction_runtime.hpp"
@@ -255,8 +256,28 @@ void setup_library_diagnostic(pixel_town::GameAppState& state,
     state.notice = "诊断：图书馆页面。";
 }
 
+void setup_home_diagnostic(pixel_town::GameAppState& state) {
+    state = pixel_town::GameAppState{};
+    state.has_session = true;
+    state.session = pixel_town::GameSession::new_game(20260713U);
+    (void)state.session.enter_location(pixel_town::Location::restaurant);
+    const auto result_id = state.session.start_location();
+    pixel_town::ActionResult day_result;
+    day_result.result_id = result_id;
+    day_result.slot = pixel_town::ActionSlot::day;
+    day_result.location = pixel_town::Location::restaurant;
+    day_result.outcome = pixel_town::ActionOutcome::completed;
+    day_result.summary = "诊断截图快速推进白天行动。";
+    (void)state.session.apply_action_result(day_result);
+    state.home_preview_open = true;
+    state.collision_debug_visible = true;
+    state.notice = "诊断：家的场景与碰撞箱。";
+}
+
 void setup_tavern_diagnostic(pixel_town::GameAppState& state,
-                             pixel_town::TavernScreen screen) {
+                             pixel_town::TavernScreen screen,
+                             int dialogue_line = 0,
+                             bool missing_bartender = false) {
     pixel_town::unload_tavern_assets(state.locations.tavern_assets);
     state = pixel_town::GameAppState{};
     state.has_session = true;
@@ -272,7 +293,28 @@ void setup_tavern_diagnostic(pixel_town::GameAppState& state,
     (void)state.session.apply_action_result(day_result);
     (void)state.locations.tavern.open(state.session);
     pixel_town::ensure_tavern_assets_loaded(state.locations.tavern_assets);
-    if (screen != pixel_town::TavernScreen::lobby) {
+    if (screen == pixel_town::TavernScreen::npc_dialog) {
+        const auto layout = pixel_town::tavern_layout();
+        pixel_town::TavernFrameInput input;
+        input.pointer = pixel_town::TavernCanvasPoint{
+            (layout.npc_hotspot.x + layout.npc_hotspot.width * 0.5F) *
+                pixel_town::ui::design_to_canvas_scale,
+            (layout.npc_hotspot.y + layout.npc_hotspot.height * 0.5F) *
+                pixel_town::ui::design_to_canvas_scale,
+            true};
+        input.primary_pressed = true;
+        (void)state.locations.tavern.step(state.session, input);
+        for (int line = 0; line < dialogue_line; ++line) {
+            input = {};
+            input.enter_pressed = true;
+            (void)state.locations.tavern.step(state.session, input);
+        }
+        if (missing_bartender &&
+            state.locations.tavern_assets.bartender_sheet.id != 0) {
+            UnloadTexture(state.locations.tavern_assets.bartender_sheet);
+            state.locations.tavern_assets.bartender_sheet = {};
+        }
+    } else if (screen != pixel_town::TavernScreen::lobby) {
         pixel_town::TavernFrameInput input;
         input.space_pressed = true;
         (void)state.locations.tavern.step(state.session, input);
@@ -328,8 +370,33 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
         case 11:
             setup_tavern_diagnostic(state, pixel_town::TavernScreen::gomoku);
             break;
-        default:
+        case 12:
             setup_tavern_diagnostic(state, pixel_town::TavernScreen::liars_dice);
+            break;
+        case 13:
+            setup_tavern_diagnostic(state, pixel_town::TavernScreen::npc_dialog);
+            break;
+        case 14:
+            setup_tavern_diagnostic(state, pixel_town::TavernScreen::npc_dialog, 1);
+            break;
+        case 15:
+            setup_tavern_diagnostic(state, pixel_town::TavernScreen::npc_dialog, 2);
+            break;
+        case 16:
+            setup_tavern_diagnostic(state, pixel_town::TavernScreen::npc_dialog, 0,
+                                    true);
+            break;
+        case 17:
+            setup_restaurant_diagnostic(state, false);
+            state.collision_debug_visible = true;
+            break;
+        case 18:
+            setup_home_diagnostic(state);
+            break;
+        default:
+            setup_library_diagnostic(
+                state, pixel_town::library::ui::LibrarySceneState::room_view);
+            state.collision_debug_visible = true;
             break;
     }
 }
@@ -453,6 +520,7 @@ int main(int argc, char* argv[]) {
     Texture2D generated_full_map_scene{};
     Texture2D generated_map_background{};
     Texture2D generated_buildings{};
+    pixel_town::SceneVisualAssets scene_assets;
     const std::array<std::filesystem::path, 2> kenney_tiles_paths{
         "assets/textures/kenney_tiny_town/Tilemap/tilemap_packed.png",
         "assets/textures/kenney_tiny_farm/Tilemap/tilemap_packed.png",
@@ -500,6 +568,7 @@ int main(int argc, char* argv[]) {
                 SetTextureFilter(generated_buildings, TEXTURE_FILTER_POINT);
             }
         }
+        pixel_town::load_scene_visual_assets(scene_assets);
     }
 
     pixel_town::VisualPrototypeState prototype;
@@ -575,7 +644,7 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 13> ui_diagnostic_capture_paths{
+    const std::array<const char*, 20> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/store-prepare.png",
@@ -589,9 +658,17 @@ int main(int argc, char* argv[]) {
         "ui-diagnostics-captures/tavern-selection.png",
         "ui-diagnostics-captures/tavern-gomoku.png",
         "ui-diagnostics-captures/tavern-liars-dice.png",
+        "ui-diagnostics-captures/tavern-dialogue-first.png",
+        "ui-diagnostics-captures/tavern-dialogue-middle.png",
+        "ui-diagnostics-captures/tavern-dialogue-last.png",
+        "ui-diagnostics-captures/tavern-dialogue-fallback.png",
+        "ui-diagnostics-captures/restaurant-colliders.png",
+        "ui-diagnostics-captures/home-colliders.png",
+        "ui-diagnostics-captures/library-colliders.png",
     };
     auto unload_resources = [&]() {
         pixel_town::unload_tavern_assets(game_flow.locations.tavern_assets);
+        pixel_town::unload_scene_visual_assets(scene_assets);
         if (town_marker.id != 0) {
             UnloadTexture(town_marker);
         }
@@ -626,7 +703,7 @@ int main(int argc, char* argv[]) {
                 BeginTextureMode(canvas);
                 pixel_town::draw_game_flow(ui_font, title_background, town_marker, kenney_tiles,
                                            generated_full_map_scene, generated_map_background,
-                                           generated_buildings, game_flow,
+                                           generated_buildings, scene_assets, game_flow,
                                            resources.audio_enabled && !interaction_runtime.muted(),
                                            false, Vector2{-1.0F, -1.0F});
                 EndTextureMode();
@@ -714,7 +791,7 @@ int main(int argc, char* argv[]) {
             } else {
                 pixel_town::draw_game_flow(ui_font, title_background, town_marker, kenney_tiles,
                                            generated_full_map_scene, generated_map_background,
-                                           generated_buildings, game_flow, audio_enabled,
+                                           generated_buildings, scene_assets, game_flow, audio_enabled,
                                            interaction_runtime.paused(), logical_mouse);
             }
         } else {

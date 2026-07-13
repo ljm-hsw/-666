@@ -182,19 +182,63 @@ void draw_selection(const Font& font, const TavernPresentation& presentation,
     centered_text(font, "返回大厅", layout.cancel_button, 15, ink);
 }
 
-void draw_npc_dialog(const Font& font, Vector2 mouse) {
+void draw_dialog_character(const TavernPresentation& presentation,
+                           const TavernVisualAssets& assets,
+                           const DialoguePresentation& dialogue) {
+    const Rectangle slot{92, 208, 54, 92};
+    panel(slot, Color{239, 220, 182, 255}, Color{157, 111, 72, 255});
+    const Rectangle destination = scaled_rect(Rectangle{94, 214, 50, 78});
+    if (dialogue.speaker == "酒保" && assets.bartender_sheet.id != 0) {
+        const int frame = static_cast<int>(presentation.bartender_animation_seconds /
+                                           bartender_frame_duration) %
+                          bartender_frame_count;
+        const Rectangle source{static_cast<float>(frame * bartender_frame_width), 0.0F,
+                               static_cast<float>(bartender_frame_width),
+                               static_cast<float>(bartender_frame_height)};
+        DrawTexturePro(assets.bartender_sheet, source, destination, Vector2{0, 0},
+                       0.0F, WHITE);
+        return;
+    }
+    const Color coat = dialogue.speaker == "主角" ? green : tavern_dark;
+    DrawCircleV(Vector2{destination.x + destination.width * 0.5F,
+                        destination.y + destination.height * 0.24F},
+                destination.width * 0.18F, Color{222, 188, 146, 255});
+    DrawRectangleRec(Rectangle{destination.x + destination.width * 0.24F,
+                               destination.y + destination.height * 0.4F,
+                               destination.width * 0.52F,
+                               destination.height * 0.48F},
+                     coat);
+}
+
+void draw_npc_dialog(const Font& font, const TavernPresentation& presentation,
+                     const TavernVisualAssets& assets, Vector2 mouse) {
     draw_dim_overlay();
     const TavernLayout layout = tavern_layout();
     panel(layout.dialog_panel, cream);
-    text(font, "酒保", 120, 238, 18, red);
-    text(font, "欢迎来到像素小镇酒馆。今晚想坐在哪张桌边？", 120, 266, 14,
-         ink);
-    text(font, "左边是五子棋，右边是骗子骰子；选好玩法和赌注再开始。", 120,
-         290, 13, muted_text);
+    if (!presentation.dialogue.has_value()) {
+        text(font, "对话暂时不可用。", 160, 236, 14, red);
+        return;
+    }
+    const DialoguePresentation& dialogue = *presentation.dialogue;
+    draw_dialog_character(presentation, assets, dialogue);
+    text(font, dialogue.speaker, 160, 202, 18, red);
+    const std::string progress = std::to_string(dialogue.current_line) + " / " +
+                                 std::to_string(dialogue.total_lines);
+    text(font, progress, 486, 204, 12, muted_text);
+    const auto lines = wrap_text_lines(dialogue.text, 24, 3);
+    for (std::size_t index = 0; index < lines.size(); ++index) {
+        text(font, lines[index], 160, 236 + static_cast<float>(index) * 22.0F, 14,
+             ink);
+    }
+    text(font, "Enter / Space / 点击继续 · Esc 跳过", 160, 316, 12,
+         muted_text);
     panel(layout.dialog_close_button,
           hovered(layout.dialog_close_button, mouse) ? paper
                                                       : Color{215, 204, 180, 255});
-    centered_text(font, "关闭", layout.dialog_close_button, 13, ink);
+    const char* button_label = dialogue.current_line == dialogue.total_lines
+                                   ? "关闭"
+                                   : "下一句";
+    centered_text(font, button_label, layout.dialog_close_button, 13, ink);
 }
 
 float board_point(int index, float origin, float cell_size) {
@@ -441,7 +485,7 @@ void draw_tavern_view(const Font& font, const TavernPresentation& presentation,
             break;
         case TavernScreen::npc_dialog:
             draw_lobby(font, presentation, assets, logical_mouse);
-            draw_npc_dialog(font, logical_mouse);
+            draw_npc_dialog(font, presentation, assets, logical_mouse);
             break;
         case TavernScreen::gomoku:
             draw_gomoku(font, presentation, logical_mouse);

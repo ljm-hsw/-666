@@ -14,6 +14,8 @@
 
 人物小人、主角/NPC 线性对话、统一对话框和图书馆/酒馆室内导航的占位接口与 P4 实施顺序见 [`CHARACTER_DIALOGUE_PLAN.md`](CHARACTER_DIALOGUE_PLAN.md)。首轮允许 32×32 单帧或四方向占位小人；基础功能稳定后再由 Issue 17 替换最终角色资产。
 
+酒馆、图书馆和便利店的当前主体生产方式是 imagegen 分件加人工拼接，而不是直接采用一次生成的完整房间。分件批次、原始图归档、chroma-key 去背、合成 manifest、碰撞交接和恢复 Issue 门槛见 [`SCENE_ASSET_PRODUCTION_PLAN.md`](SCENE_ASSET_PRODUCTION_PLAN.md)。
+
 ## 现在适合使用 imagegen 的内容
 
 P1/P2 初期可以生成并归档以下候选资产，用于统一风格参考和后续替换：
@@ -85,6 +87,7 @@ P4 由展示/美术集成负责人统一处理：
 - 检查 960×540 下中文可读性。
 - 更新 `CREDITS.md`、资源 hash、许可证和素材来源记录。
 - 记录人工视觉、可读性、音频和教程验收结论。
+- 保留三地点人工拼接的 runtime candidate、review PNG、composition manifest 和被选中分件来源。
 
 ## 验收口径
 

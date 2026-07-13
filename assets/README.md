@@ -11,6 +11,7 @@ P0 基线包含资源诊断与视觉原型所需的最小资源：
 - `textures/imagegen_backgrounds/title_screen_background.png`：使用内置 imagegen 生成并处理得到的 P1 标题/进入页背景，当前已接入运行时。该资源未获得最终美术批准。
 - `textures/imagegen_backgrounds/town_map_full_scene.png`：使用内置 imagegen 生成并处理得到的 P1 地图页完整场景背景，当前已接入运行时。该资源未获得最终美术批准。
 - `textures/ui/tavern/`：P3 酒馆大厅与酒保 NPC 候选素材。大厅仅获非商业项目使用许可，不能视为最终可商用资源；完整条款和哈希见模块说明与根目录 `CREDITS.md`。
+- `textures/ui/restaurant/restaurant_interior.png`、`textures/ui/home/home_interior.png`、`textures/ui/library/library_interior.png`：团队提供的室内场景合成稿经裁切/最近邻处理后的 960×540 运行时候选；源图、哈希和授权边界见 `art_sources/manual_composites/README.md`。
 - `data/baseline.txt`：启动数据标记，用于证明数据资源验证路径。
 - `audio/theme.ogg`：可选路径，P0 默认不提供；缺失时记录诊断并静音继续。
 
