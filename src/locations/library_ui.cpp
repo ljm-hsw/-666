@@ -459,15 +459,21 @@ void draw_intro_screen(const LibraryRuleEngine& engine, const LibraryRenderConfi
     DrawRectangle(scaled(295), scaled(175), scaled(50), scaled(10), Color{100, 60, 30, 255});
     DrawCircle(scaled(320), scaled(115), scaled(12), Color{255, 220, 180, 255});
 
-    panel(Rectangle{50, 230, 540, 110}, paper);
+    panel(Rectangle{50, 180, 540, 180}, paper);
     
     const std::string& welcome = engine.get_data().welcome_message.empty() ? engine.get_dialogue().greeting : engine.get_data().welcome_message;
-    text(font, welcome, 70, 245, 20, ink);
-    
-    const std::string& intro = engine.get_data().work_intro.empty() ? "图书馆来了一批新书需要整理，你需要把地上的书放到正确的书架上" : engine.get_data().work_intro;
-    draw_text_wrapped(font, intro, 70, 272, 500, 22, 14, ink);
+    text(font, welcome, 70, 195, 20, ink);
 
-    const int btn_y = 320;
+    text(font, "📚 游戏目标", 70, 220, 18, gold);
+    draw_text_wrapped(font, "整理图书馆的书籍，把散落在地上的书放到正确的书架上，同时找出并修正放错位置的书籍。", 70, 242, 500, 22, 14, ink);
+
+    text(font, "🎮 操作说明", 70, 275, 18, gold);
+    text(font, "1. 点击地上闪烁的书捡起它", 70, 297, 14, ink);
+    text(font, "2. 点击书架将书放上去（正确的书架会显示绿色✓）", 70, 315, 14, ink);
+    text(font, "3. 点击书架上的感叹号查看放错的书", 70, 333, 14, ink);
+    text(font, "4. 放完所有书后完成工作", 70, 351, 14, ink);
+
+    const int btn_y = 380;
     const int btn_w = 200;
     const int btn_h = 40;
     const int btn_x = config.logical_width / 2 - btn_w / 2;
@@ -769,9 +775,16 @@ void draw_organizing_screen(const LibraryRuleEngine& engine, const LibraryUIStat
         float title_x = bounds.x + (bounds.width - title_width) / 2.0F;
         DrawTextEx(font, current_book.title.c_str(), Vector2{title_x, bounds.y - 22.0F}, 14.0F, 1.0F, ink);
         
+        int pulse_frame = static_cast<int>(GetTime() * 8.0F) % 4;
+        if (pulse_frame < 2) {
+            unsigned char alpha = static_cast<unsigned char>(150 + pulse_frame * 50);
+            DrawRectangleLinesEx(Rectangle{bounds.x - 4, bounds.y - 4, bounds.width + 8, bounds.height + 8}, 2.0F, Color{224, 169, 74, alpha});
+        }
+        
+        text(font, "→ 点击捡起", bounds.x + (bounds.width - 60) / 2, bounds.y + bounds.height + 5, 11, gold);
+        
         if (hovered) {
             DrawRectangleLinesEx(Rectangle{bounds.x - 3, bounds.y - 3, bounds.width + 6, bounds.height + 6}, 2.0F, gold);
-            text(font, "点击捡起", bounds.x + (bounds.width - 48) / 2, bounds.y + bounds.height + 8, 10, faded_ink);
         }
     }
 
@@ -813,7 +826,19 @@ void draw_organizing_screen(const LibraryRuleEngine& engine, const LibraryUIStat
         }
     }
 
-    text(font, "点击地上的书捡起，点击书架放置，点击感叹号查看错放书籍", 10, config.logical_height - 20, 10, faded_ink);
+    if (!session.scattered_books.empty() && session.current_scattered_index < static_cast<int>(session.scattered_books.size())) {
+        text(font, "📖 当前目标：将「" + session.scattered_books[session.current_scattered_index].title + "」放到正确的书架", 10, config.logical_height - 35, 11, ink);
+    } else if (!session.misplaced_books.empty()) {
+        text(font, "🔍 当前目标：点击感叹号查看并修正放错的书籍", 10, config.logical_height - 35, 11, ink);
+    } else {
+        text(font, "🎉 所有书籍已整理完毕！", 10, config.logical_height - 35, 11, gold);
+    }
+    
+    if (engine.is_holding_book()) {
+        text(font, "🖱️ 点击书架放置书籍（绿色=正确，红色=错误）", 10, config.logical_height - 20, 10, faded_ink);
+    } else {
+        text(font, "🖱️ 点击地上的书捡起，点击感叹号查看错放书籍", 10, config.logical_height - 20, 10, faded_ink);
+    }
     text(font, "按 ESC 放弃工作", config.logical_width - 100, config.logical_height - 20, 10, Color{128, 128, 128, 255});
 }
 
