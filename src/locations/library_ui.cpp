@@ -746,8 +746,13 @@ void draw_organizing_screen(const LibraryRuleEngine& engine, const LibraryUIStat
             if (book.current_shelf_id == shelves[i].id) {
                 float exclamation_x = x + shelf_w / 2.0F;
                 float exclamation_y = y + layouts[i].height / 2.0F;
-                DrawCircle(exclamation_x, exclamation_y, 8.0F, Color{183, 83, 72, 255});
-                DrawTextEx(font, "!", Vector2{exclamation_x - 4.0F, exclamation_y - 8.0F}, 16.0F, 1.0F, WHITE);
+                
+                int pulse_frame = static_cast<int>(GetTime() * 6.0F) % 4;
+                float pulse_scale = pulse_frame < 2 ? 1.0F : 0.85F;
+                float radius = 12.0F * pulse_scale;
+                
+                DrawCircle(exclamation_x, exclamation_y, radius, Color{183, 83, 72, 255});
+                DrawTextEx(font, "!", Vector2{exclamation_x - 6.0F, exclamation_y - 12.0F}, 24.0F, 1.0F, WHITE);
 
                 if (ui_state.highlighted_misplaced == book.id) {
                     float tooltip_w = 120.0F;
