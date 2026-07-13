@@ -849,7 +849,9 @@ void draw_feedback_screen(const LibraryRuleEngine& engine, const LibraryUIState&
     const char* feedback_text = ui_state.last_answer_correct ? "放置正确！" : "放错了";
     
     panel(Rectangle{config.logical_width / 2.0F - 140.0F, 100.0F, 280.0F, 120.0F}, ui_state.last_answer_correct ? Color{230, 245, 230, 255} : Color{245, 230, 230, 255});
-    text(font, feedback_text, config.logical_width / 2 - 70, 130, 32, feedback_color);
+    
+    float feedback_width = MeasureTextEx(font, feedback_text, 32.0F, 1.0F).x;
+    text(font, feedback_text, config.logical_width / 2 - feedback_width / 2, 130, 32, feedback_color);
 
     const auto& feedback = ui_state.feedback_data;
     
