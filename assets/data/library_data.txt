@@ -1,0 +1,93 @@
+WELCOME 欢迎来到小镇图书馆
+WORK_INTRO 图书馆今天需要整理书籍。地上散落着一些书需要分类上架，有些书架上还放错了书需要纠正。点击地上的书捡起，再点击正确的书架放置。
+
+CATEGORY history:历史
+CATEGORY_DESC 记录人类文明发展历程的书籍
+CATEGORY science:科学
+CATEGORY_DESC 探索自然规律和宇宙奥秘的知识
+CATEGORY literature:文学
+CATEGORY_DESC 人类情感与想象力的艺术表达
+CATEGORY art:艺术
+CATEGORY_DESC 视觉与听觉的美学创造
+CATEGORY technology:技术
+CATEGORY_DESC 人类智慧与工具的结合
+CATEGORY geography:地理
+CATEGORY_DESC 地球表面与人文环境的探索
+
+SHELF history:历史书架
+SHELF science:科学书架
+SHELF literature:文学书架
+SHELF art:艺术书架
+SHELF technology:技术书架
+SHELF geography:地理书架
+
+BOOK history:秦始皇传
+BOOK history:三国风云
+BOOK history:世界通史
+BOOK history:中国历史
+BOOK history:古代文明
+BOOK history:近代史
+
+BOOK science:物理奥秘
+BOOK science:化学探索
+BOOK science:宇宙探索
+BOOK science:数学原理
+BOOK science:天文观测
+BOOK science:生命科学
+
+BOOK literature:红楼梦
+BOOK literature:唐诗宋词
+BOOK literature:三国演义
+BOOK literature:水浒传
+BOOK literature:西游记
+BOOK literature:聊斋志异
+
+BOOK art:名画鉴赏
+BOOK art:书法入门
+BOOK art:音乐史话
+BOOK art:雕塑艺术
+BOOK art:建筑美学
+BOOK art:摄影艺术
+
+BOOK technology:计算机基础
+BOOK technology:网络技术
+BOOK technology:编程入门
+BOOK technology:人工智能
+BOOK technology:软件工程
+BOOK technology:数据分析
+
+BOOK geography:世界地图集
+BOOK geography:中国地理
+BOOK geography:自然奇观
+BOOK geography:城市规划
+BOOK geography:气候环境
+BOOK geography:旅游指南
+
+SCATTERED 物理奥秘:200,400
+SCATTERED 红楼梦:350,420
+
+MISPLACED 唐诗宋词:shelf_history
+MISPLACED 物理奥秘:shelf_literature
+
+DIALOGUE_GREETING 欢迎来到小镇图书馆。
+DIALOGUE_INTRO 地上有散落的书需要整理到对应的书架上，书架上也可能有错放的书需要纠正。按类别放对就行。
+DIALOGUE_FAMILIAR 窗台晒着借书卡，今天适合把书页翻慢一点。你想看那本旧的吗？
+DIALOGUE_MAP 借书卡盒子有点卡。管理员敲了两下，掉出一张旧集市地图。"以前这里很热闹的。地图边缘有摊位标记，你可以先看看。"
+DIALOGUE_BORROW 借书卡盒子里多了几张新记录。管理员把旧地图收回去前，指了指边上的空白处："以后可以把今年的事也写上去。"
+DIALOGUE_CLOSE_FRIEND 管理员递给你一杯热茶。窗外的梧桐树影落在书页上，今天的图书馆格外安静。
+DIALOGUE_WORK_ASSIGN 今天有一批书需要整理上架，还有几本放错了位置需要纠正。辛苦你了。
+DIALOGUE_WORK_COMPLETE 今天的整理工作完成了，谢谢你的帮忙。
+DIALOGUE_WORK_PRAISE 你整理得又快又好，真是帮了大忙！
+DIALOGUE_WORK_CRITICIZE 有些书放错了位置，下次要注意分类哦。
+
+PLOT_EVENT first_discovery:旧地图的秘密
+PLOT_DESC 借书卡盒子里藏着一张旧集市地图，地图边缘有模糊的摊位标记。管理员说这是几十年前的东西了。
+PLOT_REQUIREMENT 2:30
+
+PLOT_EVENT borrow_card:借书卡的印记
+PLOT_DESC 你帮孩子找到了考试要用的书，借书卡又多盖了一个章。管理员说以后可以把今年的事也写上去。
+PLOT_REQUIREMENT 5:50
+
+PLOT_EVENT close_friend:图书馆的守护者
+PLOT_DESC 管理员终于向你敞开了心扉。原来他守护这座图书馆已经三十年了，那些泛黄的书页里藏着小镇的记忆。
+PLOT_REQUIREMENT 8:80

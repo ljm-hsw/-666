@@ -444,6 +444,14 @@ void draw_location(const Font& font, const GameAppState& state, Vector2 mouse) {
         return;
     }
 
+    if (state.in_library && state.library_engine) {
+        library::ui::LibraryRenderConfig render_config;
+        render_config.logical_width = 960;
+        render_config.logical_height = 540;
+        library::ui::draw_library_scene(*state.library_engine, state.library_ui_state, state.library_scene, render_config, font, mouse);
+        return;
+    }
+
     panel(Rectangle{96, 78, 448, 210}, cream);
     text(font, location_label(location), 126, 106, 30, red);
     text(font,
@@ -517,7 +525,7 @@ const char* game_flow_glyphs() {
     static const std::string glyphs = [] {
         std::string result =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 "
-            "·/：，。；“”+-:?!().";
+            "·/：，。；“”‘’+-！？《》【】、———（）「」『』℃°:?!().";
         for (const char* value : ui_texts) {
             result += value;
         }
@@ -537,7 +545,62 @@ const char* game_flow_glyphs() {
             "已选择按空格开始！（，）"
             "你的回合点击棋盘落子电脑思考中你赢了按Esc返回你输了平局"
             "五子棋开始返回将放弃本局并消耗阶段思考"
+            "历史科学文学艺术技术地理生物人类登月光速红楼梦蒙娜丽莎计算机海洋DNA四大发明牛顿莎士"
+            "比亚梵高互联网赤道光合作用第二次世界大战回答正确回答错误正确答案继续答题结算声望"
+            "欢迎来到小镇图书馆读者会提出各种问题你需要从书架上找到正确的书籍类别来回答答对可获"
+            "得知识和声望奖励连续答对还有额外奖励开始工作选择书籍类别按ESC放弃工作正确答案是继续下"
+            "一题图书馆工作完成体力金钱知识声望心情按任意键继续公里每秒作者是谁作品基本组成部分最大"
+            "全称四大发明运动定律包含多少部戏剧最著名的前身叫什么名字周长大约是主要发生在部位结束于"
+            "借书卡盒子敲掉窗台晒摊位标记盖章指空白翻递街边缘旧集市地图管理员今年事写上去孩子考试"
+            "人类第一次登月是在哪一年这是1969年的历史性事件光速大约是多少公里每秒大约每秒30万公里"
+            "离开了图书馆什么也没做在图书馆工作了一天答对答错最高连续答对题获得金币表现出色表现不错"
+            "还需要继续努力帮孩子找到了考试要用的书又多盖了一个章旧地图递给你说可以先看看不急着还"
+            "书页翻动的声音很轻窗外的街也慢下来盒子里多了几张新记录收回去前指了指边上的空白处"
+            "说以后可以把今年的事也写上去递给你一杯热茶梧桐树影落在书页上今天的图书馆格外安静"
+            "管理员说点击对话像素小镇科学类历史类文学类艺术类技术类地理类生物类人类类"
+            "秦始皇传三国风云世界通史物理奥秘化学探索宇宙探索红楼梦唐诗宋词三国演义名画鉴赏书法入门"
+            "音乐史话计算机基础网络技术编程入门世界地图集中国地理自然奇观植物图鉴动物世界人体奥秘"
+            "历史书架科学书架文学书架艺术书架技术书架地理书架生物书架整理纠错连续正确放这里不对"
             "酒保五子棋桌骗子骰子桌玩法选择选择挑战策略对弈与对局"
+            "记录人类文明发展历程的书籍探索自然规律和宇宙奥秘的知识"
+            "人类情感与想象力的艺术表达视觉与听觉的美学创造"
+            "人类智慧与工具的结合地球表面与人文环境的探索生命科学与自然生态"
+            "欢迎来到小镇图书馆地上有散落的书需要整理到对应的书架上书架上也可能有错放的书需要纠正按类别放对就行"
+            "窗台晒着借书卡今天适合把书页翻慢一点你想看那本旧的吗"
+            "借书卡盒子有点卡管理员敲了两下掉出一张旧集市地图以前这里很热闹的地图边缘有摊位标记你可以先看看"
+            "借书卡盒子里多了几张新记录管理员把旧地图收回去前指了指边上的空白处以后可以把今年的事也写上去"
+            "管理员递给你一杯热茶窗外的梧桐树影落在书页上今天的图书馆格外安静"
+            "今天有一批书需要整理上架还有几本放错了位置需要纠正辛苦你了"
+            "今天的整理工作完成了谢谢你的帮忙你整理得又快又好真是帮了大忙有些书放错了位置下次要注意分类哦"
+            "旧地图的秘密借书卡盒子里藏着一张旧集市地图地图边缘有模糊的摊位标记管理员说这是几十年前的东西了"
+            "借书卡的印记你帮孩子找到了考试要用的书借书卡又多盖了一个章管理员说以后可以把今年的事也写上去"
+            "图书馆的守护者管理员终于向你敞开了心扉原来他守护这座图书馆已经三十年了那些泛黄的书页里藏着小镇的记忆"
+            "阿波罗曹雪芹达芬奇牛顿莎士比亚梵高张择端罗贯中蒲松龄吴敬梓"
+            "造纸术印刷术火药指南针三大运动定律梅兰竹菊"
+            "细胞膜细胞质细胞核遗传变异进化生态系统食物链"
+            "春夏秋冬东南西北前后左右上下里外中间旁边附近远处近处"
+            "第一第二第三第四第五第六第七第八第九第十"
+            "个只本张篇首部首章节段落行字词句篇"
+            "红黄蓝绿紫黑白灰棕橙粉红米黄深绿浅蓝"
+            "大小多少长短高低远近快慢轻重新旧好坏美丑"
+            "真假是非对错有无能否会不会能不能行不行"
+            "今天明天昨天前天后天每天每天都每周每月每年"
+            "早上中午晚上下午上午夜晚白天凌晨黄昏黎明"
+            "春夏秋冬四季春夏秋冬季节气候天气温度湿度"
+            "山川河流湖泊海洋森林草原沙漠岛屿城市乡村"
+            "爷爷奶奶爸爸妈妈兄弟姐妹亲戚朋友同学同事老师学生"
+            "医生护士警察消防员工程师程序员设计师画家音乐家"
+            "吃饭睡觉工作学习休息玩游戏看电影听音乐读书写字"
+            "走路跑步游泳骑车开车坐飞机坐船爬山徒步"
+            "酸甜苦辣咸香臭腥鲜淡浓油腻清淡苦涩甘甜"
+            "高兴伤心生气害怕惊喜失望担心紧张放松兴奋难过"
+            "喜欢讨厌爱恨想念忘记记得知道明白理解糊涂"
+            "开始结束继续暂停停止重复开始继续暂停停止"
+            "进来出去上来下去过来过去回来离开上去下来"
+            "因为所以如果但是虽然而且或者还是不是就是"
+            "什么怎么哪里谁为什么哪多少几什么样怎么了"
+            "的了和是在有也就要都还就又而再被把从到"
+            "会能可以应该必须需要想打算计划准备正在已经曾经"
             "运气博弈看穿谎言开始挑战返回大厅关闭点击或Esc牌桌"
             "欢迎来到像素小镇酒馆想试试手气吗左边是右边选好玩法后告诉我"
             "骗子骰子电脑你的骰子尚无叫点当前叫点个数点数叫点质疑确认结算"
@@ -569,6 +632,33 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             state.save_present = true;
             state.confirm_new_game_overwrite = false;
             state.notice = "第 1 天开始：请选择一个白天工作地点。";
+        }
+        return;
+    }
+
+    if (state.in_library && state.library_engine) {
+        library::ui::LibraryRenderConfig render_config;
+        render_config.logical_width = 960;
+        render_config.logical_height = 540;
+        library::ui::update_library_ui(*state.library_engine, state.library_ui_state, state.library_scene);
+        bool exit_library = library::ui::handle_library_input(*state.library_engine, state.library_ui_state, state.library_scene, render_config, logical_mouse);
+        if (exit_library && state.library_ui_state.scene_state == library::ui::LibrarySceneState::summary) {
+            auto result = state.library_engine->finish_session();
+            ActionResult game_result;
+            game_result.result_id = 0;
+            game_result.slot = state.session.phase() == GamePhase::day_location ? ActionSlot::day : ActionSlot::night;
+            game_result.location = Location::library;
+            game_result.outcome = result.gave_up ? ActionOutcome::abandoned : ActionOutcome::completed;
+            game_result.delta.money = result.money_change;
+            game_result.delta.stamina = result.stamina_change;
+            game_result.delta.reputation = result.reputation_change;
+            game_result.delta.knowledge = result.knowledge_change;
+            game_result.delta.mood = result.mood_change;
+            game_result.summary = result.summary;
+            [[maybe_unused]] auto applied = state.session.apply_action_result(game_result);
+            state.in_library = false;
+            state.library_ui_state = library::ui::LibraryUIState{};
+            state.notice = result.summary;
         }
         return;
     }
@@ -644,7 +734,36 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 }
                 return;
             }
-            if (activated(start_button_location, logical_mouse, KEY_SPACE)) {
+            if (state.session.pending_location() == Location::library) {
+                if (activated(start_button_location, logical_mouse, KEY_SPACE)) {
+                    static bool library_loaded = false;
+                    if (!library_loaded) {
+                        auto result = library::load_library_data("assets/data/library_data.txt");
+                        if (result.success) {
+                            state.library_data = std::move(result.data);
+                            auto config = library::default_library_config();
+                            state.library_engine = new library::LibraryRuleEngine(state.library_data, config);
+                            library_loaded = true;
+                        }
+                    }
+                    if (state.library_engine) {
+                        state.library_visits++;
+                        library::DailyContext context;
+                        context.day = state.session.day();
+                        context.random_seed = static_cast<uint64_t>(state.session.day()) * 100000 + 
+                                              static_cast<uint64_t>(state.session.phase() == GamePhase::day_location ? 0 : 1) * 10000 +
+                                              static_cast<uint64_t>(state.library_visits) * 100 +
+                                              static_cast<uint64_t>(GetRandomValue(0, 99));
+                        context.library_visits = state.library_visits;
+                        state.library_engine->start_session(context);
+                        state.library_engine->update_npc_relationship(state.session.player().knowledge, state.library_visits);
+                        state.library_ui_state = library::ui::LibraryUIState{};
+                        state.library_ui_state.scene_state = library::ui::LibrarySceneState::organizing;
+                        state.in_library = true;
+                    }
+                    return;
+                }
+            } else if (activated(start_button_location, logical_mouse, KEY_SPACE)) {
                 if (state.session.start_location() != 0) {
                     state.notice = "地点已开始：完成或放弃都会消耗本阶段。";
                 }

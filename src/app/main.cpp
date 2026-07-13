@@ -11,7 +11,15 @@
 
 #ifdef _WIN32
 #define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#define NOGDI
+#define NOUSER
 #include <windows.h>
+#undef NOUSER
+#undef NOGDI
+extern "C" {
+    WINUSERAPI DWORD WINAPI GetModuleFileNameW(HMODULE hModule, LPWSTR lpFilename, DWORD nSize);
+}
 #elif defined(__APPLE__)
 #include <mach-o/dyld.h>
 #elif defined(__linux__)

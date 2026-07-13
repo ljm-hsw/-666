@@ -34,6 +34,10 @@ add_executable(pixel_town
   src/app/main.cpp
   src/app/tavern_ui.cpp
   src/app/visual_prototype.cpp
+  src/locations/library_data.cpp
+  src/locations/library_rules.cpp
+  src/locations/library_scene.cpp
+  src/locations/library_ui.cpp
 )
 target_link_libraries(pixel_town PRIVATE pixel_town_io raylib)
 target_compile_definitions(pixel_town PRIVATE PIXEL_TOWN_VERSION="${PROJECT_VERSION}")

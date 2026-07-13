@@ -7,6 +7,9 @@
 #include "core/game_session.hpp"
 #include "core/tavern_rules.hpp"
 #include "app/tavern_ui.hpp"
+#include "locations/library_data.hpp"
+#include "locations/library_rules.hpp"
+#include "locations/library_ui.hpp"
 
 namespace pixel_town {
 
@@ -18,6 +21,12 @@ struct GameAppState {
     std::string notice{"点击\"新游戏\"开始第一天。"};
     TavernUiState tavern_ui{};
     TavernUiAssets tavern_assets{};
+    library::LibraryData library_data{};
+    library::LibraryRuleEngine* library_engine{nullptr};
+    library::LibraryScene library_scene{};
+    library::ui::LibraryUIState library_ui_state{};
+    bool in_library{false};
+    int library_visits{0};
 };
 
 [[nodiscard]] const char* game_flow_glyphs();
