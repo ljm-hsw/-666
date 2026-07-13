@@ -850,8 +850,11 @@ void draw_feedback_screen(const LibraryRuleEngine& engine, const LibraryUIState&
     
     panel(Rectangle{config.logical_width / 2.0F - 140.0F, 100.0F, 280.0F, 120.0F}, ui_state.last_answer_correct ? Color{230, 245, 230, 255} : Color{245, 230, 230, 255});
     
-    float feedback_width = MeasureTextEx(font, feedback_text, 32.0F, 1.0F).x;
-    text(font, feedback_text, config.logical_width / 2 - feedback_width / 2, 130, 32, feedback_color);
+    float font_size = scaled_font_size(32.0F);
+    float feedback_width = MeasureTextEx(font, feedback_text, font_size, 1.0F).x;
+    float text_x = scaled(config.logical_width) / 2.0F - feedback_width / 2.0F;
+    float text_y = scaled(130.0F);
+    DrawTextEx(font, feedback_text, Vector2{text_x, text_y}, font_size, 1.0F, feedback_color);
 
     const auto& feedback = ui_state.feedback_data;
     
