@@ -20,7 +20,7 @@ constexpr int shelf_row1_design_y = 80;
 constexpr int shelf_row_gap = 15;
 
 constexpr int book_design_w = 50;
-constexpr int book_design_h = 12;
+constexpr int book_design_h = 40;
 constexpr int book_grid_unit = 20;
 constexpr int book_grid_offset_x = 40;
 constexpr int book_grid_offset_y = 120;
@@ -776,7 +776,7 @@ void draw_organizing_screen(const LibraryRuleEngine& engine, const LibraryUIStat
         int pulse_frame = static_cast<int>(GetTime() * 8.0F) % 4;
         if (pulse_frame < 2) {
             unsigned char alpha = static_cast<unsigned char>(150 + pulse_frame * 50);
-            DrawRectangleLinesEx(Rectangle{bounds.x - 25, bounds.y - 6, bounds.width + 50, bounds.height + 12}, 3.0F, Color{224, 169, 74, alpha});
+            DrawRectangleLinesEx(Rectangle{bounds.x - 5, bounds.y - 5, bounds.width + 10, bounds.height + 10}, 3.0F, Color{224, 169, 74, alpha});
         }
         
         float title_width = MeasureTextEx(font, current_book.title.c_str(), 16.0F, 1.0F).x;
