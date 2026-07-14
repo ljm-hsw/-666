@@ -42,6 +42,20 @@ void load_scene_visual_assets(SceneVisualAssets& assets) {
         assets.library_interior =
             load_optional_texture("assets/textures/ui/library/library_interior.png");
     }
+    constexpr std::array<const char*, 6> organizing_book_paths = {
+        "assets/textures/ui/library/organizing_books/history.png",
+        "assets/textures/ui/library/organizing_books/science.png",
+        "assets/textures/ui/library/organizing_books/literature.png",
+        "assets/textures/ui/library/organizing_books/art.png",
+        "assets/textures/ui/library/organizing_books/technology.png",
+        "assets/textures/ui/library/organizing_books/geography.png",
+    };
+    for (std::size_t index = 0; index < organizing_book_paths.size(); ++index) {
+        if (assets.library_organizing_books[index].id == 0) {
+            assets.library_organizing_books[index] =
+                load_optional_texture(organizing_book_paths[index]);
+        }
+    }
 }
 
 void unload_scene_visual_assets(SceneVisualAssets& assets) {
@@ -49,6 +63,9 @@ void unload_scene_visual_assets(SceneVisualAssets& assets) {
     unload_texture(assets.convenience_store_interior);
     unload_texture(assets.home_interior);
     unload_texture(assets.library_interior);
+    for (auto& texture : assets.library_organizing_books) {
+        unload_texture(texture);
+    }
 }
 
 const Texture2D& scene_interior_texture(const SceneVisualAssets& assets,

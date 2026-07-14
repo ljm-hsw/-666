@@ -11,6 +11,17 @@
 
 进入最终发布包前，必须补齐五张合成稿所用素材的来源与许可，或替换为许可证明确的项目自制/imagegen 资源。本节记录的是接入事实，不是第三方授权声明。
 
+## Imagegen 图书馆整理书本候选
+
+- 生成方式：内置 imagegen，使用仓库已批准的 C 风格板生成图书馆小型道具 sheet，再经仓库脚本去背和独立分件裁切
+- 生成日期：2026-07-11；运行时接入日期：2026-07-14
+- 源分件：`assets/art_sources/imagegen/scene_kits/library/pieces/props/library_props_piece_001_candidate_v01.png` 至 `library_props_piece_006_candidate_v01.png`
+- 运行时路径：`assets/textures/ui/library/organizing_books/`
+- 分类映射和逐文件 SHA-256：[`assets/textures/ui/library/organizing_books/README.md`](assets/textures/ui/library/organizing_books/README.md)
+- 生成、透明处理与裁切记录：[`assets/art_sources/imagegen/scene_kits/component_batch_c_manifest.md`](assets/art_sources/imagegen/scene_kits/component_batch_c_manifest.md)
+
+这六张书堆用于图书馆整理模式的散落书、错架书和手持槽显示，不包含第三方素材声明。它们仍是项目自制候选美术，最终交付前需完成人工视觉验收。
+
 ## Fusion Pixel Font
 
 - 名称：Fusion Pixel Font 12px Proportional zh_hans

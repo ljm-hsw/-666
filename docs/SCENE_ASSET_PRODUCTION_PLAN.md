@@ -90,7 +90,7 @@ Prompt 中的 960×540 是最终构图目标，不假设内置工具必然直接
 
 首轮获批方向分件先收敛为每个地点各 3 张：建筑结构、主要家具、小型道具，共 9 张。建筑结构 sheet 承接墙段、转角、地板样片、门和窗；它们替代原计划中“先生成完整空房壳”的第一轮探索，完整空房壳延后到人工挑选分件之后作为合成验证稿。这样可以先检查素材是否真的可拆、可重复拼接，再消耗调用生成整屋候选。
 
-上述 9 张分件已完成生成、去背和首轮检查。原图、透明候选、哈希、透明度检查和联系表记录在 [`../assets/art_sources/imagegen/scene_kits/component_batch_c_manifest.md`](../assets/art_sources/imagegen/scene_kits/component_batch_c_manifest.md)。它们仍停留在 `assets/art_sources/`，尚未进入运行时资源目录。
+上述 9 张分件已完成生成、去背和首轮检查。原图、透明候选、哈希、透明度检查和联系表记录在 [`../assets/art_sources/imagegen/scene_kits/component_batch_c_manifest.md`](../assets/art_sources/imagegen/scene_kits/component_batch_c_manifest.md)。除 2026-07-14 为图书馆整理模式挑选并复制到 `assets/textures/ui/library/organizing_books/` 的六组分类书堆外，其余分件仍停留在 `assets/art_sources/`，尚未进入运行时资源目录。
 
 9 张透明 sheet 已进一步裁切为 204 张带 4 像素安全边的独立 RGBA PNG，并保留源坐标、尺寸与 SHA-256 清单。该步骤只形成可供人工挑选的源分件；在完成语义命名、比例统一和场景拼接之前，不把编号文件直接复制到运行时目录。
 
@@ -246,6 +246,7 @@ assets/textures/ui/
 - 高书架、矮书架、借阅台、阅读桌和墙体属于阻挡物；后续增加书架时必须同步更新碰撞数据。
 - 旧地图、借书卡盒和书车是叙事道具，但不能遮挡分类题目和反馈面板。
 - 书脊不得生成可读乱码；使用抽象色条和像素块。
+- 整理模式的散落书和错架书使用独立透明 PNG，不烘焙进背景。当前六种分类书堆分别映射历史、科学、文学、艺术、技术和地理；显示层以最近邻缩放放入独立拾取热区，底部手持槽和书架归位热区保持为程序状态。
 
 ### 便利店
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include <raylib.h>
 
 #include "core/game_session.hpp"
@@ -11,6 +13,7 @@ struct SceneVisualAssets {
     Texture2D convenience_store_interior{};
     Texture2D home_interior{};
     Texture2D library_interior{};
+    std::array<Texture2D, 6> library_organizing_books{};
 };
 
 void load_scene_visual_assets(SceneVisualAssets& assets);

@@ -584,7 +584,8 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
 }
 
 void draw_active_library(const Font& font, const LocationRuntimeState& runtime,
-                         Vector2 logical_mouse, const Texture2D& background) {
+                         Vector2 logical_mouse, const Texture2D& background,
+                         const std::array<Texture2D, 6>& organizing_book_textures) {
     if (!runtime.in_library) {
         return;
     }
@@ -595,7 +596,7 @@ void draw_active_library(const Font& font, const LocationRuntimeState& runtime,
     if (runtime.library_mode == LibraryWorkMode::book_organizing &&
         runtime.library_organizing) {
         library::ui::draw_library_organizing(
-            font, background, *runtime.library_organizing,
+            font, background, organizing_book_textures, *runtime.library_organizing,
             runtime.library_organizing_ui_state, logical_mouse);
         return;
     }

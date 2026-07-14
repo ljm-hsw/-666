@@ -2,7 +2,7 @@
 
 生成日期：2026-07-11。
 
-本批次使用内置 imagegen，以 `style_boards/style_board_c_source.png` 为唯一视觉参考，共执行 9 次独立生成。完整提示词见 [`component_batch_c_prompts.md`](component_batch_c_prompts.md)。所有文件仍是候选源素材，不在运行时加载。
+本批次使用内置 imagegen，以 `style_boards/style_board_c_source.png` 为唯一视觉参考，共执行 9 次独立生成。完整提示词见 [`component_batch_c_prompts.md`](component_batch_c_prompts.md)。原始 sheet 和绝大多数分件仍是候选源素材；2026-07-14 仅将图书馆道具 `piece_001` 至 `piece_006` 以语义名称复制到 `assets/textures/ui/library/organizing_books/`，供书籍整理模式运行时加载。
 
 ## 原始生成图
 

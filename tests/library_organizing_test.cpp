@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include "locations/library_organizing.hpp"
+#include "locations/library_organizing_ui.hpp"
 
 TEST_CASE("library organizing lets the player shelve a scattered book correctly") {
     using namespace pixel_town::library;
@@ -25,6 +26,69 @@ TEST_CASE("library organizing lets the player shelve a scattered book correctly"
     CHECK(placed.status == OrganizingActionStatus::accepted);
     CHECK(session.state().completed_count == 1);
     CHECK(session.is_completed());
+}
+
+TEST_CASE("library organizing UI finishes immediately after the final correct shelf") {
+    using namespace pixel_town::library;
+    using namespace pixel_town::library::ui;
+
+    const std::vector<OrganizingShelf> shelves = {
+        {"shelf_science", "science", "科学书架", 620, 80, 80, 90},
+    };
+    const std::vector<OrganizingBookTask> tasks = {
+        {"book_physics", "物理奥秘", "science", OrganizingBookSource::scattered,
+         "", 280, 400},
+    };
+    LibraryOrganizingSession session(tasks, shelves, default_organizing_config());
+    OrganizingUIState ui_state;
+    session.start(12345);
+    REQUIRE(session.pick_up("book_physics").status == OrganizingActionStatus::accepted);
+
+    const auto exit_action = place_held_book(session, ui_state, "shelf_science");
+
+    CHECK(exit_action == OrganizingExitAction::finish);
+    CHECK(session.is_completed());
+    CHECK(ui_state.feedback == "分类正确，全部书籍已归位，正在结算。");
+}
+
+TEST_CASE("library organizing UI keeps running after a wrong shelf") {
+    using namespace pixel_town::library;
+    using namespace pixel_town::library::ui;
+
+    const std::vector<OrganizingShelf> shelves = {
+        {"shelf_history", "history", "历史书架", 500, 80, 80, 90},
+        {"shelf_science", "science", "科学书架", 620, 80, 80, 90},
+    };
+    const std::vector<OrganizingBookTask> tasks = {
+        {"book_physics", "物理奥秘", "science", OrganizingBookSource::scattered,
+         "", 280, 400},
+    };
+    LibraryOrganizingSession session(tasks, shelves, default_organizing_config());
+    OrganizingUIState ui_state;
+    session.start(12345);
+    REQUIRE(session.pick_up("book_physics").status == OrganizingActionStatus::accepted);
+
+    CHECK(place_held_book(session, ui_state, "shelf_history") ==
+          OrganizingExitAction::none);
+    CHECK(session.state().held_book_id == "book_physics");
+    CHECK(ui_state.feedback == "分类不匹配，请换一个书架。");
+}
+
+TEST_CASE("library organizing UI reserves separate pickup and held-book spaces") {
+    using namespace pixel_town::library;
+    using namespace pixel_town::library::ui;
+
+    const OrganizingBookTask task{
+        "book_physics", "物理奥秘", "science", OrganizingBookSource::scattered,
+        "", 280, 400};
+    const Rectangle pickup = organizing_book_hitbox(task);
+    const Rectangle held = organizing_held_book_slot();
+
+    CHECK(pickup.width >= 56.0F);
+    CHECK(pickup.height >= 44.0F);
+    CHECK(held.width >= 120.0F);
+    CHECK(held.height >= 50.0F);
+    CHECK(pickup.y + pickup.height < held.y);
 }
 
 TEST_CASE("library organizing keeps a book in hand after a wrong shelf so the player can retry") {

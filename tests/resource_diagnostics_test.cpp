@@ -96,6 +96,18 @@ TEST_CASE("production baseline manifest keeps the startup resource contract") {
                  false);
     require_spec("textures/ui/home/home_interior.png", ResourceKind::texture, false);
     require_spec("textures/ui/library/library_interior.png", ResourceKind::texture, false);
+    require_spec("textures/ui/library/organizing_books/history.png",
+                 ResourceKind::texture, false);
+    require_spec("textures/ui/library/organizing_books/science.png",
+                 ResourceKind::texture, false);
+    require_spec("textures/ui/library/organizing_books/literature.png",
+                 ResourceKind::texture, false);
+    require_spec("textures/ui/library/organizing_books/art.png",
+                 ResourceKind::texture, false);
+    require_spec("textures/ui/library/organizing_books/technology.png",
+                 ResourceKind::texture, false);
+    require_spec("textures/ui/library/organizing_books/geography.png",
+                 ResourceKind::texture, false);
     require_spec("data/baseline.txt", ResourceKind::data, true);
     require_spec("audio/theme.ogg", ResourceKind::audio, false);
 }
