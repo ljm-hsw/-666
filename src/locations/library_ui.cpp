@@ -20,7 +20,7 @@ constexpr int shelf_row1_design_y = 80;
 constexpr int shelf_row_gap = 15;
 
 constexpr int book_design_w = 50;
-constexpr int book_design_h = 40;
+constexpr int book_design_h = 45;
 constexpr int book_grid_unit = 20;
 constexpr int book_grid_offset_x = 40;
 constexpr int book_grid_offset_y = 120;
@@ -848,12 +848,14 @@ void draw_feedback_screen(const LibraryRuleEngine& engine, const LibraryUIState&
     const Color feedback_color = ui_state.last_answer_correct ? correct_color : wrong_color;
     const char* feedback_text = ui_state.last_answer_correct ? "放置正确！" : "放错了";
     
-    panel(Rectangle{config.logical_width / 2.0F - 140.0F, 100.0F, 280.0F, 120.0F}, ui_state.last_answer_correct ? Color{230, 245, 230, 255} : Color{245, 230, 230, 255});
+    Rectangle panel_rect = Rectangle{config.logical_width / 2.0F - 140.0F, 100.0F, 280.0F, 120.0F};
+    panel(panel_rect, ui_state.last_answer_correct ? Color{230, 245, 230, 255} : Color{245, 230, 230, 255});
     
     float font_size = scaled_font_size(32.0F);
     float feedback_width = MeasureTextEx(font, feedback_text, font_size, 1.0F).x;
-    float text_x = scaled(config.logical_width) / 2.0F - feedback_width / 2.0F;
-    float text_y = scaled(130.0F);
+    float panel_center_x = scaled(panel_rect.x) + scaled(panel_rect.width) / 2.0F;
+    float text_x = panel_center_x - feedback_width / 2.0F;
+    float text_y = scaled(panel_rect.y + 30.0F);
     DrawTextEx(font, feedback_text, Vector2{text_x, text_y}, font_size, 1.0F, feedback_color);
 
     const auto& feedback = ui_state.feedback_data;
