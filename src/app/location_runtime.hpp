@@ -9,6 +9,7 @@
 
 #include "app/library_runtime.hpp"
 #include "app/library_room_runtime.hpp"
+#include "app/npc_lobby_runtime.hpp"
 #include "core/game_session.hpp"
 #include "app/tavern_runtime.hpp"
 #include "app/tavern_view.hpp"
@@ -48,6 +49,7 @@ struct LocationRuntimeState {
     store::PricePlan store_price_plan;
     int store_selected_product_index{0};
     std::string store_feedback;
+    NpcLobbyRuntime npc_lobby;
     LibraryRoomRuntime library_room;
     LibraryRuntime library;
     library::ui::LibraryUIState library_ui_state;
@@ -87,6 +89,9 @@ void update_store_selection(LocationRuntimeState& runtime, const GameSession& se
 [[nodiscard]] LibraryRoomStepResult step_library_room(
     GameSession& session, LocationRuntimeState& runtime,
     const LibraryRoomInput& input, std::string& notice);
+[[nodiscard]] NpcLobbyStepResult step_restaurant_lobby(
+    GameSession& session, LocationRuntimeState& runtime,
+    const NpcLobbyInput& input, std::string& notice);
 [[nodiscard]] bool update_active_library(GameSession& session,
                                           LocationRuntimeState& runtime,
                                           std::string& notice,

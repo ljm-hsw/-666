@@ -48,6 +48,7 @@ target_link_libraries(pixel_town_locations PUBLIC pixel_town_core)
 add_library(pixel_town_dialogue_logic
   src/app/dialogue_runtime.cpp
   src/app/library_room_runtime.cpp
+  src/app/npc_lobby_runtime.cpp
 )
 target_include_directories(pixel_town_dialogue_logic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(pixel_town_dialogue_logic PUBLIC pixel_town_core)
@@ -105,6 +106,7 @@ add_executable(pixel_town_tests
   tests/location_result_adapter_test.cpp
   tests/location_lobby_test.cpp
   tests/location_runtime_test.cpp
+  tests/npc_lobby_runtime_test.cpp
   tests/library_room_runtime_test.cpp
   tests/library_runtime_test.cpp
   tests/restaurant_ui_model_test.cpp

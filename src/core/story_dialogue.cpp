@@ -15,9 +15,18 @@ const DialogueScript bartender_intro{
 const DialogueScript library_administrator_intro{
     DialogueTrigger::library_administrator_intro,
     {
-        {"管理员", "欢迎来到图书馆。先在房间里走走，别碰到书架。"},
+        {"管理员", "欢迎来到图书馆。书架按类别排好，先听听读者需要什么。"},
         {"主角", "我想帮点忙。今天有什么需要处理的？"},
         {"管理员", "可以帮读者找书，也可以把散落的书整理归位。"},
+    },
+};
+
+const DialogueScript restaurant_owner_intro{
+    DialogueTrigger::restaurant_owner_intro,
+    {
+        {"餐馆老板", "围裙在门边。先看清订单，忙起来也别端错桌。"},
+        {"主角", "明白。我先记菜名和桌号，再把每份餐送稳。"},
+        {"餐馆老板", "好。客人等得起一句招呼，订单可等不起发呆。"},
     },
 };
 
@@ -29,6 +38,8 @@ const DialogueScript* StoryDialogueCatalog::find(DialogueTrigger trigger) const 
             return &bartender_intro;
         case DialogueTrigger::library_administrator_intro:
             return &library_administrator_intro;
+        case DialogueTrigger::restaurant_owner_intro:
+            return &restaurant_owner_intro;
     }
     return nullptr;
 }
@@ -40,6 +51,10 @@ std::string StoryDialogueCatalog::glyphs() const {
         result += line.text;
     }
     for (const auto& line : library_administrator_intro.lines) {
+        result += line.speaker;
+        result += line.text;
+    }
+    for (const auto& line : restaurant_owner_intro.lines) {
         result += line.speaker;
         result += line.text;
     }

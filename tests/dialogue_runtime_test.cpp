@@ -82,3 +82,22 @@ TEST_CASE("library administrator dialogue is available from the shared catalog")
         CHECK(glyphs.find(line.text) != std::string::npos);
     }
 }
+
+TEST_CASE("restaurant owner dialogue extends the existing main story") {
+    const pixel_town::StoryDialogueCatalog catalog;
+    const auto* script =
+        catalog.find(pixel_town::DialogueTrigger::restaurant_owner_intro);
+
+    REQUIRE(script != nullptr);
+    REQUIRE(script->lines.size() == 3);
+    CHECK(script->lines.front().speaker == "餐馆老板");
+    CHECK(script->lines[1].speaker == "主角");
+    CHECK(script->lines.front().text.find("围裙") != std::string::npos);
+    CHECK(script->lines.back().text.find("订单") != std::string::npos);
+
+    const std::string glyphs = catalog.glyphs();
+    for (const auto& line : script->lines) {
+        CHECK(glyphs.find(line.speaker) != std::string::npos);
+        CHECK(glyphs.find(line.text) != std::string::npos);
+    }
+}

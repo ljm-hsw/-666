@@ -847,6 +847,10 @@ void draw_collision_debug(Location location) {
                          Color{80, 170, 255, 255});
 }
 
+void draw_npc_dialogue(const Font& font,
+                       const DialoguePresentation& dialogue,
+                       Vector2 mouse);
+
 void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets,
                          const GameAppState& state, bool audio_enabled,
                          Vector2 mouse) {
@@ -873,13 +877,22 @@ void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets
 
     const Rectangle npc_hotspot =
         scene_design_rectangle(lobby_rectangle(spec->npc_hotspot));
-    const bool npc_hovered = hovered(npc_hotspot, mouse);
+    const NpcLobbyPresentation npc_lobby =
+        location == Location::restaurant
+            ? state.locations.npc_lobby.presentation()
+            : NpcLobbyPresentation{};
+    const bool dialogue_active = npc_lobby.dialogue.has_value();
+    const bool npc_hovered = !dialogue_active && hovered(npc_hotspot, mouse);
     if (npc_hovered) {
         DrawRectangleRec(scaled_rect(npc_hotspot), Color{255, 224, 154, 55});
         DrawRectangleLinesEx(scaled_rect(npc_hotspot), 3.0F, gold);
     }
     const float npc_center_x = npc_hotspot.x + npc_hotspot.width * 0.5F;
-    const float npc_base_y = npc_hotspot.y + npc_hotspot.height - 28.0F;
+    const int idle_frame =
+        static_cast<int>(npc_lobby.npc_animation_seconds / 0.18F) % 4;
+    const float bob = idle_frame == 1 ? -1.0F : (idle_frame == 3 ? 1.0F : 0.0F);
+    const float npc_base_y =
+        npc_hotspot.y + npc_hotspot.height - 28.0F + bob;
     DrawCircleV(scaled_point(Vector2{npc_center_x, npc_base_y - 18.0F}),
                 scaled(7.0F), Color{242, 207, 159, 220});
     DrawRectangleRec(scaled_rect(Rectangle{npc_center_x - 7.0F, npc_base_y - 11.0F,
@@ -905,11 +918,15 @@ void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets
     centered_text(font, "返回地图", back, 15, ink);
     panel(action, hovered(action, mouse) ? paper : green);
     centered_text(font, spec->action_label.c_str(), action, 14, RAYWHITE);
+
+    if (npc_lobby.dialogue.has_value()) {
+        draw_npc_dialogue(font, *npc_lobby.dialogue, mouse);
+    }
 }
 
-void draw_library_room_dialogue(const Font& font,
-                                const DialoguePresentation& dialogue,
-                                Vector2 mouse) {
+void draw_npc_dialogue(const Font& font,
+                       const DialoguePresentation& dialogue,
+                       Vector2 mouse) {
     DrawRectangle(0, 0, ui::canvas_width, ui::canvas_height,
                   Color{20, 27, 29, 155});
     const Rectangle bounds{48, 226, 544, 116};
@@ -995,7 +1012,7 @@ void draw_library_room(const Font& font, const Texture2D& background,
          RAYWHITE);
 
     if (room.dialogue.has_value()) {
-        draw_library_room_dialogue(font, *room.dialogue, mouse);
+        draw_npc_dialogue(font, *room.dialogue, mouse);
     }
 }
 
@@ -1141,6 +1158,7 @@ const char* game_flow_glyphs() {
         result += ending_rules_glyphs();
         result += store_runtime_glyphs();
         result += tavern_ui_glyphs();
+        result += StoryDialogueCatalog{}.glyphs();
         return result;
     }();
     return glyphs.c_str();
@@ -1227,6 +1245,32 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
         const Rectangle action = lobby_rectangle(spec->action_button);
         const Rectangle npc =
             scene_design_rectangle(lobby_rectangle(spec->npc_hotspot));
+        if (location == Location::restaurant) {
+            const NpcLobbyPresentation lobby =
+                state.locations.npc_lobby.presentation();
+            NpcLobbyInput input;
+            input.elapsed_seconds = GetFrameTime();
+            if (lobby.dialogue.has_value()) {
+                input.dialogue.advance_pressed =
+                    IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE) ||
+                    IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+                input.dialogue.skip_pressed = IsKeyPressed(KEY_ESCAPE);
+            } else {
+                input.interaction_activated =
+                    clicked(npc, logical_mouse) ||
+                    activated(action, logical_mouse, KEY_SPACE) ||
+                    IsKeyPressed(KEY_ENTER);
+                input.back_pressed =
+                    activated(back, logical_mouse, KEY_ESCAPE);
+            }
+            const auto stepped = step_restaurant_lobby(
+                state.session, state.locations, input, state.notice);
+            if (stepped.status == NpcLobbyStepStatus::activity_requested ||
+                stepped.status == NpcLobbyStepStatus::closed) {
+                state.location_lobby.reset();
+            }
+            return;
+        }
         if (activated(back, logical_mouse, KEY_ESCAPE)) {
             state.location_lobby.reset();
             state.notice = "已返回地图：阶段未消耗。";
@@ -1245,14 +1289,6 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             }
             if (!state.session.enter_location(location)) {
                 state.notice = "无法进入该地点，请返回地图重试。";
-                return;
-            }
-            if (location == Location::restaurant) {
-                prepare_restaurant_runtime(
-                    state.locations,
-                    state.session.location_seed(Location::restaurant));
-                state.notice = "已进入餐馆工作准备。";
-                state.location_lobby.reset();
                 return;
             }
             if (location == Location::convenience_store) {
@@ -1324,9 +1360,18 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 }
                 return;
             }
+            if (location == Location::restaurant &&
+                !state.locations.npc_lobby.open(
+                    DialogueTrigger::restaurant_owner_intro)) {
+                state.notice = "餐馆老板对话暂时不可用。";
+                return;
+            }
             state.location_lobby = location;
-            state.notice = std::string{"已进入"} + location_label(location) +
-                           "大厅；可先查看场景或尝试 NPC 预留互动。";
+            state.notice =
+                location == Location::restaurant
+                    ? "已进入餐馆大厅：点击老板或进入工作按钮开始交谈。"
+                    : std::string{"已进入"} + location_label(location) +
+                          "大厅；可先查看场景或尝试 NPC 预留互动。";
             return;
         }
         return;

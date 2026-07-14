@@ -8,6 +8,7 @@ namespace pixel_town {
 enum class DialogueTrigger {
     tavern_bartender_intro,
     library_administrator_intro,
+    restaurant_owner_intro,
 };
 
 struct DialogueLine {

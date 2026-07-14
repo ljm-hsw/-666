@@ -204,6 +204,46 @@ TEST_CASE("library room dialogue hands off to the existing work mode selection")
           pixel_town::LibraryRuntimeMode::selection);
 }
 
+TEST_CASE("restaurant owner dialogue hands off to untouched work preparation") {
+    auto session = pixel_town::GameSession::new_game(20260714U);
+    const auto session_before_dialogue = session.snapshot();
+    pixel_town::LocationRuntimeState runtime;
+    REQUIRE(runtime.npc_lobby.open(
+        pixel_town::DialogueTrigger::restaurant_owner_intro));
+    std::string notice;
+
+    pixel_town::NpcLobbyInput input;
+    input.interaction_activated = true;
+    CHECK(pixel_town::step_restaurant_lobby(session, runtime, input, notice).status ==
+          pixel_town::NpcLobbyStepStatus::dialogue_opened);
+
+    input = {};
+    input.dialogue.advance_pressed = true;
+    CHECK(pixel_town::step_restaurant_lobby(session, runtime, input, notice).status ==
+          pixel_town::NpcLobbyStepStatus::changed);
+    CHECK(pixel_town::step_restaurant_lobby(session, runtime, input, notice).status ==
+          pixel_town::NpcLobbyStepStatus::changed);
+    CHECK(session.snapshot() == session_before_dialogue);
+
+    CHECK(pixel_town::step_restaurant_lobby(session, runtime, input, notice).status ==
+          pixel_town::NpcLobbyStepStatus::activity_requested);
+    CHECK(session.phase() == pixel_town::GamePhase::day_location);
+    CHECK(session.pending_location() == pixel_town::Location::restaurant);
+    CHECK_FALSE(session.location_started());
+    REQUIRE(runtime.restaurant != nullptr);
+    CHECK(runtime.restaurant->phase() ==
+          pixel_town::RestaurantPhase::showing_instructions);
+    CHECK(runtime.restaurant_timer == doctest::Approx(0.0F));
+
+    REQUIRE(pixel_town::start_pending_location(session, runtime, notice));
+    CHECK(session.location_started());
+    CHECK(runtime.restaurant->skip_instructions());
+    CHECK(runtime.restaurant->phase() ==
+          pixel_town::RestaurantPhase::waiting_for_order);
+    CHECK(runtime.restaurant->current_order() != nullptr);
+    CHECK(runtime.restaurant_timer == doctest::Approx(0.0F));
+}
+
 TEST_CASE("library organizing UI reserves separate pickup and held-book spaces") {
     using namespace pixel_town::library;
     using namespace pixel_town::library::ui;

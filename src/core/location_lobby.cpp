@@ -24,7 +24,7 @@ const LocationLobbySpec& restaurant_lobby() {
     static const LocationLobbySpec spec{
         Location::restaurant,
         "餐馆大厅",
-        "餐馆老板（预留）",
+        "餐馆老板",
         "进入餐馆工作",
         LobbyRect{72.0F, 78.0F, 128.0F, 100.0F},
         LobbyRect{364.0F, 312.0F, 110.0F, 34.0F},

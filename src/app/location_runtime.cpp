@@ -383,6 +383,27 @@ LibraryRoomStepResult step_library_room(
     return result;
 }
 
+NpcLobbyStepResult step_restaurant_lobby(
+    GameSession& session, LocationRuntimeState& runtime,
+    const NpcLobbyInput& input, std::string& notice) {
+    NpcLobbyStepResult result = runtime.npc_lobby.step(input);
+    if (!result.notice.empty()) {
+        notice = result.notice;
+    }
+    if (result.status != NpcLobbyStepStatus::activity_requested) {
+        return result;
+    }
+
+    if (!session.enter_location(Location::restaurant)) {
+        notice = "当前阶段不能开始餐馆工作。";
+        return {NpcLobbyStepStatus::rejected, notice};
+    }
+    prepare_restaurant_runtime(
+        runtime, session.location_seed(Location::restaurant));
+    notice = "老板交代完毕，已进入餐馆工作准备。";
+    return result;
+}
+
 bool select_library_mode(GameSession& session, LocationRuntimeState& runtime,
                          LibraryRuntimeMode mode, std::string& notice) {
     LibraryIntent intent;
