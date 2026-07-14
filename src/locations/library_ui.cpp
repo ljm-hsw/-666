@@ -1151,15 +1151,11 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
                 if (clicked_exclamation) {
                     for (const auto& book : session.misplaced_books) {
                         if (book.current_shelf_id == shelves[i].id) {
-                            if (ui_state.highlighted_misplaced == book.id) {
-                                engine.pick_misplaced_book(book.id);
-                                ui_state.is_holding_book = true;
-                                ui_state.held_book_title = book.title;
-                                ui_state.held_book_category = book.category_id;
-                                ui_state.highlighted_misplaced.clear();
-                            } else {
-                                ui_state.highlighted_misplaced = book.id;
-                            }
+                            engine.pick_misplaced_book(book.id);
+                            ui_state.is_holding_book = true;
+                            ui_state.held_book_title = book.title;
+                            ui_state.held_book_category = book.category_id;
+                            ui_state.highlighted_misplaced.clear();
                             return false;
                         }
                     }
