@@ -12,12 +12,20 @@
 #include "app/tavern_view.hpp"
 #include "locations/convenience_store.hpp"
 #include "locations/library_data.hpp"
+#include "locations/library_organizing.hpp"
+#include "locations/library_organizing_ui.hpp"
 #include "locations/library_rules.hpp"
 #include "locations/library_scene.hpp"
 #include "locations/library_ui.hpp"
 #include "locations/restaurant.hpp"
 
 namespace pixel_town {
+
+enum class LibraryWorkMode {
+    selection,
+    reader_consultation,
+    book_organizing,
+};
 
 enum class StorePlanActionType {
     select_product,
@@ -49,8 +57,11 @@ struct LocationRuntimeState {
     int store_selected_product_index{0};
     std::string store_feedback;
     bool in_library{false};
+    LibraryWorkMode library_mode{LibraryWorkMode::selection};
     library::LibraryData library_data;
     std::unique_ptr<library::LibraryRuleEngine> library_engine;
+    std::unique_ptr<library::LibraryOrganizingSession> library_organizing;
+    library::ui::OrganizingUIState library_organizing_ui_state;
     library::LibraryScene library_scene;
     library::ui::LibraryUIState library_ui_state;
     int library_visits{0};
@@ -80,6 +91,10 @@ void prepare_store_runtime(LocationRuntimeState& runtime);
 [[nodiscard]] std::string store_runtime_glyphs();
 void update_store_selection(LocationRuntimeState& runtime, const GameSession& session,
                             Vector2 logical_mouse, std::string& notice);
+[[nodiscard]] bool select_library_mode(GameSession& session,
+                                       LocationRuntimeState& runtime,
+                                       LibraryWorkMode mode,
+                                       std::string& notice);
 [[nodiscard]] bool start_pending_location(GameSession& session,
                                            LocationRuntimeState& runtime,
                                            std::string& notice);

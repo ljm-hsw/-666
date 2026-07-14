@@ -1031,7 +1031,14 @@ const char* game_flow_glyphs() {
             "儒林外史吴敬梓书法楷行草隶篆人工智能英文缩写北京阳光水二氧化碳"
             "原子核秦始皇撒哈拉蒲松龄达·芬奇穆朗玛肝脏吴敬梓楷行草隶篆二氧化碳"
             "读者问达·芬奇除了绘画还擅长什么回答正确达·芬奇还是科学家和发明家"
-            "回答错误达·芬奇还擅长科学发明";
+            "回答错误达·芬奇还擅长科学发明"
+            "选择本次工作数字也可以选择今天想怎样帮助图书馆读者咨询根据需求选择书籍类别"
+            "书籍整理拾取散落或错架书并归位放弃本次图书馆行动已归位错误先点击散落或错架的书"
+            "再点击正确分类书架手中整理完成完成图书馆整理归位错误尝试次已拿起分类正确书籍已归位"
+            "分类不匹配请换一个书架这里没有待整理的书请点击带编号的书本标记请点击书架高亮区域完成归位"
+            "物理奥秘唐诗宋词世界地图集历史书架科学书架文学书架艺术书架技术书架地理书架"
+            "请选择读者咨询或书籍整理当前不能切换图书馆工作模式整理数据不完整无法开始"
+            "已选择根据需求匹配拿起待整理书再点击正确书架工作模式未能启动整理工作没有结算";
         result += story_text_glyphs();
         result += ending_rules_glyphs();
         result += store_runtime_glyphs();
@@ -1287,7 +1294,7 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
         return;
     }
 
-    if (state.locations.in_library && state.locations.library_engine) {
+    if (state.locations.in_library) {
         draw_active_library(font, state.locations, logical_mouse,
                             scene_assets.library_interior);
         if (state.collision_debug_visible) {

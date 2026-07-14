@@ -26,7 +26,7 @@
 | --- | --- | --- | --- |
 | 餐馆 | `assets/textures/ui/restaurant/restaurant_interior.png` | 先显示餐馆大厅与老板预留热点，再进入原有准备、订单和结算 UI | 柜台、果蔬台、木桶、冷柜、两组餐桌、伞架、墙体和门口通道 |
 | 家 | `assets/textures/ui/home/home_interior.png` | 先显示家中大厅与互动预留热点，再进入休息确认；两次返回都不消耗阶段 | 床、衣柜、壁炉、扶手椅、圆桌、书架、书桌、右侧桌椅、沙发、墙体和门口通道 |
-| 图书馆 | `assets/textures/ui/library/library_interior.png` | 先显示图书馆大厅与管理员预留热点，再进入原有引导、答题、反馈及房间视图 | 借阅台、书车、三组书架、地图桌、两组阅读桌、植物、墙体和门口通道 |
+| 图书馆 | `assets/textures/ui/library/library_interior.png` | 先显示图书馆大厅与管理员预留热点，再选择读者咨询或书籍整理；两种模式共享背景视口 | 借阅台、书车、三组书架、地图桌、两组阅读桌、植物、墙体和门口通道 |
 | 酒馆 | `assets/textures/ui/tavern/tavern_lobby.png` | 替换旧酒馆背景；酒保、五子棋桌和骗子骰子桌热点已重新对齐 | 吧台、酒桶、酒柜、四组圆桌、两张桌游桌、墙体和门口通道 |
 | 便利店 | `assets/textures/ui/convenience_store/convenience_store_interior.png` | 先显示便利店大厅与店主预留热点，再进入原有进货、定价、预算和结算 UI | 货架、纸箱、购物篮、冷柜、饮料柜、收银台、伞架、墙体和门口通道 |
 

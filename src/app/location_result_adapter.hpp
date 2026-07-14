@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/game_session.hpp"
+#include "locations/library_organizing.hpp"
 #include "locations/library_rules.hpp"
 
 namespace pixel_town {
@@ -12,5 +13,7 @@ namespace pixel_town {
 
 [[nodiscard]] ActionResult library_action_result(const library::ActionResult& result,
                                                  int result_id, ActionSlot slot);
+[[nodiscard]] ActionResult library_organizing_action_result(
+    const library::OrganizingResult& result, int result_id, ActionSlot slot);
 
 }  // namespace pixel_town

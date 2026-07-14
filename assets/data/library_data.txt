@@ -6,6 +6,8 @@
 // HINT <提示文本>
 // FEEDBACK_CORRECT <正确反馈>
 // FEEDBACK_WRONG <错误反馈>
+// ORGANIZING_SHELF <id>|<类别id>|<名称>|<x>|<y>|<宽>|<高>
+// ORGANIZING_BOOK <id>|<书名>|<类别id>|<scattered/misplaced>|<原书架id或->|<x>|<y>
 // DIALOGUE_* <对话文本>
 // PLOT_EVENT <id>:<标题>
 // PLOT_DESC <描述文本>
@@ -31,6 +33,20 @@ CATEGORY geography:地理
 CATEGORY_DESC 地球表面与人文环境的探索
 CATEGORY biology:生物
 CATEGORY_DESC 生命科学与自然生态
+
+// 整理模式书架热点（坐标以 960×540 图书馆背景原图为准）
+ORGANIZING_SHELF shelf_history|history|历史书架|507|80|95|84
+ORGANIZING_SHELF shelf_science|science|科学书架|627|80|95|84
+ORGANIZING_SHELF shelf_literature|literature|文学书架|748|80|95|84
+ORGANIZING_SHELF shelf_art|art|艺术书架|507|166|95|86
+ORGANIZING_SHELF shelf_technology|technology|技术书架|627|166|95|86
+ORGANIZING_SHELF shelf_geography|geography|地理书架|748|166|95|86
+
+// 整理模式任务：散落书可直接拾取，错架书从其当前书架取出后重新分类
+ORGANIZING_BOOK book_physics|物理奥秘|science|scattered|-|280|400
+ORGANIZING_BOOK book_red_chamber|红楼梦|literature|scattered|-|360|400
+ORGANIZING_BOOK book_poetry|唐诗宋词|literature|misplaced|shelf_history|548|120
+ORGANIZING_BOOK book_atlas|世界地图集|geography|misplaced|shelf_technology|668|190
 
 // 读者问题
 QUESTION history:人类第一次登月是在哪一年？

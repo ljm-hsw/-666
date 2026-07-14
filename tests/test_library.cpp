@@ -78,6 +78,52 @@ TEST_CASE("Bundled library data passes the production parser") {
     CHECK(result.data.categories.size() >= 5);
     CHECK(result.data.questions.size() >= 5);
     CHECK(result.data.plot_events.size() == 3);
+    CHECK(result.data.organizing_shelves.size() == 6);
+    CHECK(result.data.organizing_tasks.size() == 4);
+}
+
+TEST_CASE("Library data loading accepts organizing shelves and book tasks") {
+    const std::filesystem::path path =
+        std::filesystem::current_path() / ".tmp-library-organizing-data.txt";
+    {
+        std::ofstream file(path);
+        file << "CATEGORY history: 历史\n";
+        file << "CATEGORY science: 科学\n";
+        file << "QUESTION history: 测试问题\n";
+        file << "ORGANIZING_SHELF shelf_history|history|历史书架|507|79|70|90\n";
+        file << "ORGANIZING_SHELF shelf_science|science|科学书架|628|79|70|90\n";
+        file << "ORGANIZING_BOOK book_physics|物理奥秘|science|scattered|-|280|400\n";
+        file << "ORGANIZING_BOOK book_poetry|唐诗宋词|history|misplaced|shelf_science|665|110\n";
+    }
+
+    const auto result = pixel_town::library::load_library_data(path.string());
+    std::filesystem::remove(path);
+
+    REQUIRE(result.success);
+    REQUIRE(result.data.organizing_shelves.size() == 2);
+    REQUIRE(result.data.organizing_tasks.size() == 2);
+    CHECK(result.data.organizing_shelves[0].category_id == "history");
+    CHECK(result.data.organizing_tasks[0].source ==
+          pixel_town::library::OrganizingBookSource::scattered);
+    CHECK(result.data.organizing_tasks[1].source_shelf_id == "shelf_science");
+}
+
+TEST_CASE("Library data loading rejects a misplaced book with an unknown source shelf") {
+    const std::filesystem::path path =
+        std::filesystem::current_path() / ".tmp-library-invalid-organizing-data.txt";
+    {
+        std::ofstream file(path);
+        file << "CATEGORY history: 历史\n";
+        file << "QUESTION history: 测试问题\n";
+        file << "ORGANIZING_SHELF shelf_history|history|历史书架|507|79|70|90\n";
+        file << "ORGANIZING_BOOK book_poetry|唐诗宋词|history|misplaced|missing|520|110\n";
+    }
+
+    const auto result = pixel_town::library::load_library_data(path.string());
+    std::filesystem::remove(path);
+
+    CHECK_FALSE(result.success);
+    CHECK(result.error_message.find("unknown shelf") != std::string::npos);
 }
 
 TEST_CASE("Library data loading rejects questions with unknown categories") {

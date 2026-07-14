@@ -1,10 +1,12 @@
 #include "locations/library_data.hpp"
 
+#include <algorithm>
 #include <charconv>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace pixel_town::library {
 
@@ -31,6 +33,20 @@ bool parse_nonnegative_int(std::string_view text, int& value) {
     const char* end = begin + text.size();
     const auto parsed = std::from_chars(begin, end, value);
     return parsed.ec == std::errc{} && parsed.ptr == end && value >= 0;
+}
+
+std::vector<std::string> split_fields(const std::string& value, char separator) {
+    std::vector<std::string> fields;
+    std::size_t start = 0;
+    while (start <= value.size()) {
+        const std::size_t end = value.find(separator, start);
+        fields.push_back(trim(value.substr(start, end - start)));
+        if (end == std::string::npos) {
+            break;
+        }
+        start = end + 1;
+    }
+    return fields;
 }
 
 }  // namespace
@@ -77,6 +93,68 @@ LoadResult load_library_data(const std::string& file_path) {
                 return result;
             }
             result.data.categories.back().description = desc;
+        } else if (starts_with(trimmed, "ORGANIZING_SHELF ")) {
+            const auto fields = split_fields(
+                trimmed.substr(std::string{"ORGANIZING_SHELF "}.size()), '|');
+            if (fields.size() != 7) {
+                result.error_message = "Invalid organizing shelf format: " + line;
+                return result;
+            }
+            OrganizingShelf shelf;
+            shelf.id = fields[0];
+            shelf.category_id = fields[1];
+            shelf.name = fields[2];
+            if (shelf.id.empty() || shelf.category_id.empty() || shelf.name.empty() ||
+                !parse_nonnegative_int(fields[3], shelf.x) ||
+                !parse_nonnegative_int(fields[4], shelf.y) ||
+                !parse_nonnegative_int(fields[5], shelf.width) ||
+                !parse_nonnegative_int(fields[6], shelf.height) || shelf.width == 0 ||
+                shelf.height == 0) {
+                result.error_message = "Invalid organizing shelf values: " + line;
+                return result;
+            }
+            const auto duplicate = std::find_if(
+                result.data.organizing_shelves.begin(), result.data.organizing_shelves.end(),
+                [&shelf](const auto& existing) { return existing.id == shelf.id; });
+            if (duplicate != result.data.organizing_shelves.end()) {
+                result.error_message = "Duplicate organizing shelf id: " + shelf.id;
+                return result;
+            }
+            result.data.organizing_shelves.push_back(std::move(shelf));
+        } else if (starts_with(trimmed, "ORGANIZING_BOOK ")) {
+            const auto fields = split_fields(
+                trimmed.substr(std::string{"ORGANIZING_BOOK "}.size()), '|');
+            if (fields.size() != 7) {
+                result.error_message = "Invalid organizing book format: " + line;
+                return result;
+            }
+            OrganizingBookTask task;
+            task.id = fields[0];
+            task.title = fields[1];
+            task.category_id = fields[2];
+            if (fields[3] == "scattered") {
+                task.source = OrganizingBookSource::scattered;
+            } else if (fields[3] == "misplaced") {
+                task.source = OrganizingBookSource::misplaced;
+            } else {
+                result.error_message = "Invalid organizing book source: " + line;
+                return result;
+            }
+            task.source_shelf_id = fields[4] == "-" ? "" : fields[4];
+            if (task.id.empty() || task.title.empty() || task.category_id.empty() ||
+                !parse_nonnegative_int(fields[5], task.x) ||
+                !parse_nonnegative_int(fields[6], task.y)) {
+                result.error_message = "Invalid organizing book values: " + line;
+                return result;
+            }
+            const auto duplicate = std::find_if(
+                result.data.organizing_tasks.begin(), result.data.organizing_tasks.end(),
+                [&task](const auto& existing) { return existing.id == task.id; });
+            if (duplicate != result.data.organizing_tasks.end()) {
+                result.error_message = "Duplicate organizing book id: " + task.id;
+                return result;
+            }
+            result.data.organizing_tasks.push_back(std::move(task));
         } else if (starts_with(trimmed, "QUESTION ")) {
             const std::string rest = trimmed.substr(9);
             const auto colon_pos = rest.find(':');
@@ -210,6 +288,38 @@ LoadResult load_library_data(const std::string& file_path) {
         }
     }
 
+    const auto category_exists = [&result](const std::string& category_id) {
+        return std::any_of(result.data.categories.begin(), result.data.categories.end(),
+                           [&category_id](const auto& category) {
+                               return category.id == category_id;
+                           });
+    };
+    for (const auto& shelf : result.data.organizing_shelves) {
+        if (!category_exists(shelf.category_id)) {
+            result.error_message =
+                "Organizing shelf references unknown category: " + shelf.category_id;
+            return result;
+        }
+    }
+    for (const auto& task : result.data.organizing_tasks) {
+        if (!category_exists(task.category_id)) {
+            result.error_message =
+                "Organizing book references unknown category: " + task.category_id;
+            return result;
+        }
+        if (task.source == OrganizingBookSource::misplaced) {
+            const bool shelf_exists = std::any_of(
+                result.data.organizing_shelves.begin(), result.data.organizing_shelves.end(),
+                [&task](const auto& shelf) { return shelf.id == task.source_shelf_id; });
+            if (!shelf_exists) {
+                result.error_message =
+                    "Misplaced organizing book references unknown shelf: " +
+                    task.source_shelf_id;
+                return result;
+            }
+        }
+    }
+
     result.success = true;
     return result;
 }
@@ -219,6 +329,12 @@ std::string collect_all_text_characters(const LibraryData& data) {
     for (const auto& cat : data.categories) {
         result += cat.name;
         result += cat.description;
+    }
+    for (const auto& shelf : data.organizing_shelves) {
+        result += shelf.name;
+    }
+    for (const auto& task : data.organizing_tasks) {
+        result += task.title;
     }
     for (const auto& q : data.questions) {
         result += q.question;

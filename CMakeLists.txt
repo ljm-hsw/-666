@@ -38,6 +38,7 @@ add_library(pixel_town_locations
   src/locations/gomoku_rules.cpp
   src/locations/liars_dice_rules.cpp
   src/locations/library_data.cpp
+  src/locations/library_organizing.cpp
   src/locations/library_rules.cpp
   src/locations/tavern_challenge_settlement.cpp
 )
@@ -53,6 +54,7 @@ target_include_directories(pixel_town_tavern_logic PUBLIC "${CMAKE_CURRENT_SOURC
 target_link_libraries(pixel_town_tavern_logic PUBLIC pixel_town_locations)
 
 add_library(pixel_town_location_scene
+  src/locations/library_organizing_ui.cpp
   src/locations/library_npc.cpp
   src/locations/library_scene.cpp
   src/locations/library_ui.cpp
@@ -106,6 +108,7 @@ add_executable(pixel_town_tests
   tests/tavern_challenge_settlement_test.cpp
   tests/tavern_runtime_test.cpp
   tests/test_library.cpp
+  tests/library_organizing_test.cpp
 )
 target_link_libraries(pixel_town_tests PRIVATE pixel_town_io pixel_town_app_logic)
 target_include_directories(pixel_town_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/doctest")

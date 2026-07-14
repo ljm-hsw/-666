@@ -330,16 +330,14 @@ bool start_pending_location(GameSession& session, LocationRuntimeState& runtime,
             return false;
         }
         runtime.library_data = std::move(load_result.data);
-        runtime.library_engine = std::make_unique<library::LibraryRuleEngine>(
-            runtime.library_data, library::default_library_config());
         ++runtime.library_visits;
-        runtime.library_engine->start_session(
-            make_library_daily_context(session, runtime.library_visits));
-        runtime.library_engine->update_npc_relationship(session.player().knowledge,
-                                                        runtime.library_visits);
+        runtime.library_mode = LibraryWorkMode::selection;
+        runtime.library_engine.reset();
+        runtime.library_organizing.reset();
+        runtime.library_organizing_ui_state = library::ui::OrganizingUIState{};
         runtime.library_ui_state = library::ui::LibraryUIState{};
         runtime.in_library = true;
-        notice = "已进入图书馆，请完成读者问答。";
+        notice = "已进入图书馆，请选择读者咨询或书籍整理。";
         return true;
     }
 
@@ -370,10 +368,103 @@ bool start_pending_location(GameSession& session, LocationRuntimeState& runtime,
     return true;
 }
 
+bool select_library_mode(GameSession& session, LocationRuntimeState& runtime,
+                         LibraryWorkMode mode, std::string& notice) {
+    if (!runtime.in_library || runtime.library_mode != LibraryWorkMode::selection) {
+        notice = "当前不能切换图书馆工作模式。";
+        return false;
+    }
+
+    if (mode == LibraryWorkMode::reader_consultation) {
+        runtime.library_engine = std::make_unique<library::LibraryRuleEngine>(
+            runtime.library_data, library::default_library_config());
+        runtime.library_engine->start_session(
+            make_library_daily_context(session, runtime.library_visits));
+        runtime.library_engine->update_npc_relationship(session.player().knowledge,
+                                                        runtime.library_visits);
+        runtime.library_ui_state = library::ui::LibraryUIState{};
+        runtime.library_organizing.reset();
+        runtime.library_mode = mode;
+        notice = "已选择读者咨询：根据需求匹配书籍类别。";
+        return true;
+    }
+
+    if (mode == LibraryWorkMode::book_organizing) {
+        if (runtime.library_data.organizing_tasks.empty() ||
+            runtime.library_data.organizing_shelves.empty()) {
+            notice = "图书馆整理数据不完整，无法开始。";
+            return false;
+        }
+        runtime.library_organizing = std::make_unique<library::LibraryOrganizingSession>(
+            runtime.library_data.organizing_tasks,
+            runtime.library_data.organizing_shelves,
+            library::default_organizing_config());
+        const auto context = make_library_daily_context(session, runtime.library_visits);
+        runtime.library_organizing->start(context.random_seed);
+        runtime.library_organizing_ui_state = library::ui::OrganizingUIState{};
+        runtime.library_engine.reset();
+        runtime.library_mode = mode;
+        notice = "已选择书籍整理：拿起待整理书，再点击正确书架。";
+        return true;
+    }
+
+    notice = "请选择一种图书馆工作模式。";
+    return false;
+}
+
 bool update_active_library(GameSession& session, LocationRuntimeState& runtime,
                            std::string& notice, Vector2 logical_mouse) {
-    if (!runtime.in_library || !runtime.library_engine) {
+    if (!runtime.in_library) {
         return false;
+    }
+
+    if (runtime.library_mode == LibraryWorkMode::selection) {
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            const auto applied = session.apply_action_result(session.abandon_current_location());
+            runtime.in_library = false;
+            notice = applied.message;
+            return true;
+        }
+        const bool choose_reader =
+            IsKeyPressed(KEY_ONE) ||
+            (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
+             CheckCollisionPointRec(logical_mouse, library::ui::reader_mode_button()));
+        const bool choose_organizing =
+            IsKeyPressed(KEY_TWO) ||
+            (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
+             CheckCollisionPointRec(logical_mouse, library::ui::organizing_mode_button()));
+        if (choose_reader) {
+            (void)select_library_mode(session, runtime,
+                                      LibraryWorkMode::reader_consultation, notice);
+        } else if (choose_organizing) {
+            (void)select_library_mode(session, runtime,
+                                      LibraryWorkMode::book_organizing, notice);
+        }
+        return true;
+    }
+
+    if (runtime.library_mode == LibraryWorkMode::book_organizing &&
+        runtime.library_organizing) {
+        const auto exit_action = library::ui::handle_library_organizing_input(
+            *runtime.library_organizing, runtime.library_organizing_ui_state,
+            logical_mouse);
+        if (exit_action == library::ui::OrganizingExitAction::none) {
+            return true;
+        }
+        const auto organizing_result = runtime.library_organizing->finish_session();
+        const auto applied = session.apply_action_result(library_organizing_action_result(
+            organizing_result, session.active_result_id(),
+            action_slot_for_phase(session.phase())));
+        runtime.in_library = false;
+        runtime.library_organizing.reset();
+        runtime.library_organizing_ui_state = library::ui::OrganizingUIState{};
+        notice = applied.accepted ? organizing_result.summary : applied.message;
+        return true;
+    }
+
+    if (!runtime.library_engine) {
+        notice = "图书馆工作模式未能启动。";
+        return true;
     }
 
     library::ui::update_library_ui(*runtime.library_engine, runtime.library_ui_state,
@@ -388,6 +479,7 @@ bool update_active_library(GameSession& session, LocationRuntimeState& runtime,
     const auto applied = session.apply_action_result(library_action_result(
         library_result, session.active_result_id(), action_slot_for_phase(session.phase())));
     runtime.in_library = false;
+    runtime.library_engine.reset();
     runtime.library_ui_state = library::ui::LibraryUIState{};
     notice = applied.accepted ? library_result.summary : applied.message;
     return true;
@@ -493,7 +585,21 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
 
 void draw_active_library(const Font& font, const LocationRuntimeState& runtime,
                          Vector2 logical_mouse, const Texture2D& background) {
-    if (!runtime.in_library || !runtime.library_engine) {
+    if (!runtime.in_library) {
+        return;
+    }
+    if (runtime.library_mode == LibraryWorkMode::selection) {
+        library::ui::draw_library_mode_selection(font, background, logical_mouse);
+        return;
+    }
+    if (runtime.library_mode == LibraryWorkMode::book_organizing &&
+        runtime.library_organizing) {
+        library::ui::draw_library_organizing(
+            font, background, *runtime.library_organizing,
+            runtime.library_organizing_ui_state, logical_mouse);
+        return;
+    }
+    if (!runtime.library_engine) {
         return;
     }
     library::ui::LibraryRenderConfig render_config;

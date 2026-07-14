@@ -22,7 +22,7 @@
 - [`BUILD_AND_RUN.md`](BUILD_AND_RUN.md)：Windows/macOS 从零编译、测试、运行、截图和常见问题。
 - [`DESIGN.md`](DESIGN.md)：核心架构、状态机、模块契约、存档、随机性和测试边界。
 - [`UI_ASSET_STRATEGY.md`](UI_ASSET_STRATEGY.md)：P2/P3 占位 UI、imagegen 候选资产和 P4 统一视觉收尾策略。
-- [`CHARACTER_DIALOGUE_PLAN.md`](CHARACTER_DIALOGUE_PLAN.md)：P4 人物小人占位规格、共享对话、图书馆/酒馆室内导航、静态碰撞、NPC 轨迹和 Issues 23-28 实施顺序。
+- [`CHARACTER_DIALOGUE_PLAN.md`](CHARACTER_DIALOGUE_PLAN.md)：P4 人物小人占位规格、共享对话、图书馆/酒馆室内导航、静态碰撞、NPC 轨迹和 Issues 23-29 实施顺序。
 - [`RESTAURANT_VISUAL_SPEC.md`](RESTAURANT_VISUAL_SPEC.md)：餐馆 960×540 布局、背景、食物图标、倒计时和反馈资源槽位。
 - [`story/README.md`](story/README.md)：主线剧情、文案风格、MVP 文本草案、地点/NPC、结局回声和剧情接入规划。
 - [`VISUAL_PROTOTYPE.md`](VISUAL_PROTOTYPE.md)：P0 待审视觉方案、调色板、像素尺寸与资源命名候选。

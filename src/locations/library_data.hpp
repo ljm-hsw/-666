@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "locations/library_organizing.hpp"
+
 namespace pixel_town::library {
 
 struct BookCategory {
@@ -44,6 +46,8 @@ struct PlotEvent {
 
 struct LibraryData {
     std::vector<BookCategory> categories;
+    std::vector<OrganizingShelf> organizing_shelves;
+    std::vector<OrganizingBookTask> organizing_tasks;
     std::vector<ReaderQuestion> questions;
     NpcDialogue dialogue;
     std::vector<PlotEvent> plot_events;

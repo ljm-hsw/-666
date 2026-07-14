@@ -40,6 +40,53 @@ TEST_CASE("library give up maps to abandoned core result") {
     CHECK(result.delta.money == 0);
 }
 
+TEST_CASE("library organizing result uses the same core settlement contract") {
+    pixel_town::library::OrganizingResult organizing_result;
+    organizing_result.completed = true;
+    organizing_result.money_change = 8;
+    organizing_result.stamina_change = -15;
+    organizing_result.reputation_change = 4;
+    organizing_result.knowledge_change = 10;
+    organizing_result.mood_change = 2;
+    organizing_result.summary = "完成图书馆整理";
+
+    const auto result = pixel_town::library_organizing_action_result(
+        organizing_result, 43, pixel_town::ActionSlot::day);
+
+    CHECK(result.result_id == 43);
+    CHECK(result.location == pixel_town::Location::library);
+    CHECK(result.outcome == pixel_town::ActionOutcome::completed);
+    CHECK(result.delta.money == 8);
+    CHECK(result.delta.stamina == -15);
+    CHECK(result.delta.reputation == 4);
+    CHECK(result.delta.knowledge == 10);
+    CHECK(result.delta.mood == 2);
+}
+
+TEST_CASE("library organizing completion advances the day through the core session") {
+    auto session = pixel_town::GameSession::new_game();
+    REQUIRE(session.enter_location(pixel_town::Location::library));
+    const int result_id = session.start_location();
+    REQUIRE(result_id != 0);
+
+    pixel_town::library::OrganizingResult organizing_result;
+    organizing_result.completed = true;
+    organizing_result.knowledge_change = 10;
+    organizing_result.reputation_change = 4;
+    organizing_result.stamina_change = -15;
+    organizing_result.summary = "完成图书馆整理";
+
+    const auto applied = session.apply_action_result(
+        pixel_town::library_organizing_action_result(
+            organizing_result, result_id, pixel_town::ActionSlot::day));
+
+    CHECK(applied.accepted);
+    CHECK(session.phase() == pixel_town::GamePhase::night_choice);
+    CHECK(session.player().knowledge == 10);
+    CHECK(session.player().reputation == 4);
+    CHECK(session.player().stamina == 65);
+}
+
 TEST_CASE("library action result keeps narrative echo in core summary") {
     pixel_town::library::ActionResult library_result;
     library_result.completed = true;

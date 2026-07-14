@@ -3,6 +3,7 @@
 #include "app/tavern_layout.hpp"
 #include "app/location_runtime.hpp"
 #include "app/ui_primitives.hpp"
+#include "ui/scene_viewport.hpp"
 #include "ui/ui_metrics.hpp"
 
 TEST_CASE("restaurant layout stays inside the 960 by 540 canvas") {
@@ -150,4 +151,36 @@ TEST_CASE("store runtime glyph manifest includes generated feedback copy") {
     CHECK(glyphs.find("已经是 0") != std::string::npos);
     CHECK(glyphs.find("方案已锁定") != std::string::npos);
     CHECK(glyphs.find("现金不足") != std::string::npos);
+}
+
+TEST_CASE("library starts at mode selection and can launch the organizing mode") {
+    auto session = pixel_town::GameSession::new_game();
+    REQUIRE(session.enter_location(pixel_town::Location::library));
+    pixel_town::LocationRuntimeState runtime;
+    std::string notice;
+
+    REQUIRE(pixel_town::start_pending_location(session, runtime, notice));
+    CHECK(runtime.library_mode == pixel_town::LibraryWorkMode::selection);
+    CHECK(runtime.library_engine == nullptr);
+    CHECK(runtime.library_organizing == nullptr);
+
+    REQUIRE(pixel_town::select_library_mode(
+        session, runtime, pixel_town::LibraryWorkMode::book_organizing, notice));
+    CHECK(runtime.library_mode == pixel_town::LibraryWorkMode::book_organizing);
+    REQUIRE(runtime.library_organizing != nullptr);
+    CHECK(runtime.library_organizing->state().is_active);
+    CHECK(runtime.library_engine == nullptr);
+    CHECK(notice.find("整理") != std::string::npos);
+}
+
+TEST_CASE("library mode controls stay below the scene header and do not overlap") {
+    const Rectangle reader = pixel_town::library::ui::reader_mode_button();
+    const Rectangle organizing = pixel_town::library::ui::organizing_mode_button();
+
+    CHECK(reader.y >= pixel_town::ui::scene_header_height);
+    CHECK(organizing.y >= pixel_town::ui::scene_header_height);
+    CHECK(reader.x >= 0.0F);
+    CHECK(reader.x + reader.width <= pixel_town::ui::canvas_width);
+    CHECK(organizing.x + organizing.width <= pixel_town::ui::canvas_width);
+    CHECK_FALSE(CheckCollisionRecs(reader, organizing));
 }

@@ -252,8 +252,39 @@ void setup_library_diagnostic(pixel_town::GameAppState& state,
     state.locations.library_ui_state = pixel_town::library::ui::LibraryUIState{};
     state.locations.library_ui_state.scene_state = scene_state;
     state.locations.library_ui_state.show_hint = show_hint;
+    state.locations.library_mode = pixel_town::LibraryWorkMode::reader_consultation;
     state.locations.in_library = true;
     state.notice = "诊断：图书馆页面。";
+}
+
+void setup_library_mode_diagnostic(pixel_town::GameAppState& state,
+                                   bool organizing, bool wrong_retry = false) {
+    state = pixel_town::GameAppState{};
+    state.has_session = true;
+    state.session = pixel_town::GameSession::new_game(20260714U);
+    (void)state.session.enter_location(pixel_town::Location::library);
+    if (!pixel_town::start_pending_location(state.session, state.locations,
+                                            state.notice)) {
+        return;
+    }
+    if (organizing) {
+        (void)pixel_town::select_library_mode(
+            state.session, state.locations,
+            pixel_town::LibraryWorkMode::book_organizing, state.notice);
+        if (wrong_retry && state.locations.library_organizing) {
+            for (const auto& task : state.locations.library_organizing->tasks()) {
+                if (task.category_id == "history") {
+                    continue;
+                }
+                const auto picked = state.locations.library_organizing->pick_up(task.id);
+                state.locations.library_organizing_ui_state.feedback = picked.message;
+                const auto wrong =
+                    state.locations.library_organizing->place_on_shelf("shelf_history");
+                state.locations.library_organizing_ui_state.feedback = wrong.message;
+                break;
+            }
+        }
+    }
 }
 
 void setup_home_diagnostic(pixel_town::GameAppState& state) {
@@ -431,8 +462,14 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
         case 24:
             setup_location_lobby_diagnostic(state, pixel_town::Location::library);
             break;
-        default:
+        case 25:
             setup_location_lobby_diagnostic(state, pixel_town::Location::home);
+            break;
+        case 26:
+            setup_library_mode_diagnostic(state, false);
+            break;
+        default:
+            setup_library_mode_diagnostic(state, true, true);
             break;
     }
 }
@@ -680,7 +717,7 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 26> ui_diagnostic_capture_paths{
+    const std::array<const char*, 28> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/store-prepare.png",
@@ -707,6 +744,8 @@ int main(int argc, char* argv[]) {
         "ui-diagnostics-captures/store-lobby.png",
         "ui-diagnostics-captures/library-lobby.png",
         "ui-diagnostics-captures/home-lobby.png",
+        "ui-diagnostics-captures/library-mode-selection.png",
+        "ui-diagnostics-captures/library-organizing-wrong-retry.png",
     };
     auto unload_resources = [&]() {
         pixel_town::unload_tavern_assets(game_flow.locations.tavern_assets);
