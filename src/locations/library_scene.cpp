@@ -26,11 +26,7 @@ void LibraryScene::initialize_default_layout() {
     NpcData librarian;
     librarian.id = "librarian";
     librarian.name = "管理员";
-    librarian.speed = 0.4F;
-    librarian.behavior = NpcBehavior::patrol;
-    librarian.patrol_area.bounds = {50, 240, 150, 80};
-    librarian.patrol_area.waypoints.push_back({80, 280});
-    librarian.patrol_area.waypoints.push_back({180, 280});
+    librarian.fixed_position = {110.0F, 280.0F};
     librarian.interaction_radius = 25.0F;
 
     npc_manager_.add_npc(librarian);
@@ -68,7 +64,7 @@ NpcManager& LibraryScene::get_npc_manager() {
 }
 
 void LibraryScene::update(float delta_time) {
-    npc_manager_.update(delta_time, get_obstacles());
+    npc_manager_.update(delta_time);
 }
 
 bool LibraryScene::handle_click(const Vector2& click_position, std::string& out_npc_id) const {

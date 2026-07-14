@@ -8,12 +8,12 @@
 #include <raylib.h>
 
 #include "app/library_runtime.hpp"
+#include "app/library_room_runtime.hpp"
 #include "core/game_session.hpp"
 #include "app/tavern_runtime.hpp"
 #include "app/tavern_view.hpp"
 #include "locations/convenience_store.hpp"
 #include "locations/library_organizing_ui.hpp"
-#include "locations/library_scene.hpp"
 #include "locations/library_ui.hpp"
 #include "locations/restaurant.hpp"
 
@@ -48,8 +48,8 @@ struct LocationRuntimeState {
     store::PricePlan store_price_plan;
     int store_selected_product_index{0};
     std::string store_feedback;
+    LibraryRoomRuntime library_room;
     LibraryRuntime library;
-    library::LibraryScene library_scene;
     library::ui::LibraryUIState library_ui_state;
 };
 
@@ -84,6 +84,9 @@ void update_store_selection(LocationRuntimeState& runtime, const GameSession& se
 [[nodiscard]] bool start_pending_location(GameSession& session,
                                            LocationRuntimeState& runtime,
                                            std::string& notice);
+[[nodiscard]] LibraryRoomStepResult step_library_room(
+    GameSession& session, LocationRuntimeState& runtime,
+    const LibraryRoomInput& input, std::string& notice);
 [[nodiscard]] bool update_active_library(GameSession& session,
                                           LocationRuntimeState& runtime,
                                           std::string& notice,

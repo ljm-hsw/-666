@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "locations/library_data.hpp"
+#include "locations/library_npc.hpp"
 #include "locations/library_rules.hpp"
 #include "locations/library_ui.hpp"
 
@@ -191,6 +192,25 @@ TEST_CASE("Library UI state starts from intro instructions") {
     const pixel_town::library::ui::LibraryUIState ui_state;
 
     CHECK(ui_state.scene_state == pixel_town::library::ui::LibrarySceneState::intro);
+}
+
+TEST_CASE("Library NPC idle animation never changes its fixed position") {
+    pixel_town::library::NpcManager manager;
+    manager.add_npc(pixel_town::library::NpcData{
+        "librarian", "管理员", {110.0F, 280.0F}, 25.0F});
+
+    REQUIRE(manager.get_npc_states().size() == 1);
+    const auto initial = manager.get_npc_states().front().position;
+
+    manager.update(0.5F);
+    const auto& state = manager.get_npc_states().front();
+    CHECK(state.position.x == doctest::Approx(initial.x));
+    CHECK(state.position.y == doctest::Approx(initial.y));
+    CHECK(state.idle_animation_seconds == doctest::Approx(0.5F));
+
+    std::string clicked_id;
+    CHECK(manager.is_npc_clicked({110.0F, 280.0F}, clicked_id));
+    CHECK(clicked_id == "librarian");
 }
 
 TEST_CASE("Library UI instructions can be reviewed from answering state") {

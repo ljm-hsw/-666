@@ -176,6 +176,34 @@ TEST_CASE("library starts at mode selection and can launch the organizing mode")
     CHECK(notice.find("整理") != std::string::npos);
 }
 
+TEST_CASE("library room dialogue hands off to the existing work mode selection") {
+    auto session = pixel_town::GameSession::new_game(20260714U);
+    const auto session_before_dialogue = session.snapshot();
+    pixel_town::LocationRuntimeState runtime;
+    REQUIRE(runtime.library_room.open());
+    std::string notice;
+
+    pixel_town::LibraryRoomInput input;
+    input.administrator_activated = true;
+    CHECK(pixel_town::step_library_room(session, runtime, input, notice).status ==
+          pixel_town::LibraryRoomStepStatus::dialogue_opened);
+
+    input = {};
+    input.dialogue.advance_pressed = true;
+    CHECK(pixel_town::step_library_room(session, runtime, input, notice).status ==
+          pixel_town::LibraryRoomStepStatus::changed);
+    CHECK(pixel_town::step_library_room(session, runtime, input, notice).status ==
+          pixel_town::LibraryRoomStepStatus::changed);
+    CHECK(session.snapshot() == session_before_dialogue);
+    CHECK(pixel_town::step_library_room(session, runtime, input, notice).status ==
+          pixel_town::LibraryRoomStepStatus::work_requested);
+
+    CHECK(session.phase() == pixel_town::GamePhase::day_location);
+    CHECK(runtime.library.active());
+    CHECK(runtime.library.presentation().mode ==
+          pixel_town::LibraryRuntimeMode::selection);
+}
+
 TEST_CASE("library organizing UI reserves separate pickup and held-book spaces") {
     using namespace pixel_town::library;
     using namespace pixel_town::library::ui;

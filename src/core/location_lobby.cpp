@@ -50,7 +50,7 @@ const LocationLobbySpec& library_lobby() {
     static const LocationLobbySpec spec{
         Location::library,
         "图书馆大厅",
-        "图书馆管理员（预留）",
+        "图书馆管理员",
         "开始图书馆工作",
         LobbyRect{48.0F, 62.0F, 160.0F, 100.0F},
         LobbyRect{364.0F, 312.0F, 110.0F, 34.0F},

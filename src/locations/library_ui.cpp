@@ -1,5 +1,7 @@
 #include "locations/library_ui.hpp"
 
+#include "locations/library_scene.hpp"
+
 #include "ui/scene_viewport.hpp"
 #include "ui/ui_metrics.hpp"
 
@@ -68,7 +70,7 @@ Rectangle indoor_scene_rectangle() {
     return Rectangle{viewport.x, viewport.y, viewport.width, viewport.height};
 }
 
-Camera2D indoor_scene_camera() {
+[[maybe_unused]] Camera2D indoor_scene_camera() {
     const auto viewport = ::pixel_town::ui::indoor_scene_viewport();
     Camera2D camera{};
     camera.offset = Vector2{viewport.x, viewport.y};
@@ -78,7 +80,7 @@ Camera2D indoor_scene_camera() {
     return camera;
 }
 
-Vector2 scene_design_mouse(Vector2 logical_mouse) {
+[[maybe_unused]] Vector2 scene_design_mouse(Vector2 logical_mouse) {
     const auto transformed = ::pixel_town::ui::viewport_to_scene_design(
         {logical_mouse.x, logical_mouse.y});
     return Vector2{transformed.x, transformed.y};
@@ -166,7 +168,7 @@ void draw_category_button(int x, int y, int width, int height, const std::string
     centered_text(font, name, Rectangle{static_cast<float>(x), static_cast<float>(y), static_cast<float>(width), static_cast<float>(height)}, 18, text_color);
 }
 
-void draw_library_floor(const LibraryRenderConfig& config) {
+[[maybe_unused]] void draw_library_floor(const LibraryRenderConfig& config) {
     const float tile_size = scaled(16);
     const int cols = static_cast<int>(scaled(config.logical_width) / tile_size);
     const int rows = static_cast<int>(scaled(config.logical_height) / tile_size);
@@ -195,7 +197,7 @@ void draw_library_floor(const LibraryRenderConfig& config) {
     }
 }
 
-void draw_library_walls(const LibraryRenderConfig& config) {
+[[maybe_unused]] void draw_library_walls(const LibraryRenderConfig& config) {
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(80), wall_color);
 }
 
@@ -212,7 +214,7 @@ void draw_library_backdrop(const LibraryRenderConfig& config) {
         Vector2{0.0F, 0.0F}, 0.0F, WHITE);
 }
 
-void draw_scene_element(const SceneElement& element) {
+[[maybe_unused]] void draw_scene_element(const SceneElement& element) {
     const Vector2 pos = scaled_point(element.position);
     const float w = scaled(element.width);
     const float h = scaled(element.height);
@@ -298,7 +300,8 @@ void draw_scene_element(const SceneElement& element) {
     }
 }
 
-void draw_npc_sprite(const NpcState& state, const NpcData& data, bool is_hovered, const Font& font) {
+[[maybe_unused]] void draw_npc_sprite(const NpcState& state, const NpcData& data,
+                                      bool is_hovered, const Font& font) {
     const Vector2 pos = scaled_point(state.position);
     
     DrawCircle(pos.x, pos.y + scaled(15), scaled(18), is_hovered ? Color{255, 255, 200, 100} : Color{0, 0, 0, 30});
@@ -372,7 +375,8 @@ void draw_npc_sprite(const NpcState& state, const NpcData& data, bool is_hovered
     DrawTextEx(font, hint_text.c_str(), Vector2{text_x, text_y}, scaled_font_size(12), 1.0F, Color{80, 60, 40, 255});
 }
 
-void draw_room_ui(const LibraryRenderConfig& config, const Font& font) {
+[[maybe_unused]] void draw_room_ui(const LibraryRenderConfig& config,
+                                   const Font& font) {
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(40), slate);
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
@@ -380,7 +384,8 @@ void draw_room_ui(const LibraryRenderConfig& config, const Font& font) {
     text(font, "点击NPC进行互动", 10, 330, 14, faded_ink);
 }
 
-void draw_transition_effect(float progress, const LibraryRenderConfig& config) {
+[[maybe_unused]] void draw_transition_effect(float progress,
+                                             const LibraryRenderConfig& config) {
     const unsigned char fade_alpha = static_cast<unsigned char>(progress * 255.0F);
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height), 
                   Color{0, 0, 0, fade_alpha});
@@ -637,8 +642,11 @@ void draw_answering_screen(const LibraryReaderPresentation& presentation,
                              ui_state.selected_category_id == categories[i].id, font);
     }
 
-    text(font, "按 I 重看说明 / ESC 放弃工作", 50, config.logical_height - 25, 14,
-         Color{128, 128, 128, 255});
+    const Rectangle instruction_panel{
+        50.0F, static_cast<float>(config.logical_height - 28), 250.0F, 22.0F};
+    panel(instruction_panel, Color{46, 58, 57, 232});
+    text(font, "按 I 重看说明 / ESC 放弃工作", 60,
+         config.logical_height - 24, 12, RAYWHITE);
 }
 
 void draw_feedback_screen(const LibraryUIState& ui_state,
@@ -748,53 +756,15 @@ void draw_summary_screen(const LibraryWorkResult& result,
 
 }  // namespace
 
-void draw_library_room_scene(const LibraryScene& scene, const LibraryUIState& ui_state,
-                             const LibraryRenderConfig& render_config, const Font& font, Vector2 logical_mouse) {
-    const Vector2 library_mouse = scene_design_mouse(logical_mouse);
-
-    draw_library_backdrop(render_config);
-    BeginMode2D(indoor_scene_camera());
-    if (render_config.background.id == 0) {
-        draw_library_floor(render_config);
-        draw_library_walls(render_config);
-
-        for (const auto& element : scene.get_elements()) {
-            draw_scene_element(element);
-        }
-    }
-
-    const auto& npc_states = scene.get_npc_manager().get_npc_states();
-    for (const auto& state : npc_states) {
-        const auto* data = scene.get_npc_manager().get_npc_data(state.npc_id);
-        if (!data) continue;
-
-        const float dist = std::sqrt(std::pow(library_mouse.x - state.position.x, 2) + 
-                                     std::pow(library_mouse.y - state.position.y, 2));
-        bool is_hovered = dist <= data->interaction_radius;
-
-        draw_npc_sprite(state, *data, is_hovered, font);
-    }
-    EndMode2D();
-
-    draw_room_ui(render_config, font);
-
-    if (ui_state.is_transitioning) {
-        draw_transition_effect(ui_state.transition_progress, render_config);
-    }
-}
-
 void draw_library_scene(const LibraryReaderPresentation& presentation,
                         const LibraryUIState& ui_state,
-                        const LibraryScene& scene, const LibraryRenderConfig& render_config, const Font& font, Vector2 logical_mouse) {
+                        const LibraryRenderConfig& render_config, const Font& font,
+                        Vector2 logical_mouse) {
     const Vector2 library_mouse = {
         logical_mouse.x / ::pixel_town::ui::design_to_canvas_scale,
         logical_mouse.y / ::pixel_town::ui::design_to_canvas_scale};
 
     switch (ui_state.scene_state) {
-        case LibrarySceneState::room_view: {
-            draw_library_room_scene(scene, ui_state, render_config, font, logical_mouse);
-            break;
-        }
         case LibrarySceneState::intro:
             draw_intro_screen(presentation, render_config, font, library_mouse);
             break;
@@ -823,28 +793,10 @@ void draw_library_scene(const LibraryReaderPresentation& presentation,
             break;
     }
 
-    if (ui_state.is_transitioning) {
-        draw_transition_effect(ui_state.transition_progress, render_config);
-    }
 }
 
 void update_library_ui(const LibraryReaderPresentation& presentation,
-                       LibraryUIState& ui_state, LibraryScene& scene) {
-    scene.update(1.0F / 60.0F);
-
-    if (ui_state.is_transitioning) {
-        ui_state.transition_progress += 0.05F;
-        if (ui_state.transition_progress >= 1.0F) {
-            ui_state.is_transitioning = false;
-            ui_state.transition_progress = 0.0F;
-            
-            if (ui_state.scene_state == LibrarySceneState::room_view) {
-                ui_state.scene_state = LibrarySceneState::intro;
-            }
-        }
-        return;
-    }
-
+                       LibraryUIState& ui_state) {
     if (ui_state.scene_state == LibrarySceneState::feedback) {
         ui_state.feedback_timer++;
         if (ui_state.feedback_timer >= 60) {
@@ -860,32 +812,12 @@ void update_library_ui(const LibraryReaderPresentation& presentation,
 
 LibraryIntent handle_library_input(const LibraryReaderPresentation& presentation,
                                    LibraryUIState& ui_state,
-                                   LibraryScene& scene,
                                    Vector2 logical_mouse) {
-    const Vector2 library_mouse =
-        ui_state.scene_state == LibrarySceneState::room_view
-            ? scene_design_mouse(logical_mouse)
-            : Vector2{logical_mouse.x /
-                          ::pixel_town::ui::design_to_canvas_scale,
-                      logical_mouse.y /
-                          ::pixel_town::ui::design_to_canvas_scale};
+    const Vector2 library_mouse = {
+        logical_mouse.x / ::pixel_town::ui::design_to_canvas_scale,
+        logical_mouse.y / ::pixel_town::ui::design_to_canvas_scale};
 
-    if (ui_state.is_transitioning) {
-        return {};
-    }
-
-    if (ui_state.scene_state == LibrarySceneState::room_view) {
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            std::string npc_id;
-            if (scene.handle_click(library_mouse, npc_id)) {
-                ui_state.clicked_npc_id = npc_id;
-                ui_state.is_transitioning = true;
-                ui_state.transition_progress = 0.0F;
-                return {};
-            }
-        }
-        return {};
-    } else if (ui_state.scene_state == LibrarySceneState::intro) {
+    if (ui_state.scene_state == LibrarySceneState::intro) {
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             advance_from_intro(ui_state);
             return {};

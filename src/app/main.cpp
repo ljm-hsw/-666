@@ -284,6 +284,37 @@ void setup_library_mode_diagnostic(pixel_town::GameAppState& state,
     }
 }
 
+enum class LibraryRoomDiagnostic {
+    static_npc,
+    idle_frame,
+    dialogue,
+};
+
+void setup_library_room_diagnostic(pixel_town::GameAppState& state,
+                                   LibraryRoomDiagnostic diagnostic) {
+    state = pixel_town::GameAppState{};
+    state.has_session = true;
+    state.session = pixel_town::GameSession::new_game(20260714U);
+
+    if (!state.locations.library_room.open()) {
+        state.notice = "诊断：图书馆场景加载失败。";
+        return;
+    }
+
+    pixel_town::LibraryRoomInput input;
+    if (diagnostic == LibraryRoomDiagnostic::idle_frame) {
+        input.elapsed_seconds = 0.25F;
+        (void)state.locations.library_room.step(input);
+        state.notice = "诊断：固定管理员待机动画帧。";
+    } else if (diagnostic == LibraryRoomDiagnostic::dialogue) {
+        input.administrator_activated = true;
+        const auto opened = state.locations.library_room.step(input);
+        state.notice = opened.notice;
+    } else {
+        state.notice = "诊断：固定管理员点击热点。";
+    }
+}
+
 void setup_home_diagnostic(pixel_town::GameAppState& state) {
     state = pixel_town::GameAppState{};
     state.has_session = true;
@@ -437,8 +468,7 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
             setup_home_diagnostic(state);
             break;
         case 19:
-            setup_library_diagnostic(
-                state, pixel_town::library::ui::LibrarySceneState::room_view);
+            setup_location_lobby_diagnostic(state, pixel_town::Location::library);
             state.collision_debug_visible = true;
             break;
         case 20:
@@ -465,8 +495,20 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
         case 26:
             setup_library_mode_diagnostic(state, false);
             break;
-        default:
+        case 27:
             setup_library_mode_diagnostic(state, true, true);
+            break;
+        case 28:
+            setup_library_room_diagnostic(
+                state, LibraryRoomDiagnostic::static_npc);
+            break;
+        case 29:
+            setup_library_room_diagnostic(state,
+                                          LibraryRoomDiagnostic::idle_frame);
+            break;
+        default:
+            setup_library_room_diagnostic(state,
+                                          LibraryRoomDiagnostic::dialogue);
             break;
     }
 }
@@ -714,7 +756,7 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 28> ui_diagnostic_capture_paths{
+    const std::array<const char*, 31> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/store-prepare.png",
@@ -743,6 +785,9 @@ int main(int argc, char* argv[]) {
         "ui-diagnostics-captures/home-lobby.png",
         "ui-diagnostics-captures/library-mode-selection.png",
         "ui-diagnostics-captures/library-organizing-wrong-retry.png",
+        "ui-diagnostics-captures/library-room-static-npc.png",
+        "ui-diagnostics-captures/library-room-idle-frame.png",
+        "ui-diagnostics-captures/library-room-dialogue.png",
     };
     auto unload_resources = [&]() {
         pixel_town::unload_tavern_assets(game_flow.locations.tavern_assets);

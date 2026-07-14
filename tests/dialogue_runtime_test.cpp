@@ -66,3 +66,19 @@ TEST_CASE("dialogue can be skipped without applying another line") {
     CHECK_FALSE(runtime.presentation().active);
     CHECK(runtime.step(input) == pixel_town::DialogueStepStatus::unchanged);
 }
+
+TEST_CASE("library administrator dialogue is available from the shared catalog") {
+    const pixel_town::StoryDialogueCatalog catalog;
+    const auto* script = catalog.find(
+        pixel_town::DialogueTrigger::library_administrator_intro);
+
+    REQUIRE(script != nullptr);
+    REQUIRE(script->lines.size() == 3);
+    CHECK(script->lines.front().speaker == "管理员");
+    CHECK(script->lines.back().text.find("整理") != std::string::npos);
+    const std::string glyphs = catalog.glyphs();
+    for (const auto& line : script->lines) {
+        CHECK(glyphs.find(line.speaker) != std::string::npos);
+        CHECK(glyphs.find(line.text) != std::string::npos);
+    }
+}

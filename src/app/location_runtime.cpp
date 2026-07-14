@@ -361,6 +361,28 @@ bool start_pending_location(GameSession& session, LocationRuntimeState& runtime,
     return true;
 }
 
+LibraryRoomStepResult step_library_room(
+    GameSession& session, LocationRuntimeState& runtime,
+    const LibraryRoomInput& input, std::string& notice) {
+    LibraryRoomStepResult result = runtime.library_room.step(input);
+    if (!result.notice.empty()) {
+        notice = result.notice;
+    }
+    if (result.status != LibraryRoomStepStatus::work_requested) {
+        return result;
+    }
+
+    if (!session.enter_location(Location::library)) {
+        notice = "当前阶段不能开始图书馆工作。";
+        return {LibraryRoomStepStatus::rejected, notice};
+    }
+    if (!start_pending_location(session, runtime, notice)) {
+        (void)session.return_to_map();
+        return {LibraryRoomStepStatus::rejected, notice};
+    }
+    return result;
+}
+
 bool select_library_mode(GameSession& session, LocationRuntimeState& runtime,
                          LibraryRuntimeMode mode, std::string& notice) {
     LibraryIntent intent;
@@ -431,11 +453,9 @@ bool update_active_library(GameSession& session, LocationRuntimeState& runtime,
         return true;
     }
 
-    library::ui::update_library_ui(*presentation.reader, runtime.library_ui_state,
-                                   runtime.library_scene);
+    library::ui::update_library_ui(*presentation.reader, runtime.library_ui_state);
     const LibraryIntent intent = library::ui::handle_library_input(
-        *presentation.reader, runtime.library_ui_state, runtime.library_scene,
-        logical_mouse);
+        *presentation.reader, runtime.library_ui_state, logical_mouse);
     if (intent.type != LibraryIntentType::none) {
         const auto stepped = runtime.library.step(session, intent);
         notice = stepped.notice;
@@ -577,7 +597,7 @@ void draw_active_library(const Font& font, const LocationRuntimeState& runtime,
     render_config.logical_height = 360;
     render_config.background = background;
     library::ui::draw_library_scene(*presentation.reader, runtime.library_ui_state,
-                                    runtime.library_scene, render_config, font, logical_mouse);
+                                    render_config, font, logical_mouse);
 }
 
 }  // namespace pixel_town

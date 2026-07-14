@@ -120,6 +120,15 @@ constexpr std::array ui_texts{
     "进入餐馆工作",
     "开始经营",
     "开始图书馆工作",
+    "点击管理员或按 Space 交谈 · Esc 返回地图",
+    "图书馆管理员",
+    "已进入图书馆：点击柜台管理员开始交谈。",
+    "图书馆场景加载失败。",
+    "管理员对话结束，请选择今天的图书馆工作。",
+    "已开始与管理员交谈。",
+    "图书馆室内场景尚未打开。",
+    "当前阶段不能开始图书馆工作。",
+    "图书馆场景收到非法帧时间。",
     "准备休息",
     "对话接口已预留，后续接入正式 NPC 内容。",
     "诊断：场景大厅与 NPC 预留热点。",
@@ -826,7 +835,7 @@ void draw_collision_debug(Location location) {
         return scene_canvas_rectangle(
             Rectangle{value.x, value.y, value.width, value.height});
     };
-    DrawRectangleLinesEx(to_rectangle(layout->walkable_bounds), 3.0F,
+    DrawRectangleLinesEx(to_rectangle(layout->review_bounds), 3.0F,
                          Color{75, 255, 120, 255});
     for (const auto& collider : layout->static_colliders) {
         const Rectangle bounds = to_rectangle(collider.bounds);
@@ -836,10 +845,6 @@ void draw_collision_debug(Location location) {
     DrawRectangleRec(to_rectangle(layout->exit_trigger), Color{70, 150, 255, 85});
     DrawRectangleLinesEx(to_rectangle(layout->exit_trigger), 3.0F,
                          Color{80, 170, 255, 255});
-    const Rectangle spawn = to_rectangle(
-        scene_actor_bounds(layout->player_spawn, SceneSize{24.0F, 24.0F}));
-    DrawRectangleRec(spawn, Color{255, 225, 60, 150});
-    DrawRectangleLinesEx(spawn, 2.0F, Color{255, 235, 80, 255});
 }
 
 void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets,
@@ -900,6 +905,98 @@ void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets
     centered_text(font, "返回地图", back, 15, ink);
     panel(action, hovered(action, mouse) ? paper : green);
     centered_text(font, spec->action_label.c_str(), action, 14, RAYWHITE);
+}
+
+void draw_library_room_dialogue(const Font& font,
+                                const DialoguePresentation& dialogue,
+                                Vector2 mouse) {
+    DrawRectangle(0, 0, ui::canvas_width, ui::canvas_height,
+                  Color{20, 27, 29, 155});
+    const Rectangle bounds{48, 226, 544, 116};
+    panel(bounds, cream, gold);
+    panel(Rectangle{60, 238, 62, 84}, Color{239, 220, 182, 255},
+          Color{157, 111, 72, 255});
+    const Color coat = dialogue.speaker == "主角" ? green : slate;
+    DrawCircleV(scaled_point(Vector2{91, 259}), scaled(10),
+                Color{222, 188, 146, 255});
+    DrawRectangleRec(scaled_rect(Rectangle{78, 270, 26, 36}), coat);
+
+    text(font, dialogue.speaker, 136, 238, 18, red);
+    const std::string progress = std::to_string(dialogue.current_line) + " / " +
+                                 std::to_string(dialogue.total_lines);
+    text(font, progress, 500, 240, 12, Color{102, 105, 101, 255});
+    const auto lines = wrap_text_lines(dialogue.text, 30, 3);
+    for (std::size_t index = 0; index < lines.size(); ++index) {
+        text(font, lines[index], 136,
+             266.0F + static_cast<float>(index) * 20.0F, 14, ink);
+    }
+    const Rectangle next{470, 306, 104, 28};
+    panel(next, hovered(next, mouse) ? paper : Color{215, 204, 180, 255});
+    centered_text(font,
+                  dialogue.current_line == dialogue.total_lines ? "关闭"
+                                                                 : "下一句",
+                  next, 13, ink);
+    text(font, "Enter / Space / 点击继续 · Esc 跳过", 136, 320, 11,
+         Color{102, 105, 101, 255});
+}
+
+void draw_library_room(const Font& font, const Texture2D& background,
+                       const GameAppState& state, bool audio_enabled,
+                       Vector2 mouse) {
+    if (background.id != 0) {
+        draw_scene_texture(background);
+    } else {
+        ClearBackground(Color{117, 91, 70, 255});
+    }
+    draw_status(font, state.session, audio_enabled);
+
+    const LibraryRoomPresentation room =
+        state.locations.library_room.presentation();
+    const LocationLobbySpec* spec =
+        find_location_lobby_spec(Location::library);
+    const Rectangle administrator_hotspot =
+        spec == nullptr
+            ? Rectangle{48.0F, 62.0F, 160.0F, 100.0F}
+            : scene_design_rectangle(lobby_rectangle(spec->npc_hotspot));
+    const bool administrator_hovered = hovered(administrator_hotspot, mouse);
+    if (administrator_hovered) {
+        DrawRectangleRec(scaled_rect(administrator_hotspot),
+                         Color{255, 224, 154, 45});
+        DrawRectangleLinesEx(scaled_rect(administrator_hotspot), 3.0F, gold);
+    }
+
+    const int idle_frame =
+        static_cast<int>(room.administrator_animation_seconds / 0.18F) % 4;
+    const float bob = idle_frame == 1 ? -1.0F : (idle_frame == 3 ? 1.0F : 0.0F);
+    const float center_x =
+        administrator_hotspot.x + administrator_hotspot.width * 0.70F;
+    const float base_y =
+        administrator_hotspot.y + administrator_hotspot.height * 0.78F + bob;
+    DrawEllipse(static_cast<int>(scaled(center_x)),
+                static_cast<int>(scaled(base_y + 12.0F)), scaled(11.0F),
+                scaled(4.0F), Color{25, 30, 31, 95});
+    DrawCircleV(scaled_point(Vector2{center_x, base_y - 13.0F}), scaled(8.0F),
+                Color{222, 188, 146, 255});
+    DrawRectangleRec(
+        scaled_rect(Rectangle{center_x - 9.0F, base_y - 5.0F, 18.0F, 25.0F}),
+        slate);
+    const Rectangle administrator_label{
+        administrator_hotspot.x + 8.0F,
+        administrator_hotspot.y + administrator_hotspot.height - 24.0F,
+        administrator_hotspot.width - 16.0F, 24.0F};
+    panel(administrator_label,
+          administrator_hovered ? Color{250, 238, 203, 248}
+                                : Color{46, 58, 57, 230});
+    centered_text(font, "图书馆管理员", administrator_label, 13,
+                  administrator_hovered ? ink : RAYWHITE);
+
+    panel(Rectangle{12, 318, 616, 30}, Color{46, 58, 57, 232});
+    text(font, "点击管理员或按 Space 交谈 · Esc 返回地图", 24, 326, 12,
+         RAYWHITE);
+
+    if (room.dialogue.has_value()) {
+        draw_library_room_dialogue(font, *room.dialogue, mouse);
+    }
 }
 
 void draw_home_preview(const Font& font, const Texture2D& background,
@@ -1092,6 +1189,32 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
         state.collision_debug_visible = !state.collision_debug_visible;
     }
 
+    if (state.locations.library_room.active()) {
+        const LibraryRoomPresentation room =
+            state.locations.library_room.presentation();
+        LibraryRoomInput input;
+        input.elapsed_seconds = GetFrameTime();
+        if (room.dialogue.has_value()) {
+            input.dialogue.advance_pressed =
+                IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE) ||
+                IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+            input.dialogue.skip_pressed = IsKeyPressed(KEY_ESCAPE);
+        } else {
+            const LocationLobbySpec* spec =
+                find_location_lobby_spec(Location::library);
+            const Rectangle administrator_hotspot =
+                spec == nullptr
+                    ? Rectangle{48.0F, 62.0F, 160.0F, 100.0F}
+                    : scene_design_rectangle(lobby_rectangle(spec->npc_hotspot));
+            input.administrator_activated =
+                activated(administrator_hotspot, logical_mouse, KEY_SPACE);
+            input.back_pressed = IsKeyPressed(KEY_ESCAPE);
+        }
+        (void)step_library_room(state.session, state.locations, input,
+                                state.notice);
+        return;
+    }
+
     if (state.location_lobby.has_value()) {
         const Location location = *state.location_lobby;
         const LocationLobbySpec* spec = find_location_lobby_spec(location);
@@ -1192,6 +1315,15 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 state.notice = opened.message;
                 return;
             }
+            if (location == Location::library) {
+                if (state.locations.library_room.open()) {
+                    state.notice =
+                        "已进入图书馆：点击柜台管理员开始交谈。";
+                } else {
+                    state.notice = "图书馆场景加载失败。";
+                }
+                return;
+            }
             state.location_lobby = location;
             state.notice = std::string{"已进入"} + location_label(location) +
                            "大厅；可先查看场景或尝试 NPC 预留互动。";
@@ -1266,6 +1398,15 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
                     bool audio_enabled, bool paused, Vector2 logical_mouse) {
     if (!state.has_session) {
         draw_title(font, title_background, state, logical_mouse);
+        if (paused) {
+            draw_pause_overlay(font, audio_enabled);
+        }
+        return;
+    }
+
+    if (state.locations.library_room.active()) {
+        draw_library_room(font, scene_assets.library_interior, state,
+                          audio_enabled, logical_mouse);
         if (paused) {
             draw_pause_overlay(font, audio_enabled);
         }

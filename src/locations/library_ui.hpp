@@ -5,12 +5,10 @@
 #include <raylib.h>
 
 #include "locations/library_runtime_contract.hpp"
-#include "locations/library_scene.hpp"
 
 namespace pixel_town::library::ui {
 
 enum class LibrarySceneState {
-    room_view,
     intro,
     npc_talk,
     plot_event,
@@ -40,9 +38,6 @@ struct LibraryUIState {
     bool show_hint{false};
     std::string current_plot_event_id;
     FeedbackData feedback_data;
-    float transition_progress{0.0F};
-    bool is_transitioning{false};
-    std::string clicked_npc_id;
 };
 
 inline void request_instruction_review(LibraryUIState& ui_state) {
@@ -67,16 +62,14 @@ struct LibraryRenderConfig {
 
 void draw_library_scene(const LibraryReaderPresentation& presentation,
                         const LibraryUIState& ui_state,
-                        const LibraryScene& scene, const LibraryRenderConfig& render_config, const Font& font, Vector2 logical_mouse);
-
-void draw_library_room_scene(const LibraryScene& scene, const LibraryUIState& ui_state,
-                             const LibraryRenderConfig& render_config, const Font& font, Vector2 logical_mouse);
+                        const LibraryRenderConfig& render_config, const Font& font,
+                        Vector2 logical_mouse);
 
 void update_library_ui(const LibraryReaderPresentation& presentation,
-                       LibraryUIState& ui_state, LibraryScene& scene);
+                       LibraryUIState& ui_state);
 
 [[nodiscard]] LibraryIntent handle_library_input(
     const LibraryReaderPresentation& presentation, LibraryUIState& ui_state,
-    LibraryScene& scene, Vector2 logical_mouse);
+    Vector2 logical_mouse);
 
 }  // namespace pixel_town::library::ui
