@@ -404,6 +404,26 @@ NpcLobbyStepResult step_restaurant_lobby(
     return result;
 }
 
+NpcLobbyStepResult step_store_lobby(
+    GameSession& session, LocationRuntimeState& runtime,
+    const NpcLobbyInput& input, std::string& notice) {
+    NpcLobbyStepResult result = runtime.npc_lobby.step(input);
+    if (!result.notice.empty()) {
+        notice = result.notice;
+    }
+    if (result.status != NpcLobbyStepStatus::activity_requested) {
+        return result;
+    }
+
+    if (!session.enter_location(Location::convenience_store)) {
+        notice = "当前阶段不能开始便利店经营。";
+        return {NpcLobbyStepStatus::rejected, notice};
+    }
+    prepare_store_runtime(runtime);
+    notice = "店主交代完毕，已进入便利店经营准备。";
+    return result;
+}
+
 bool select_library_mode(GameSession& session, LocationRuntimeState& runtime,
                          LibraryRuntimeMode mode, std::string& notice) {
     LibraryIntent intent;

@@ -244,6 +244,57 @@ TEST_CASE("restaurant owner dialogue hands off to untouched work preparation") {
     CHECK(runtime.restaurant_timer == doctest::Approx(0.0F));
 }
 
+TEST_CASE("convenience store owner dialogue hands off to unchanged planning") {
+    auto session = pixel_town::GameSession::new_game(20260714U);
+    const auto session_before_dialogue = session.snapshot();
+    const unsigned int store_seed_before =
+        session.location_seed(pixel_town::Location::convenience_store);
+    pixel_town::LocationRuntimeState runtime;
+    REQUIRE(runtime.npc_lobby.open(
+        pixel_town::DialogueTrigger::convenience_store_owner_intro));
+    std::string notice;
+
+    pixel_town::NpcLobbyInput input;
+    input.interaction_activated = true;
+    CHECK(pixel_town::step_store_lobby(session, runtime, input, notice).status ==
+          pixel_town::NpcLobbyStepStatus::dialogue_opened);
+
+    input = {};
+    input.dialogue.advance_pressed = true;
+    CHECK(pixel_town::step_store_lobby(session, runtime, input, notice).status ==
+          pixel_town::NpcLobbyStepStatus::changed);
+    CHECK(pixel_town::step_store_lobby(session, runtime, input, notice).status ==
+          pixel_town::NpcLobbyStepStatus::changed);
+    CHECK(session.snapshot() == session_before_dialogue);
+    CHECK(runtime.store_purchase_plan.quantities.empty());
+    CHECK(runtime.store_price_plan.tiers.empty());
+
+    CHECK(pixel_town::step_store_lobby(session, runtime, input, notice).status ==
+          pixel_town::NpcLobbyStepStatus::activity_requested);
+    CHECK(session.phase() == pixel_town::GamePhase::day_location);
+    CHECK(session.pending_location() ==
+          pixel_town::Location::convenience_store);
+    CHECK_FALSE(session.location_started());
+    CHECK(session.player().money == session_before_dialogue.player.money);
+    CHECK(session.player().stamina == session_before_dialogue.player.stamina);
+    CHECK(session.player().reputation ==
+          session_before_dialogue.player.reputation);
+    CHECK(session.player().knowledge == session_before_dialogue.player.knowledge);
+    CHECK(session.player().mood == session_before_dialogue.player.mood);
+    CHECK(session.store_inventory() == session_before_dialogue.store_inventory);
+    CHECK(session.location_seed(pixel_town::Location::convenience_store) ==
+          store_seed_before);
+    CHECK(session.active_result_id() == 0);
+    CHECK_FALSE(runtime.store_purchase_plan.quantities.empty());
+    CHECK_FALSE(runtime.store_price_plan.tiers.empty());
+
+    const auto changed = pixel_town::apply_store_plan_action(
+        runtime, session,
+        {pixel_town::StorePlanActionType::increase_purchase, 0});
+    CHECK(changed.accepted);
+    CHECK(changed.changed);
+}
+
 TEST_CASE("library organizing UI reserves separate pickup and held-book spaces") {
     using namespace pixel_town::library;
     using namespace pixel_town::library::ui;

@@ -9,6 +9,7 @@ enum class DialogueTrigger {
     tavern_bartender_intro,
     library_administrator_intro,
     restaurant_owner_intro,
+    convenience_store_owner_intro,
 };
 
 struct DialogueLine {

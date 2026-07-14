@@ -101,3 +101,23 @@ TEST_CASE("restaurant owner dialogue extends the existing main story") {
         CHECK(glyphs.find(line.text) != std::string::npos);
     }
 }
+
+TEST_CASE("convenience store owner dialogue extends the existing main story") {
+    const pixel_town::StoryDialogueCatalog catalog;
+    const auto* script =
+        catalog.find(pixel_town::DialogueTrigger::convenience_store_owner_intro);
+
+    REQUIRE(script != nullptr);
+    REQUIRE(script->lines.size() == 3);
+    CHECK(script->lines.front().speaker == "便利店店主");
+    CHECK(script->lines[1].speaker == "主角");
+    CHECK(script->lines.front().text.find("天气") != std::string::npos);
+    CHECK(script->lines[1].text.find("库存") != std::string::npos);
+    CHECK(script->lines.back().text.find("账本") != std::string::npos);
+
+    const std::string glyphs = catalog.glyphs();
+    for (const auto& line : script->lines) {
+        CHECK(glyphs.find(line.speaker) != std::string::npos);
+        CHECK(glyphs.find(line.text) != std::string::npos);
+    }
+}

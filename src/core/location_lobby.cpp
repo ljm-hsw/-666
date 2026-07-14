@@ -37,7 +37,7 @@ const LocationLobbySpec& store_lobby() {
     static const LocationLobbySpec spec{
         Location::convenience_store,
         "便利店大厅",
-        "便利店店主（预留）",
+        "便利店店主",
         "开始经营",
         LobbyRect{420.0F, 108.0F, 130.0F, 100.0F},
         LobbyRect{364.0F, 312.0F, 110.0F, 34.0F},

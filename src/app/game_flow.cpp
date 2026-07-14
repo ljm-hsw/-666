@@ -113,8 +113,8 @@ constexpr std::array ui_texts{
     "餐馆大厅",
     "便利店大厅",
     "图书馆大厅",
-    "餐馆老板（预留）",
-    "便利店店主（预留）",
+    "餐馆老板",
+    "便利店店主",
     "图书馆管理员（预留）",
     "访客互动位（预留）",
     "进入餐馆工作",
@@ -137,6 +137,14 @@ constexpr std::array ui_texts{
     "无法进入该地点，请返回地图重试。",
     "已进入餐馆工作准备。",
     "已进入便利店经营：请设置进货数量和价格档。",
+    "已进入便利店大厅：点击店主或开始经营按钮开始交谈。",
+    "便利店店主对话暂时不可用。",
+    "当前阶段不能开始便利店经营。",
+    "店主交代完毕，已进入便利店经营准备。",
+    "诊断：餐馆老板固定热点。",
+    "诊断：餐馆老板主线对话。",
+    "诊断：便利店店主固定热点。",
+    "诊断：便利店店主主线对话。",
     "继续到下一天",
     "十日计划完成",
     "主结局",
@@ -877,10 +885,12 @@ void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets
 
     const Rectangle npc_hotspot =
         scene_design_rectangle(lobby_rectangle(spec->npc_hotspot));
+    const bool uses_npc_lobby =
+        location == Location::restaurant ||
+        location == Location::convenience_store;
     const NpcLobbyPresentation npc_lobby =
-        location == Location::restaurant
-            ? state.locations.npc_lobby.presentation()
-            : NpcLobbyPresentation{};
+        uses_npc_lobby ? state.locations.npc_lobby.presentation()
+                       : NpcLobbyPresentation{};
     const bool dialogue_active = npc_lobby.dialogue.has_value();
     const bool npc_hovered = !dialogue_active && hovered(npc_hotspot, mouse);
     if (npc_hovered) {
@@ -1245,7 +1255,8 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
         const Rectangle action = lobby_rectangle(spec->action_button);
         const Rectangle npc =
             scene_design_rectangle(lobby_rectangle(spec->npc_hotspot));
-        if (location == Location::restaurant) {
+        if (location == Location::restaurant ||
+            location == Location::convenience_store) {
             const NpcLobbyPresentation lobby =
                 state.locations.npc_lobby.presentation();
             NpcLobbyInput input;
@@ -1263,8 +1274,12 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 input.back_pressed =
                     activated(back, logical_mouse, KEY_ESCAPE);
             }
-            const auto stepped = step_restaurant_lobby(
-                state.session, state.locations, input, state.notice);
+            const auto stepped =
+                location == Location::restaurant
+                    ? step_restaurant_lobby(state.session, state.locations,
+                                            input, state.notice)
+                    : step_store_lobby(state.session, state.locations, input,
+                                       state.notice);
             if (stepped.status == NpcLobbyStepStatus::activity_requested ||
                 stepped.status == NpcLobbyStepStatus::closed) {
                 state.location_lobby.reset();
@@ -1289,12 +1304,6 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             }
             if (!state.session.enter_location(location)) {
                 state.notice = "无法进入该地点，请返回地图重试。";
-                return;
-            }
-            if (location == Location::convenience_store) {
-                prepare_store_runtime(state.locations);
-                state.notice = "已进入便利店经营：请设置进货数量和价格档。";
-                state.location_lobby.reset();
                 return;
             }
             if (location == Location::library) {
@@ -1360,18 +1369,31 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 }
                 return;
             }
-            if (location == Location::restaurant &&
-                !state.locations.npc_lobby.open(
-                    DialogueTrigger::restaurant_owner_intro)) {
-                state.notice = "餐馆老板对话暂时不可用。";
-                return;
+            if (location == Location::restaurant ||
+                location == Location::convenience_store) {
+                const DialogueTrigger trigger =
+                    location == Location::restaurant
+                        ? DialogueTrigger::restaurant_owner_intro
+                        : DialogueTrigger::convenience_store_owner_intro;
+                if (!state.locations.npc_lobby.open(trigger)) {
+                    state.notice =
+                        location == Location::restaurant
+                            ? "餐馆老板对话暂时不可用。"
+                            : "便利店店主对话暂时不可用。";
+                    return;
+                }
             }
             state.location_lobby = location;
-            state.notice =
-                location == Location::restaurant
-                    ? "已进入餐馆大厅：点击老板或进入工作按钮开始交谈。"
-                    : std::string{"已进入"} + location_label(location) +
-                          "大厅；可先查看场景或尝试 NPC 预留互动。";
+            if (location == Location::restaurant) {
+                state.notice =
+                    "已进入餐馆大厅：点击老板或进入工作按钮开始交谈。";
+            } else if (location == Location::convenience_store) {
+                state.notice =
+                    "已进入便利店大厅：点击店主或开始经营按钮开始交谈。";
+            } else {
+                state.notice = std::string{"已进入"} + location_label(location) +
+                               "大厅；可先查看场景或尝试 NPC 预留互动。";
+            }
             return;
         }
         return;

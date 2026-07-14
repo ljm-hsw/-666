@@ -92,6 +92,9 @@ void update_store_selection(LocationRuntimeState& runtime, const GameSession& se
 [[nodiscard]] NpcLobbyStepResult step_restaurant_lobby(
     GameSession& session, LocationRuntimeState& runtime,
     const NpcLobbyInput& input, std::string& notice);
+[[nodiscard]] NpcLobbyStepResult step_store_lobby(
+    GameSession& session, LocationRuntimeState& runtime,
+    const NpcLobbyInput& input, std::string& notice);
 [[nodiscard]] bool update_active_library(GameSession& session,
                                           LocationRuntimeState& runtime,
                                           std::string& notice,

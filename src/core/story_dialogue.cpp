@@ -30,6 +30,15 @@ const DialogueScript restaurant_owner_intro{
     },
 };
 
+const DialogueScript convenience_store_owner_intro{
+    DialogueTrigger::convenience_store_owner_intro,
+    {
+        {"便利店店主", "先看看今天的天气。下雨和晴天，货架缺的东西不一样。"},
+        {"主角", "我会对照库存进货，再决定价格，不让常用商品断档。"},
+        {"便利店店主", "好，卖完别只看收入，成本和剩货也要记进账本。"},
+    },
+};
+
 }  // namespace
 
 const DialogueScript* StoryDialogueCatalog::find(DialogueTrigger trigger) const noexcept {
@@ -40,6 +49,8 @@ const DialogueScript* StoryDialogueCatalog::find(DialogueTrigger trigger) const 
             return &library_administrator_intro;
         case DialogueTrigger::restaurant_owner_intro:
             return &restaurant_owner_intro;
+        case DialogueTrigger::convenience_store_owner_intro:
+            return &convenience_store_owner_intro;
     }
     return nullptr;
 }
@@ -55,6 +66,10 @@ std::string StoryDialogueCatalog::glyphs() const {
         result += line.text;
     }
     for (const auto& line : restaurant_owner_intro.lines) {
+        result += line.speaker;
+        result += line.text;
+    }
+    for (const auto& line : convenience_store_owner_intro.lines) {
         result += line.speaker;
         result += line.text;
     }

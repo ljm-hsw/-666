@@ -344,19 +344,28 @@ void setup_location_lobby_diagnostic(pixel_town::GameAppState& state,
         state.has_session = true;
         state.session = pixel_town::GameSession::new_game(20260713U);
     }
-    if (location == pixel_town::Location::restaurant) {
-        (void)state.locations.npc_lobby.open(
-            pixel_town::DialogueTrigger::restaurant_owner_intro);
+    if (location == pixel_town::Location::restaurant ||
+        location == pixel_town::Location::convenience_store) {
+        const auto trigger =
+            location == pixel_town::Location::restaurant
+                ? pixel_town::DialogueTrigger::restaurant_owner_intro
+                : pixel_town::DialogueTrigger::convenience_store_owner_intro;
+        (void)state.locations.npc_lobby.open(trigger);
     }
     state.location_lobby = location;
-    state.notice = location == pixel_town::Location::restaurant
-                       ? "诊断：餐馆老板固定热点。"
-                       : "诊断：场景大厅与 NPC 预留热点。";
+    if (location == pixel_town::Location::restaurant) {
+        state.notice = "诊断：餐馆老板固定热点。";
+    } else if (location == pixel_town::Location::convenience_store) {
+        state.notice = "诊断：便利店店主固定热点。";
+    } else {
+        state.notice = "诊断：场景大厅与 NPC 预留热点。";
+    }
 }
 
-void setup_restaurant_lobby_dialogue_diagnostic(
-    pixel_town::GameAppState& state, int dialogue_line) {
-    setup_location_lobby_diagnostic(state, pixel_town::Location::restaurant);
+void setup_location_lobby_dialogue_diagnostic(
+    pixel_town::GameAppState& state, pixel_town::Location location,
+    int dialogue_line) {
+    setup_location_lobby_diagnostic(state, location);
     pixel_town::NpcLobbyInput input;
     input.interaction_activated = true;
     (void)state.locations.npc_lobby.step(input);
@@ -365,7 +374,9 @@ void setup_restaurant_lobby_dialogue_diagnostic(
         input.dialogue.advance_pressed = true;
         (void)state.locations.npc_lobby.step(input);
     }
-    state.notice = "诊断：餐馆老板主线对话。";
+    state.notice = location == pixel_town::Location::restaurant
+                       ? "诊断：餐馆老板主线对话。"
+                       : "诊断：便利店店主主线对话。";
 }
 
 void setup_tavern_diagnostic(pixel_town::GameAppState& state,
@@ -531,10 +542,20 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
                                           LibraryRoomDiagnostic::dialogue);
             break;
         case 31:
-            setup_restaurant_lobby_dialogue_diagnostic(state, 0);
+            setup_location_lobby_dialogue_diagnostic(
+                state, pixel_town::Location::restaurant, 0);
+            break;
+        case 32:
+            setup_location_lobby_dialogue_diagnostic(
+                state, pixel_town::Location::restaurant, 2);
+            break;
+        case 33:
+            setup_location_lobby_dialogue_diagnostic(
+                state, pixel_town::Location::convenience_store, 0);
             break;
         default:
-            setup_restaurant_lobby_dialogue_diagnostic(state, 2);
+            setup_location_lobby_dialogue_diagnostic(
+                state, pixel_town::Location::convenience_store, 2);
             break;
     }
 }
@@ -782,7 +803,7 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 33> ui_diagnostic_capture_paths{
+    const std::array<const char*, 35> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/store-prepare.png",
@@ -816,6 +837,8 @@ int main(int argc, char* argv[]) {
         "ui-diagnostics-captures/library-room-dialogue.png",
         "ui-diagnostics-captures/restaurant-dialogue-first.png",
         "ui-diagnostics-captures/restaurant-dialogue-last.png",
+        "ui-diagnostics-captures/store-dialogue-first.png",
+        "ui-diagnostics-captures/store-dialogue-last.png",
     };
     auto unload_resources = [&]() {
         pixel_town::unload_tavern_assets(game_flow.locations.tavern_assets);
