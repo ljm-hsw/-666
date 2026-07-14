@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "locations/library_data.hpp"
+#include "locations/library_work_result.hpp"
 
 namespace pixel_town::library {
 
@@ -67,21 +68,6 @@ struct NpcInteraction {
     PlotStatus current_plot_status{PlotStatus::not_available};
 };
 
-struct ActionResult {
-    int money_change{0};
-    int stamina_change{0};
-    int reputation_change{0};
-    int knowledge_change{0};
-    int mood_change{0};
-    std::string summary;
-    bool completed{false};
-    bool gave_up{false};
-    std::string narrative_echo;
-    bool plot_triggered{false};
-    std::string plot_title;
-    std::string plot_description;
-};
-
 struct SessionState {
     int current_question_index{0};
     int correct_count{0};
@@ -116,7 +102,7 @@ public:
 
     [[nodiscard]] bool was_last_answer_correct() const;
 
-    [[nodiscard]] ActionResult finish_session() const;
+    [[nodiscard]] LibraryWorkResult finish_session() const;
 
     void give_up();
 
@@ -151,12 +137,13 @@ public:
     [[nodiscard]] bool has_pending_plot_event() const;
 
 private:
-    const LibraryData& data_;
+    LibraryData data_;
     LibraryConfig config_;
     SessionState session_state_;
     DailyContext current_context_;
     std::vector<ReaderQuestion> shuffled_questions_;
     bool last_answer_correct_{false};
+    bool gave_up_{false};
     NpcInteraction npc_interaction_;
     std::vector<std::string> triggered_plot_events_;
 

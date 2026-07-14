@@ -233,27 +233,17 @@ void setup_library_diagnostic(pixel_town::GameAppState& state,
     state.has_session = true;
     state.session = pixel_town::GameSession::new_game();
     (void)state.session.enter_location(pixel_town::Location::library);
-    (void)state.session.start_location();
-    const auto load_result = pixel_town::library::load_library_data("assets/data/library_data.txt");
-    if (!load_result.success) {
-        state.notice = "诊断：图书馆数据加载失败。";
+    if (!pixel_town::start_pending_location(state.session, state.locations,
+                                            state.notice)) {
         return;
     }
-    state.locations.library_data = load_result.data;
-    state.locations.library_engine = std::make_unique<pixel_town::library::LibraryRuleEngine>(
-        state.locations.library_data, pixel_town::library::default_library_config());
-    pixel_town::library::DailyContext context;
-    context.day = state.session.day();
-    context.random_seed = state.session.location_seed(pixel_town::Location::library, 1);
-    context.library_visits = 1;
-    context.current_knowledge = state.session.player().knowledge;
-    state.locations.library_engine->start_session(context);
-    state.locations.library_engine->update_npc_relationship(state.session.player().knowledge, 1);
-    state.locations.library_ui_state = pixel_town::library::ui::LibraryUIState{};
+    if (!pixel_town::select_library_mode(
+            state.session, state.locations,
+            pixel_town::LibraryRuntimeMode::reader_consultation, state.notice)) {
+        return;
+    }
     state.locations.library_ui_state.scene_state = scene_state;
     state.locations.library_ui_state.show_hint = show_hint;
-    state.locations.library_mode = pixel_town::LibraryWorkMode::reader_consultation;
-    state.locations.in_library = true;
     state.notice = "诊断：图书馆页面。";
 }
 
@@ -270,17 +260,24 @@ void setup_library_mode_diagnostic(pixel_town::GameAppState& state,
     if (organizing) {
         (void)pixel_town::select_library_mode(
             state.session, state.locations,
-            pixel_town::LibraryWorkMode::book_organizing, state.notice);
-        if (wrong_retry && state.locations.library_organizing) {
-            for (const auto& task : state.locations.library_organizing->tasks()) {
+            pixel_town::LibraryRuntimeMode::book_organizing, state.notice);
+        if (wrong_retry) {
+            const auto view = state.locations.library.presentation();
+            if (!view.organizing) {
+                return;
+            }
+            for (const auto& task : view.organizing->tasks) {
                 if (task.category_id == "history") {
                     continue;
                 }
-                const auto picked = state.locations.library_organizing->pick_up(task.id);
-                state.locations.library_organizing_ui_state.feedback = picked.message;
-                const auto wrong =
-                    state.locations.library_organizing->place_on_shelf("shelf_history");
-                state.locations.library_organizing_ui_state.feedback = wrong.message;
+                (void)state.locations.library.step(
+                    state.session,
+                    {pixel_town::LibraryIntentType::pick_up_book, task.id});
+                const auto wrong = state.locations.library.step(
+                    state.session,
+                    {pixel_town::LibraryIntentType::place_on_shelf,
+                     "shelf_history"});
+                state.notice = wrong.notice;
                 break;
             }
         }

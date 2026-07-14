@@ -63,6 +63,7 @@ target_include_directories(pixel_town_location_scene PUBLIC "${CMAKE_CURRENT_SOU
 target_link_libraries(pixel_town_location_scene PUBLIC pixel_town_locations raylib)
 
 add_library(pixel_town_app_logic
+  src/app/library_runtime.cpp
   src/app/location_result_adapter.cpp
   src/app/location_runtime.cpp
   src/app/restaurant_ui_model.cpp
@@ -97,6 +98,7 @@ add_executable(pixel_town_tests
   tests/location_result_adapter_test.cpp
   tests/location_lobby_test.cpp
   tests/location_runtime_test.cpp
+  tests/library_runtime_test.cpp
   tests/restaurant_ui_model_test.cpp
   tests/scene_collision_test.cpp
   tests/app_settings_test.cpp

@@ -312,7 +312,7 @@ TEST_CASE("Library rule engine - action result calculation") {
         engine.select_category("wrong");
     }
 
-    pixel_town::library::ActionResult result = engine.finish_session();
+    pixel_town::library::LibraryWorkResult result = engine.finish_session();
 
     CHECK(result.completed);
     CHECK(result.stamina_change == -config.stamina_cost);
@@ -338,7 +338,7 @@ TEST_CASE("Library rule engine - give up") {
     CHECK(engine.is_session_completed());
     CHECK(!engine.is_session_active());
 
-    pixel_town::library::ActionResult result = engine.finish_session();
+    pixel_town::library::LibraryWorkResult result = engine.finish_session();
     CHECK(result.gave_up);
     CHECK(result.stamina_change == 0);
     CHECK(result.knowledge_change == 0);

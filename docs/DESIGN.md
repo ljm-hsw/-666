@@ -18,6 +18,7 @@
 flowchart TB
     Input["鼠标与键盘输入"] --> Scenes["场景与 UI 层（raylib）"]
     Scenes --> App["应用流程控制"]
+    App --> LibraryRuntime["图书馆地点运行期"]
     App --> Navigation["固定室内导航"]
     App --> Dialogue["线性对话运行期"]
     App --> Core["游戏会话核心"]
@@ -32,7 +33,8 @@ flowchart TB
     App --> Resources["资源验证与日志"]
     Restaurant --> Result["行动结果"]
     Store --> Result
-    Library --> Result
+    Library --> LibraryRuntime
+    LibraryRuntime --> Result
     Tavern --> TavernSettlement["酒馆挑战结算"]
     TavernSettlement --> Result
     Result --> Core
@@ -181,9 +183,11 @@ sequenceDiagram
 每个地点模块必须能够在没有图形窗口的测试中运行其规则，并通过 UI 适配层接入相同流程。
 
 应用层通过窄适配器把地点模块的局部结果转换为核心 `ActionResult`。`src/app/location_result_adapter.*`
-当前只处理图书馆结果映射和每日上下文，不直接绘制 UI 或写入全局状态；餐馆、图书馆和便利店的
-窗口输入、临时 UI 状态和开始/完成流程集中在 `src/app/location_runtime.*`，避免继续把地点流程堆入
-`game_flow.cpp`。酒馆使用独立 `TavernRuntime`：raylib 输入先转换为显式 `TavernFrameInput`，
+当前只处理共享 `LibraryWorkResult` 到核心结果的字段映射，不直接绘制 UI 或写入全局状态。图书馆使用
+专用 `LibraryRuntime`，以 `open / step / presentation / active` Interface 隐藏模式互斥、日种子、
+规则对象、完成/放弃和结果提交顺序；`src/app/location_runtime.*` 只把 raylib 输入转换为语义意图并绘制
+只读 presentation。餐馆和便利店的窗口输入与临时 UI 状态仍由 `location_runtime` 接入，避免继续把
+地点流程堆入 `game_flow.cpp`。酒馆使用独立 `TavernRuntime`：raylib 输入先转换为显式 `TavernFrameInput`，
 Runtime 通过 `open / step / presentation / active` Interface 隐藏大厅、棋局、骰局、计时和提交顺序。
 
 CMake 中 `pixel_town_locations` 只承载可无窗口测试的地点规则；五子棋和骗子骰子分别位于
@@ -231,8 +235,9 @@ Runtime 与布局编入不链接 raylib、链接地点规则的 `pixel_town_tave
 - 咨询模式中一条需求映射到一个正确类别，`LibraryRuleEngine` 负责匹配和统计。
 - 整理模式由 raylib-free 的 `LibraryOrganizingSession` 负责确定性任务选择、持书约束、分类验证和单次奖励；错误放置保持持书状态，避免任务变为不可完成。
 - 整理页面以透明书本 sprite 表示散落书和错架书，不使用抽象编号方块；每本书保留独立拾取热区，底部“手中书籍”槽显式展示拾取状态，分类书架热区负责放回操作。未来室内移动只把相同热区改接为主角靠近后拾取/放回，不复制整理规则。
-- 最后一本书正确归位后，UI 立即返回 `finish` 并由应用层生成一次统一行动结果；不显示需要再次点击的完成弹窗，也不要求玩家重复点击书架。
-- 两种模式的输出都映射为同一图书馆核心行动结果，包含金钱、知识、声望、体力、心情和摘要，并携带当前 `active_result_id`。
+- 最后一本书正确归位时，`LibraryOrganizingSession` 返回显式 `completed` 状态，`LibraryRuntime` 立即结算；UI 不推断完成条件，不显示需要再次点击的完成弹窗，也不要求玩家重复点击书架。
+- 两种模式都产生共享 `LibraryWorkResult`，再经一次 Adapter 映射为核心行动结果，包含金钱、知识、声望、体力、心情和摘要，并携带当前 `active_result_id`。
+- 两种模式的进入、操作、完成和主动放弃都通过 `LibraryRuntime` 的语义 intent 与只读 presentation 接入。主动放弃是显式规则状态，即使已有部分进度也不发放奖励。
 - 室内导航只负责让玩家靠近管理员、触发共享对话并进入模式选择；它不改变题库或整理规则。
 
 ### 酒馆
@@ -278,8 +283,9 @@ P2/P3 合并地点后，应用层按以下 Module 维持 Locality：
 - `GameSession`：核心状态机 Module，唯一负责玩家状态、阶段、天数、行动结果应用和结局推进。
 - `StoryText`：raylib-free 剧情文本 Module，负责开场、每日提示、地点摘要和结局叙事文本。
 - `EndingRules`：raylib-free 最终结算 Module，负责库存折价、固定优先级、单项归一化比较，以及返回唯一主结局、成长路线和判定依据。
-- `location_result_adapter`：图书馆结果 Adapter，负责把图书馆内部结果转换为统一 `ActionResult` 并准备每日上下文。
-- `location_runtime`：白天地点 UI Adapter，负责餐馆、图书馆和便利店在 app 层的临时运行状态、启动顺序、主动放弃和结果提交；其 `LocationRuntimeState` 另行拥有酒馆视觉资源的生命周期。
+- `library_runtime`：raylib-free 的图书馆流程 Module，以 `open / step / presentation / active` 为 public Interface，拥有模式互斥、确定性上下文、咨询/整理规则生命周期、反馈和结果提交顺序；不建立全地点 `ILocation`。
+- `location_result_adapter`：图书馆结果 Adapter，只负责把共享 `LibraryWorkResult` 转换为统一 `ActionResult`。
+- `location_runtime`：白天地点 UI Adapter，负责餐馆与便利店的临时运行状态，并把图书馆 raylib 输入/绘制接到 `LibraryRuntime`；其 `LocationRuntimeState` 另行拥有酒馆视觉资源的生命周期。
 - `location_lobby`：raylib-free 场景大厅布局契约，为餐馆、便利店、图书馆和家提供标题、NPC 热点、返回按钮和主要活动按钮；酒馆明确不复用该配置。
 - `tavern_runtime`：raylib-free 酒馆流程 Module，以 `open / step / presentation / active` 为 public Interface，接收显式帧输入并隐藏大厅、棋局、骰局、电脑行动和结果提交顺序。
 - `tavern_challenge_settlement`：raylib-free 结算 Module，接收真实游戏终局并推导挑战类型与胜负，校验配置、结果 ID、赌注和现金，只构造现有夜晚 `ActionResult`，不应用全局状态。

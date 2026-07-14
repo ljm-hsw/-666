@@ -386,7 +386,9 @@ void draw_transition_effect(float progress, const LibraryRenderConfig& config) {
                   Color{0, 0, 0, fade_alpha});
 }
 
-void draw_intro_screen(const LibraryRuleEngine& engine, const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
+void draw_intro_screen(const LibraryReaderPresentation& presentation,
+                       const LibraryRenderConfig& config, const Font& font,
+                       Vector2 logical_mouse) {
     draw_library_backdrop(config);
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height),
@@ -407,11 +409,9 @@ void draw_intro_screen(const LibraryRuleEngine& engine, const LibraryRenderConfi
 
     panel(Rectangle{50, 202, 540, 104}, paper);
     
-    const std::string& welcome = engine.get_data().welcome_message.empty() ? engine.get_dialogue().greeting : engine.get_data().welcome_message;
-    text(font, welcome, 70, 216, 20, ink);
-    
-    const std::string& intro = engine.get_data().work_intro.empty() ? "读者会提出各种问题，你需要从书架上找到正确的书籍类别来回答" : engine.get_data().work_intro;
-    draw_text_wrapped(font, intro, 70, 244, scaled(500), 20, 14, ink);
+    text(font, presentation.welcome_message, 70, 216, 20, ink);
+    draw_text_wrapped(font, presentation.work_intro, 70, 244, scaled(500), 20,
+                      14, ink);
 
     const int btn_y = 314;
     const int btn_w = 200;
@@ -427,7 +427,9 @@ void draw_intro_screen(const LibraryRuleEngine& engine, const LibraryRenderConfi
     draw_category_button(btn_x, btn_y, btn_w, btn_h, "开始工作", hovered, false, font);
 }
 
-void draw_npc_talk_screen(const LibraryRuleEngine& engine, const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
+void draw_npc_talk_screen(const LibraryReaderPresentation& presentation,
+                          const LibraryRenderConfig& config, const Font& font,
+                          Vector2 logical_mouse) {
     draw_library_backdrop(config);
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height),
@@ -446,8 +448,9 @@ void draw_npc_talk_screen(const LibraryRuleEngine& engine, const LibraryRenderCo
         DrawCircle(scaled(320), scaled(115), scaled(12), Color{255, 220, 180, 255});
     }
 
-    const auto& interaction = engine.get_npc_interaction();
-    const std::string& dialogue = interaction.current_dialogue.empty() ? engine.get_dialogue().introduction : interaction.current_dialogue;
+    const std::string& dialogue = presentation.interaction.current_dialogue.empty()
+                                      ? presentation.introduction_dialogue
+                                      : presentation.interaction.current_dialogue;
 
     panel(Rectangle{50, 184, 540, 108}, paper);
     text(font, "管理员说：", 70, 199, 18, ink);
@@ -467,7 +470,9 @@ void draw_npc_talk_screen(const LibraryRuleEngine& engine, const LibraryRenderCo
     draw_category_button(btn_x, btn_y, btn_w, btn_h, "继续", hovered, false, font);
 }
 
-void draw_plot_event_screen(const LibraryRuleEngine& engine, const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
+void draw_plot_event_screen(const LibraryReaderPresentation& presentation,
+                            const LibraryRenderConfig& config, const Font& font,
+                            Vector2 logical_mouse) {
     draw_library_backdrop(config);
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height), slate);
@@ -480,7 +485,7 @@ void draw_plot_event_screen(const LibraryRuleEngine& engine, const LibraryRender
         draw_pixel_bookshelf(450, 80, 160, 120);
     }
 
-    const auto& interaction = engine.get_npc_interaction();
+    const auto& interaction = presentation.interaction;
     
     panel(Rectangle{50, 80, 540, 200}, plot_highlight);
     text(font, "【剧情事件】", 70, 95, 24, gold);
@@ -503,7 +508,9 @@ void draw_plot_event_screen(const LibraryRuleEngine& engine, const LibraryRender
     draw_category_button(btn_x, btn_y, btn_w, btn_h, "了解详情", hovered, false, font);
 }
 
-void draw_map_reveal_screen(const LibraryRuleEngine& engine, const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
+void draw_map_reveal_screen(const LibraryReaderPresentation& presentation,
+                            const LibraryRenderConfig& config, const Font& font,
+                            Vector2 logical_mouse) {
     draw_library_backdrop(config);
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(config.logical_height), slate);
@@ -536,9 +543,9 @@ void draw_map_reveal_screen(const LibraryRuleEngine& engine, const LibraryRender
 
     text(font, "旧地图", 270, 85, 24, Color{100, 60, 30, 255});
 
-    const auto& dialogue = engine.get_dialogue().old_map_reveal;
     panel(Rectangle{50, 254, 540, 50}, paper);
-    draw_text_wrapped(font, dialogue, 70, 266, scaled(500), 18, 14, ink);
+    draw_text_wrapped(font, presentation.old_map_reveal_dialogue, 70, 266,
+                      scaled(500), 18, 14, ink);
 
     const int btn_y = 314;
     const int btn_w = 200;
@@ -554,7 +561,8 @@ void draw_map_reveal_screen(const LibraryRuleEngine& engine, const LibraryRender
     draw_category_button(btn_x, btn_y, btn_w, btn_h, "收下地图", hovered, false, font);
 }
 
-void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState& ui_state,
+void draw_answering_screen(const LibraryReaderPresentation& presentation,
+                           const LibraryUIState& ui_state,
                            const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
     draw_library_backdrop(config);
 
@@ -562,7 +570,7 @@ void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState
     text(font, "像素小镇", 10, 8, 22, RAYWHITE);
     text(font, "图书馆", config.logical_width / 2 - 50, 8, 22, gold);
 
-    const SessionState& session = engine.get_session_state();
+    const SessionState& session = presentation.state;
     char progress[32];
     snprintf(progress, sizeof(progress), "问题 %d/%d", session.current_question_index + 1,
              static_cast<int>(session.answers.size()) + (session.is_active ? 1 : 0));
@@ -574,7 +582,10 @@ void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState
         text(font, combo, config.logical_width - 120, 70, 16, gold);
     }
 
-    const ReaderQuestion& question = engine.get_current_question();
+    if (!presentation.current_question.has_value()) {
+        return;
+    }
+    const ReaderQuestion& question = *presentation.current_question;
 
     panel(Rectangle{50, 100, 540, 70}, paper);
     text(font, "读者问：", 70, 110, 18, ink);
@@ -603,7 +614,7 @@ void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState
     panel(Rectangle{50, 218, 540, 112}, paper);
     text(font, "选择书籍类别：", 70, 230, 18, ink);
 
-    const std::vector<BookCategory>& categories = engine.get_categories();
+    const std::vector<BookCategory>& categories = presentation.categories;
     const int cols = 4;
     const int cat_btn_w = 120;
     const int cat_btn_h = 30;
@@ -630,8 +641,9 @@ void draw_answering_screen(const LibraryRuleEngine& engine, const LibraryUIState
          Color{128, 128, 128, 255});
 }
 
-void draw_feedback_screen(const LibraryRuleEngine& /*engine*/, const LibraryUIState& ui_state,
-                          const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
+void draw_feedback_screen(const LibraryUIState& ui_state,
+                          const LibraryRenderConfig& config, const Font& font,
+                          Vector2 logical_mouse) {
     (void)logical_mouse;
     draw_library_backdrop(config);
 
@@ -667,7 +679,9 @@ void draw_feedback_screen(const LibraryRuleEngine& /*engine*/, const LibraryUISt
     text(font, "继续下一题...", config.logical_width / 2 - 70, 275, 18, Color{100, 100, 100, 255});
 }
 
-void draw_summary_screen(const ActionResult& result, const LibraryRenderConfig& config, const Font& font, Vector2 logical_mouse) {
+void draw_summary_screen(const LibraryWorkResult& result,
+                         const LibraryRenderConfig& config, const Font& font,
+                         Vector2 logical_mouse) {
     draw_library_backdrop(config);
 
     DrawRectangle(0, 0, scaled(config.logical_width), scaled(40), slate);
@@ -769,7 +783,8 @@ void draw_library_room_scene(const LibraryScene& scene, const LibraryUIState& ui
     }
 }
 
-void draw_library_scene(const LibraryRuleEngine& engine, const LibraryUIState& ui_state,
+void draw_library_scene(const LibraryReaderPresentation& presentation,
+                        const LibraryUIState& ui_state,
                         const LibraryScene& scene, const LibraryRenderConfig& render_config, const Font& font, Vector2 logical_mouse) {
     const Vector2 library_mouse = {
         logical_mouse.x / ::pixel_town::ui::design_to_canvas_scale,
@@ -781,26 +796,27 @@ void draw_library_scene(const LibraryRuleEngine& engine, const LibraryUIState& u
             break;
         }
         case LibrarySceneState::intro:
-            draw_intro_screen(engine, render_config, font, library_mouse);
+            draw_intro_screen(presentation, render_config, font, library_mouse);
             break;
         case LibrarySceneState::npc_talk:
-            draw_npc_talk_screen(engine, render_config, font, library_mouse);
+            draw_npc_talk_screen(presentation, render_config, font, library_mouse);
             break;
         case LibrarySceneState::plot_event:
-            draw_plot_event_screen(engine, render_config, font, library_mouse);
+            draw_plot_event_screen(presentation, render_config, font, library_mouse);
             break;
         case LibrarySceneState::answering:
-            draw_answering_screen(engine, ui_state, render_config, font, library_mouse);
+            draw_answering_screen(presentation, ui_state, render_config, font,
+                                  library_mouse);
             break;
         case LibrarySceneState::feedback:
-            draw_feedback_screen(engine, ui_state, render_config, font, library_mouse);
+            draw_feedback_screen(ui_state, render_config, font, library_mouse);
             break;
         case LibrarySceneState::map_reveal:
-            draw_map_reveal_screen(engine, render_config, font, library_mouse);
+            draw_map_reveal_screen(presentation, render_config, font, library_mouse);
             break;
         case LibrarySceneState::summary: {
-            const ActionResult result = engine.finish_session();
-            draw_summary_screen(result, render_config, font, library_mouse);
+            draw_summary_screen(presentation.result, render_config, font,
+                                library_mouse);
             break;
         }
         case LibrarySceneState::exit:
@@ -812,7 +828,8 @@ void draw_library_scene(const LibraryRuleEngine& engine, const LibraryUIState& u
     }
 }
 
-void update_library_ui(LibraryRuleEngine& engine, LibraryUIState& ui_state, LibraryScene& scene) {
+void update_library_ui(const LibraryReaderPresentation& presentation,
+                       LibraryUIState& ui_state, LibraryScene& scene) {
     scene.update(1.0F / 60.0F);
 
     if (ui_state.is_transitioning) {
@@ -832,7 +849,7 @@ void update_library_ui(LibraryRuleEngine& engine, LibraryUIState& ui_state, Libr
         ui_state.feedback_timer++;
         if (ui_state.feedback_timer >= 60) {
             ui_state.feedback_timer = 0;
-            if (engine.is_session_active()) {
+            if (presentation.state.is_active) {
                 ui_state.scene_state = LibrarySceneState::answering;
             } else {
                 ui_state.scene_state = LibrarySceneState::summary;
@@ -841,8 +858,10 @@ void update_library_ui(LibraryRuleEngine& engine, LibraryUIState& ui_state, Libr
     }
 }
 
-bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state, 
-                          LibraryScene& scene, Vector2 logical_mouse) {
+LibraryIntent handle_library_input(const LibraryReaderPresentation& presentation,
+                                   LibraryUIState& ui_state,
+                                   LibraryScene& scene,
+                                   Vector2 logical_mouse) {
     const Vector2 library_mouse =
         ui_state.scene_state == LibrarySceneState::room_view
             ? scene_design_mouse(logical_mouse)
@@ -852,7 +871,7 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
                           ::pixel_town::ui::design_to_canvas_scale};
 
     if (ui_state.is_transitioning) {
-        return false;
+        return {};
     }
 
     if (ui_state.scene_state == LibrarySceneState::room_view) {
@@ -862,42 +881,39 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
                 ui_state.clicked_npc_id = npc_id;
                 ui_state.is_transitioning = true;
                 ui_state.transition_progress = 0.0F;
-                return false;
+                return {};
             }
         }
-        return false;
+        return {};
     } else if (ui_state.scene_state == LibrarySceneState::intro) {
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             advance_from_intro(ui_state);
-            return false;
+            return {};
         }
     } else if (ui_state.scene_state == LibrarySceneState::npc_talk) {
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            if (engine.has_pending_plot_event()) {
+            if (presentation.pending_plot_event) {
                 ui_state.scene_state = LibrarySceneState::plot_event;
-            } else if (const auto& context = engine.get_current_context();
-                       engine.should_reveal_map(context.current_knowledge,
-                                                context.library_visits)) {
+            } else if (presentation.should_reveal_map) {
                 ui_state.scene_state = LibrarySceneState::map_reveal;
             } else {
                 ui_state.scene_state = LibrarySceneState::answering;
             }
-            return false;
+            return {};
         }
     } else if (ui_state.scene_state == LibrarySceneState::plot_event) {
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             ui_state.scene_state = LibrarySceneState::answering;
-            return false;
+            return {};
         }
     } else if (ui_state.scene_state == LibrarySceneState::answering) {
         if (IsKeyPressed(KEY_ESCAPE)) {
-            engine.give_up();
-            return true;
+            return {LibraryIntentType::abandon, {}};
         }
 
         if (IsKeyPressed(KEY_I)) {
             request_instruction_review(ui_state);
-            return false;
+            return {};
         }
 
         const int hint_btn_w = 100;
@@ -911,10 +927,10 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
                     Rectangle{static_cast<float>(hint_btn_x), static_cast<float>(hint_btn_y),
                               static_cast<float>(hint_btn_w), static_cast<float>(hint_btn_h)})) {
                 ui_state.show_hint = !ui_state.show_hint;
-                return false;
+                return {};
             }
 
-            const std::vector<BookCategory>& categories = engine.get_categories();
+            const std::vector<BookCategory>& categories = presentation.categories;
             const int cols = 4;
             const int btn_w = 120;
             const int btn_h = 30;
@@ -933,9 +949,12 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
                         library_mouse,
                         Rectangle{static_cast<float>(x), static_cast<float>(y),
                                   static_cast<float>(btn_w), static_cast<float>(btn_h)})) {
-                    const auto& current_question = engine.get_current_question();
+                    if (!presentation.current_question.has_value()) {
+                        return {};
+                    }
+                    const auto& current_question = *presentation.current_question;
                     std::string correct_name;
-                    for (const auto& cat : engine.get_categories()) {
+                    for (const auto& cat : presentation.categories) {
                         if (cat.id == current_question.correct_category_id) {
                             correct_name = cat.name;
                             break;
@@ -947,29 +966,29 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
                     ui_state.feedback_data.feedback_wrong = current_question.feedback_wrong;
                     ui_state.feedback_data.correct_category_name = correct_name;
                     ui_state.feedback_data.knowledge_reward =
-                        engine.get_config().correct_knowledge_reward;
-                    
-                    engine.select_category(categories[i].id);
+                        presentation.correct_knowledge_reward;
+
                     ui_state.selected_category_id = categories[i].id;
-                    ui_state.last_answer_correct = engine.was_last_answer_correct();
+                    ui_state.last_answer_correct =
+                        categories[i].id == current_question.correct_category_id;
                     ui_state.feedback_data.is_correct = ui_state.last_answer_correct;
                     ui_state.scene_state = LibrarySceneState::feedback;
-                    return false;
+                    return {LibraryIntentType::answer_category, categories[i].id};
                 }
             }
         }
     } else if (ui_state.scene_state == LibrarySceneState::map_reveal) {
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             ui_state.scene_state = LibrarySceneState::answering;
-            return false;
+            return {};
         }
     } else if (ui_state.scene_state == LibrarySceneState::summary) {
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            return true;
+            return {LibraryIntentType::finish_reader, {}};
         }
     }
 
-    return false;
+    return {};
 }
 
 }  // namespace pixel_town::library::ui

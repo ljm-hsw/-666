@@ -77,13 +77,14 @@ Rectangle canvas_rect(const OrganizingShelf& shelf) {
     return Rectangle{bounds.x, bounds.y, bounds.width, bounds.height};
 }
 
-const OrganizingBookTask* held_task(const LibraryOrganizingSession& session) {
-    const auto& held_id = session.state().held_book_id;
-    const auto found = std::find_if(session.tasks().begin(), session.tasks().end(),
+const OrganizingBookTask* held_task(
+    const LibraryOrganizingPresentation& presentation) {
+    const auto& held_id = presentation.state.held_book_id;
+    const auto found = std::find_if(presentation.tasks.begin(), presentation.tasks.end(),
                                     [&held_id](const auto& task) {
                                         return task.id == held_id;
                                     });
-    return found == session.tasks().end() ? nullptr : &*found;
+    return found == presentation.tasks.end() ? nullptr : &*found;
 }
 
 std::optional<std::size_t> book_texture_index(std::string_view category_id) {
@@ -194,19 +195,18 @@ void draw_library_mode_selection(const Font& font, const Texture2D& background,
 
 void draw_library_organizing(const Font& font, const Texture2D& background,
                              const std::array<Texture2D, 6>& book_textures,
-                             const LibraryOrganizingSession& session,
-                             const OrganizingUIState& ui_state,
+                             const LibraryOrganizingPresentation& presentation,
                              Vector2 logical_mouse) {
     draw_background(background);
     draw_text(font, "图书馆 · 书籍整理", 75.0F, 16.0F, 30.0F, RAYWHITE);
     const std::string progress = "已归位 " +
-                                 std::to_string(session.state().completed_count) + "/" +
-                                 std::to_string(session.tasks().size()) + "  错误 " +
-                                 std::to_string(session.state().wrong_count);
+                                 std::to_string(presentation.state.completed_count) + "/" +
+                                 std::to_string(presentation.tasks.size()) + "  错误 " +
+                                 std::to_string(presentation.state.wrong_count);
     draw_text(font, progress, 650.0F, 20.0F, 24.0F,
               Color{255, 218, 156, 255});
 
-    for (const auto& shelf : session.shelves()) {
+    for (const auto& shelf : presentation.shelves) {
         const Rectangle bounds = canvas_rect(shelf);
         const bool hovered = CheckCollisionPointRec(logical_mouse, bounds);
         DrawRectangleRec(bounds, hovered ? Color{255, 232, 164, 70}
@@ -219,12 +219,12 @@ void draw_library_organizing(const Font& font, const Texture2D& background,
                       20.0F, cream);
     }
 
-    for (std::size_t index = 0; index < session.tasks().size(); ++index) {
-        if (session.state().completed_tasks[index] ||
-            session.state().held_book_id == session.tasks()[index].id) {
+    for (std::size_t index = 0; index < presentation.tasks.size(); ++index) {
+        if (presentation.state.completed_tasks[index] ||
+            presentation.state.held_book_id == presentation.tasks[index].id) {
             continue;
         }
-        const auto& task = session.tasks()[index];
+        const auto& task = presentation.tasks[index];
         const Rectangle bounds = organizing_book_hitbox(task);
         const bool hovered = CheckCollisionPointRec(logical_mouse, bounds);
         const Color status_color =
@@ -257,8 +257,8 @@ void draw_library_organizing(const Font& font, const Texture2D& background,
     const Rectangle held_slot = organizing_held_book_slot();
     DrawRectangleRec(held_slot, Color{247, 232, 196, 235});
     DrawRectangleLinesEx(held_slot, 2.0F, gold);
-    if (const auto* held = held_task(session)) {
-        draw_fitted(font, ui_state.feedback,
+    if (const auto* held = held_task(presentation)) {
+        draw_fitted(font, presentation.feedback,
                     Rectangle{115.0F, 459.0F, 480.0F, 27.0F}, 22.0F, 17.0F,
                     cream);
         draw_fitted(font, "已拾取《" + held->title + "》，点击正确分类书架",
@@ -272,7 +272,7 @@ void draw_library_organizing(const Font& font, const Texture2D& background,
                               held_slot.width - 54.0F, 44.0F},
                     18.0F, 14.0F, ink);
     } else {
-        draw_fitted(font, ui_state.feedback,
+        draw_fitted(font, presentation.feedback,
                     Rectangle{115.0F, 467.0F, 480.0F, 38.0F}, 23.0F, 17.0F,
                     cream);
         draw_centered(font, "手中空", held_slot, 18.0F,
@@ -282,52 +282,37 @@ void draw_library_organizing(const Font& font, const Texture2D& background,
               Color{240, 190, 174, 255});
 }
 
-OrganizingExitAction place_held_book(LibraryOrganizingSession& session,
-                                     OrganizingUIState& ui_state,
-                                     const std::string& shelf_id) {
-    const auto feedback = session.place_on_shelf(shelf_id);
-    ui_state.feedback = feedback.message;
-    if (feedback.status == OrganizingActionStatus::accepted && session.is_completed()) {
-        ui_state.feedback = "分类正确，全部书籍已归位，正在结算。";
-        return OrganizingExitAction::finish;
-    }
-    return OrganizingExitAction::none;
-}
-
-OrganizingExitAction handle_library_organizing_input(
-    LibraryOrganizingSession& session, OrganizingUIState& ui_state,
+LibraryIntent handle_library_organizing_input(
+    const LibraryOrganizingPresentation& presentation,
     Vector2 logical_mouse) {
     if (IsKeyPressed(KEY_ESCAPE)) {
-        session.give_up();
-        return OrganizingExitAction::abandon;
+        return {LibraryIntentType::abandon, {}};
     }
     if (!IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        return OrganizingExitAction::none;
+        return {};
     }
 
-    if (session.state().held_book_id.empty()) {
-        for (std::size_t index = 0; index < session.tasks().size(); ++index) {
-            if (session.state().completed_tasks[index]) {
+    if (presentation.state.held_book_id.empty()) {
+        for (std::size_t index = 0; index < presentation.tasks.size(); ++index) {
+            if (presentation.state.completed_tasks[index]) {
                 continue;
             }
             if (CheckCollisionPointRec(logical_mouse,
-                                       organizing_book_hitbox(session.tasks()[index]))) {
-                ui_state.feedback = session.pick_up(session.tasks()[index].id).message;
-                return OrganizingExitAction::none;
+                                       organizing_book_hitbox(presentation.tasks[index]))) {
+                return {LibraryIntentType::pick_up_book,
+                        presentation.tasks[index].id};
             }
         }
-        ui_state.feedback = "这里没有待整理的书，请点击带光圈的书本素材。";
-        return OrganizingExitAction::none;
+        return {LibraryIntentType::pick_up_book, {}};
     }
 
-    for (const auto& shelf : session.shelves()) {
+    for (const auto& shelf : presentation.shelves) {
         if (!CheckCollisionPointRec(logical_mouse, canvas_rect(shelf))) {
             continue;
         }
-        return place_held_book(session, ui_state, shelf.id);
+        return {LibraryIntentType::place_on_shelf, shelf.id};
     }
-    ui_state.feedback = "请点击书架高亮区域完成归位。";
-    return OrganizingExitAction::none;
+    return {LibraryIntentType::place_on_shelf, {}};
 }
 
 }  // namespace pixel_town::library::ui

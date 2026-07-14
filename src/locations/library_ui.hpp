@@ -4,7 +4,7 @@
 
 #include <raylib.h>
 
-#include "locations/library_rules.hpp"
+#include "locations/library_runtime_contract.hpp"
 #include "locations/library_scene.hpp"
 
 namespace pixel_town::library::ui {
@@ -65,15 +65,18 @@ struct LibraryRenderConfig {
     Texture2D background{};
 };
 
-void draw_library_scene(const LibraryRuleEngine& engine, const LibraryUIState& ui_state,
+void draw_library_scene(const LibraryReaderPresentation& presentation,
+                        const LibraryUIState& ui_state,
                         const LibraryScene& scene, const LibraryRenderConfig& render_config, const Font& font, Vector2 logical_mouse);
 
 void draw_library_room_scene(const LibraryScene& scene, const LibraryUIState& ui_state,
                              const LibraryRenderConfig& render_config, const Font& font, Vector2 logical_mouse);
 
-void update_library_ui(LibraryRuleEngine& engine, LibraryUIState& ui_state, LibraryScene& scene);
+void update_library_ui(const LibraryReaderPresentation& presentation,
+                       LibraryUIState& ui_state, LibraryScene& scene);
 
-[[nodiscard]] bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state, 
-                                        LibraryScene& scene, Vector2 logical_mouse);
+[[nodiscard]] LibraryIntent handle_library_input(
+    const LibraryReaderPresentation& presentation, LibraryUIState& ui_state,
+    LibraryScene& scene, Vector2 logical_mouse);
 
 }  // namespace pixel_town::library::ui

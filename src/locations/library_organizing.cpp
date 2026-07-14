@@ -99,6 +99,8 @@ OrganizingActionFeedback LibraryOrganizingSession::place_on_shelf(const std::str
     if (state_.completed_count == static_cast<int>(tasks_.size())) {
         state_.is_active = false;
         state_.is_completed = true;
+        return {OrganizingActionStatus::completed,
+                "分类正确，全部书籍已归位，正在结算。"};
     }
     return {OrganizingActionStatus::accepted, "分类正确，书籍已归位。"};
 }
@@ -111,8 +113,8 @@ const std::vector<OrganizingShelf>& LibraryOrganizingSession::shelves() const { 
 
 bool LibraryOrganizingSession::is_completed() const { return state_.is_completed; }
 
-OrganizingResult LibraryOrganizingSession::finish_session() const {
-    OrganizingResult result;
+LibraryWorkResult LibraryOrganizingSession::finish_session() const {
+    LibraryWorkResult result;
     if (gave_up_ || !state_.is_completed || state_.completed_count == 0) {
         result.gave_up = true;
         result.summary = "离开了图书馆，整理工作没有结算。";

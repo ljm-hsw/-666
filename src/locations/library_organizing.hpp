@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "locations/library_work_result.hpp"
+
 namespace pixel_town::library {
 
 enum class OrganizingBookSource {
@@ -41,19 +43,9 @@ struct OrganizingConfig {
     int wrong_mood_penalty{-1};
 };
 
-struct OrganizingResult {
-    int money_change{0};
-    int stamina_change{0};
-    int reputation_change{0};
-    int knowledge_change{0};
-    int mood_change{0};
-    std::string summary;
-    bool completed{false};
-    bool gave_up{false};
-};
-
 enum class OrganizingActionStatus {
     accepted,
+    completed,
     inactive,
     already_holding,
     book_not_found,
@@ -91,7 +83,7 @@ public:
     [[nodiscard]] const std::vector<OrganizingBookTask>& tasks() const;
     [[nodiscard]] const std::vector<OrganizingShelf>& shelves() const;
     [[nodiscard]] bool is_completed() const;
-    [[nodiscard]] OrganizingResult finish_session() const;
+    [[nodiscard]] LibraryWorkResult finish_session() const;
 
 private:
     std::vector<OrganizingBookTask> all_tasks_;

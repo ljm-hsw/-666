@@ -34,6 +34,7 @@ void LibraryRuleEngine::start_session(const DailyContext& context) {
     session_state_ = SessionState{};
     session_state_.is_active = true;
     session_state_.is_in_intro = true;
+    gave_up_ = false;
 
     shuffled_questions_ = data_.questions;
     shuffle_questions(context.random_seed);
@@ -93,14 +94,16 @@ const std::vector<BookCategory>& LibraryRuleEngine::get_categories() const {
 bool LibraryRuleEngine::was_last_answer_correct() const { return last_answer_correct_; }
 
 void LibraryRuleEngine::give_up() {
+    gave_up_ = true;
     session_state_.is_completed = true;
     session_state_.is_active = false;
 }
 
-ActionResult LibraryRuleEngine::finish_session() const {
-    ActionResult result;
+LibraryWorkResult LibraryRuleEngine::finish_session() const {
+    LibraryWorkResult result;
 
-    if (session_state_.correct_count == 0 && session_state_.wrong_count == 0) {
+    if (gave_up_ ||
+        (session_state_.correct_count == 0 && session_state_.wrong_count == 0)) {
         result.gave_up = true;
         result.summary = "离开了图书馆，什么也没做。";
         return result;

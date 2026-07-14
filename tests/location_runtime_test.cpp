@@ -160,17 +160,37 @@ TEST_CASE("library starts at mode selection and can launch the organizing mode")
     std::string notice;
 
     REQUIRE(pixel_town::start_pending_location(session, runtime, notice));
-    CHECK(runtime.library_mode == pixel_town::LibraryWorkMode::selection);
-    CHECK(runtime.library_engine == nullptr);
-    CHECK(runtime.library_organizing == nullptr);
+    auto view = runtime.library.presentation();
+    CHECK(view.active);
+    CHECK(view.mode == pixel_town::LibraryRuntimeMode::selection);
+    CHECK_FALSE(view.reader.has_value());
+    CHECK_FALSE(view.organizing.has_value());
 
     REQUIRE(pixel_town::select_library_mode(
-        session, runtime, pixel_town::LibraryWorkMode::book_organizing, notice));
-    CHECK(runtime.library_mode == pixel_town::LibraryWorkMode::book_organizing);
-    REQUIRE(runtime.library_organizing != nullptr);
-    CHECK(runtime.library_organizing->state().is_active);
-    CHECK(runtime.library_engine == nullptr);
+        session, runtime, pixel_town::LibraryRuntimeMode::book_organizing, notice));
+    view = runtime.library.presentation();
+    CHECK(view.mode == pixel_town::LibraryRuntimeMode::book_organizing);
+    REQUIRE(view.organizing.has_value());
+    CHECK(view.organizing->state.is_active);
+    CHECK_FALSE(view.reader.has_value());
     CHECK(notice.find("整理") != std::string::npos);
+}
+
+TEST_CASE("library organizing UI reserves separate pickup and held-book spaces") {
+    using namespace pixel_town::library;
+    using namespace pixel_town::library::ui;
+
+    const OrganizingBookTask task{
+        "book_physics", "物理奥秘", "science", OrganizingBookSource::scattered,
+        "", 280, 400};
+    const Rectangle pickup = organizing_book_hitbox(task);
+    const Rectangle held = organizing_held_book_slot();
+
+    CHECK(pickup.width >= 56.0F);
+    CHECK(pickup.height >= 44.0F);
+    CHECK(held.width >= 120.0F);
+    CHECK(held.height >= 50.0F);
+    CHECK(pickup.y + pickup.height < held.y);
 }
 
 TEST_CASE("library mode controls stay below the scene header and do not overlap") {

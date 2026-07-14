@@ -7,26 +7,17 @@
 
 #include <raylib.h>
 
+#include "app/library_runtime.hpp"
 #include "core/game_session.hpp"
-#include "core/tavern_rules.hpp"
 #include "app/tavern_runtime.hpp"
 #include "app/tavern_view.hpp"
 #include "locations/convenience_store.hpp"
-#include "locations/library_data.hpp"
-#include "locations/library_organizing.hpp"
 #include "locations/library_organizing_ui.hpp"
-#include "locations/library_rules.hpp"
 #include "locations/library_scene.hpp"
 #include "locations/library_ui.hpp"
 #include "locations/restaurant.hpp"
 
 namespace pixel_town {
-
-enum class LibraryWorkMode {
-    selection,
-    reader_consultation,
-    book_organizing,
-};
 
 enum class StorePlanActionType {
     select_product,
@@ -57,15 +48,9 @@ struct LocationRuntimeState {
     store::PricePlan store_price_plan;
     int store_selected_product_index{0};
     std::string store_feedback;
-    bool in_library{false};
-    LibraryWorkMode library_mode{LibraryWorkMode::selection};
-    library::LibraryData library_data;
-    std::unique_ptr<library::LibraryRuleEngine> library_engine;
-    std::unique_ptr<library::LibraryOrganizingSession> library_organizing;
-    library::ui::OrganizingUIState library_organizing_ui_state;
+    LibraryRuntime library;
     library::LibraryScene library_scene;
     library::ui::LibraryUIState library_ui_state;
-    int library_visits{0};
 };
 
 [[nodiscard]] Rectangle location_back_button(bool is_tavern);
@@ -94,7 +79,7 @@ void update_store_selection(LocationRuntimeState& runtime, const GameSession& se
                             Vector2 logical_mouse, std::string& notice);
 [[nodiscard]] bool select_library_mode(GameSession& session,
                                        LocationRuntimeState& runtime,
-                                       LibraryWorkMode mode,
+                                       LibraryRuntimeMode mode,
                                        std::string& notice);
 [[nodiscard]] bool start_pending_location(GameSession& session,
                                            LocationRuntimeState& runtime,

@@ -1295,7 +1295,7 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
         return;
     }
 
-    if (state.locations.in_library) {
+    if (state.locations.library.active()) {
         draw_active_library(font, state.locations, logical_mouse,
                             scene_assets.library_interior,
                             scene_assets.library_organizing_books);
