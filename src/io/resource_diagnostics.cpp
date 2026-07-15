@@ -35,8 +35,14 @@ bool has_valid_signature(const std::filesystem::path& path, ResourceKind kind) {
             return prefix.compare(0, 8, "\x89PNG\r\n\x1a\n", 8) == 0;
         case ResourceKind::data:
             return contains_non_whitespace(path);
-        case ResourceKind::audio:
-            return prefix.compare(0, 4, "OggS") == 0 || prefix.compare(0, 4, "RIFF") == 0;
+        case ResourceKind::audio: {
+            const bool mp3_frame =
+                prefix.size() >= 2 && static_cast<unsigned char>(prefix[0]) == 0xffU &&
+                (static_cast<unsigned char>(prefix[1]) & 0xe0U) == 0xe0U;
+            return prefix.compare(0, 4, "OggS") == 0 ||
+                   prefix.compare(0, 4, "RIFF") == 0 ||
+                   prefix.compare(0, 3, "ID3") == 0 || mp3_frame;
+        }
     }
     return false;
 }
@@ -102,7 +108,17 @@ std::vector<ResourceSpec> baseline_resource_manifest() {
          false},
         {"data/baseline.txt", ResourceKind::data, true},
         {"data/library_data.txt", ResourceKind::data, false},
-        {"audio/theme.ogg", ResourceKind::audio, false},
+        {"audio/bgm_main_map.mp3", ResourceKind::audio, false},
+        {"audio/bgm_rainy_day.mp3", ResourceKind::audio, false},
+        {"audio/bgm_restaurant.mp3", ResourceKind::audio, false},
+        {"audio/bgm_store.mp3", ResourceKind::audio, false},
+        {"audio/bgm_library.mp3", ResourceKind::audio, false},
+        {"audio/bgm_tavern.mp3", ResourceKind::audio, false},
+        {"audio/bgm_home.mp3", ResourceKind::audio, false},
+        {"audio/sfx_location_switch.mp3", ResourceKind::audio, false},
+        {"audio/sfx_return_home.mp3", ResourceKind::audio, false},
+        {"audio/sfx_success.mp3", ResourceKind::audio, false},
+        {"audio/sfx_failure.mp3", ResourceKind::audio, false},
     };
 }
 

@@ -73,6 +73,7 @@ target_include_directories(pixel_town_location_scene PUBLIC "${CMAKE_CURRENT_SOU
 target_link_libraries(pixel_town_location_scene PUBLIC pixel_town_locations raylib)
 
 add_library(pixel_town_app_logic
+  src/app/audio_cues.cpp
   src/app/library_runtime.cpp
   src/app/location_result_adapter.cpp
   src/app/location_runtime.cpp
@@ -88,6 +89,7 @@ target_link_libraries(pixel_town_app_logic PUBLIC pixel_town_core pixel_town_loc
                                            pixel_town_dialogue_logic pixel_town_tavern_logic)
 
 add_executable(pixel_town
+  src/app/audio_runtime.cpp
   src/app/game_flow.cpp
   src/app/main.cpp
   src/app/visual_prototype.cpp
@@ -98,6 +100,7 @@ target_compile_definitions(pixel_town PRIVATE PIXEL_TOWN_VERSION="${PROJECT_VERS
 enable_testing()
 
 add_executable(pixel_town_tests
+  tests/audio_cues_test.cpp
   tests/dialogue_runtime_test.cpp
   tests/display_config_test.cpp
   tests/ending_rules_test.cpp

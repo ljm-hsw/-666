@@ -119,7 +119,17 @@ TEST_CASE("production baseline manifest keeps the startup resource contract") {
     require_spec("textures/ui/library/organizing_books/geography.png",
                  ResourceKind::texture, false);
     require_spec("data/baseline.txt", ResourceKind::data, true);
-    require_spec("audio/theme.ogg", ResourceKind::audio, false);
+    require_spec("audio/bgm_main_map.mp3", ResourceKind::audio, false);
+    require_spec("audio/bgm_rainy_day.mp3", ResourceKind::audio, false);
+    require_spec("audio/bgm_restaurant.mp3", ResourceKind::audio, false);
+    require_spec("audio/bgm_store.mp3", ResourceKind::audio, false);
+    require_spec("audio/bgm_library.mp3", ResourceKind::audio, false);
+    require_spec("audio/bgm_tavern.mp3", ResourceKind::audio, false);
+    require_spec("audio/bgm_home.mp3", ResourceKind::audio, false);
+    require_spec("audio/sfx_location_switch.mp3", ResourceKind::audio, false);
+    require_spec("audio/sfx_return_home.mp3", ResourceKind::audio, false);
+    require_spec("audio/sfx_success.mp3", ResourceKind::audio, false);
+    require_spec("audio/sfx_failure.mp3", ResourceKind::audio, false);
 }
 
 TEST_CASE("complete required resources allow normal startup") {
@@ -163,6 +173,20 @@ TEST_CASE("missing optional audio starts silently with a diagnostic") {
     REQUIRE(report.issues.size() == 1);
     CHECK(report.issues.front().relative_path == std::filesystem::path{"audio/theme.ogg"});
     CHECK_FALSE(report.issues.front().required);
+}
+
+TEST_CASE("MP3 frame headers are accepted as audio resources") {
+    TemporaryDirectory resources("pixel-town-resource-test-mp3");
+    write_file(resources.path(), "audio/theme.mp3", std::string{"\xff\xfb\xd0\x64", 4});
+    const std::vector<pixel_town::ResourceSpec> manifest{
+        {"audio/theme.mp3", pixel_town::ResourceKind::audio, false},
+    };
+
+    const auto report = pixel_town::validate_resources(resources.path(), manifest);
+
+    CHECK(report.can_start);
+    CHECK(report.audio_enabled);
+    CHECK(report.issues.empty());
 }
 
 TEST_CASE("invalid required resource blocks normal startup") {

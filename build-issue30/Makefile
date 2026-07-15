@@ -347,6 +347,54 @@ update_mappings/fast:
 	$(MAKE) $(MAKESILENT) -f third_party/raylib/raylib/external/glfw/src/CMakeFiles/update_mappings.dir/build.make third_party/raylib/raylib/external/glfw/src/CMakeFiles/update_mappings.dir/build
 .PHONY : update_mappings/fast
 
+src/app/audio_cues.o: src/app/audio_cues.cpp.o
+.PHONY : src/app/audio_cues.o
+
+# target to build an object file
+src/app/audio_cues.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pixel_town_app_logic.dir/build.make CMakeFiles/pixel_town_app_logic.dir/src/app/audio_cues.cpp.o
+.PHONY : src/app/audio_cues.cpp.o
+
+src/app/audio_cues.i: src/app/audio_cues.cpp.i
+.PHONY : src/app/audio_cues.i
+
+# target to preprocess a source file
+src/app/audio_cues.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pixel_town_app_logic.dir/build.make CMakeFiles/pixel_town_app_logic.dir/src/app/audio_cues.cpp.i
+.PHONY : src/app/audio_cues.cpp.i
+
+src/app/audio_cues.s: src/app/audio_cues.cpp.s
+.PHONY : src/app/audio_cues.s
+
+# target to generate assembly for a file
+src/app/audio_cues.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pixel_town_app_logic.dir/build.make CMakeFiles/pixel_town_app_logic.dir/src/app/audio_cues.cpp.s
+.PHONY : src/app/audio_cues.cpp.s
+
+src/app/audio_runtime.o: src/app/audio_runtime.cpp.o
+.PHONY : src/app/audio_runtime.o
+
+# target to build an object file
+src/app/audio_runtime.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pixel_town.dir/build.make CMakeFiles/pixel_town.dir/src/app/audio_runtime.cpp.o
+.PHONY : src/app/audio_runtime.cpp.o
+
+src/app/audio_runtime.i: src/app/audio_runtime.cpp.i
+.PHONY : src/app/audio_runtime.i
+
+# target to preprocess a source file
+src/app/audio_runtime.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pixel_town.dir/build.make CMakeFiles/pixel_town.dir/src/app/audio_runtime.cpp.i
+.PHONY : src/app/audio_runtime.cpp.i
+
+src/app/audio_runtime.s: src/app/audio_runtime.cpp.s
+.PHONY : src/app/audio_runtime.s
+
+# target to generate assembly for a file
+src/app/audio_runtime.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pixel_town.dir/build.make CMakeFiles/pixel_town.dir/src/app/audio_runtime.cpp.s
+.PHONY : src/app/audio_runtime.cpp.s
+
 src/app/dialogue_runtime.o: src/app/dialogue_runtime.cpp.o
 .PHONY : src/app/dialogue_runtime.o
 
@@ -1403,6 +1451,30 @@ tests/app_settings_test.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/pixel_town_tests.dir/build.make CMakeFiles/pixel_town_tests.dir/tests/app_settings_test.cpp.s
 .PHONY : tests/app_settings_test.cpp.s
 
+tests/audio_cues_test.o: tests/audio_cues_test.cpp.o
+.PHONY : tests/audio_cues_test.o
+
+# target to build an object file
+tests/audio_cues_test.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pixel_town_tests.dir/build.make CMakeFiles/pixel_town_tests.dir/tests/audio_cues_test.cpp.o
+.PHONY : tests/audio_cues_test.cpp.o
+
+tests/audio_cues_test.i: tests/audio_cues_test.cpp.i
+.PHONY : tests/audio_cues_test.i
+
+# target to preprocess a source file
+tests/audio_cues_test.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pixel_town_tests.dir/build.make CMakeFiles/pixel_town_tests.dir/tests/audio_cues_test.cpp.i
+.PHONY : tests/audio_cues_test.cpp.i
+
+tests/audio_cues_test.s: tests/audio_cues_test.cpp.s
+.PHONY : tests/audio_cues_test.s
+
+# target to generate assembly for a file
+tests/audio_cues_test.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pixel_town_tests.dir/build.make CMakeFiles/pixel_town_tests.dir/tests/audio_cues_test.cpp.s
+.PHONY : tests/audio_cues_test.cpp.s
+
 tests/convenience_store_test.o: tests/convenience_store_test.cpp.o
 .PHONY : tests/convenience_store_test.o
 
@@ -2126,6 +2198,12 @@ help:
 	@echo "... pixel_town_tavern_logic"
 	@echo "... pixel_town_tests"
 	@echo "... raylib"
+	@echo "... src/app/audio_cues.o"
+	@echo "... src/app/audio_cues.i"
+	@echo "... src/app/audio_cues.s"
+	@echo "... src/app/audio_runtime.o"
+	@echo "... src/app/audio_runtime.i"
+	@echo "... src/app/audio_runtime.s"
 	@echo "... src/app/dialogue_runtime.o"
 	@echo "... src/app/dialogue_runtime.i"
 	@echo "... src/app/dialogue_runtime.s"
@@ -2258,6 +2336,9 @@ help:
 	@echo "... tests/app_settings_test.o"
 	@echo "... tests/app_settings_test.i"
 	@echo "... tests/app_settings_test.s"
+	@echo "... tests/audio_cues_test.o"
+	@echo "... tests/audio_cues_test.i"
+	@echo "... tests/audio_cues_test.s"
 	@echo "... tests/convenience_store_test.o"
 	@echo "... tests/convenience_store_test.i"
 	@echo "... tests/convenience_store_test.s"

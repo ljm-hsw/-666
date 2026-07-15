@@ -25,6 +25,8 @@ constexpr unsigned long MAX_PATH_W = 260;
 #endif
 
 #include "app/game_flow.hpp"
+#include "app/audio_cues.hpp"
+#include "app/audio_runtime.hpp"
 #include "app/tavern_layout.hpp"
 #include "app/visual_prototype.hpp"
 #include "core/display_config.hpp"
@@ -147,6 +149,36 @@ std::filesystem::path application_directory_from_argv(const char* executable_pat
         return directory_from_executable_path({});
     }
     return directory_from_executable_path(std::filesystem::path{executable_path});
+}
+
+pixel_town::AudioSceneState audio_scene_state(const pixel_town::GameAppState& state) {
+    pixel_town::AudioSceneState audio;
+    if (!state.has_session) {
+        return audio;
+    }
+
+    audio.phase = state.session.phase();
+    audio.weather = state.session.current_day_context().weather;
+    audio.tavern_losses = state.session.tavern_losses();
+    audio.visits.home = state.session.location_visit_count(pixel_town::Location::home);
+    audio.visits.restaurant =
+        state.session.location_visit_count(pixel_town::Location::restaurant);
+    audio.visits.convenience_store =
+        state.session.location_visit_count(pixel_town::Location::convenience_store);
+    audio.visits.library = state.session.location_visit_count(pixel_town::Location::library);
+    audio.visits.tavern = state.session.location_visit_count(pixel_town::Location::tavern);
+
+    if (state.location_lobby.has_value()) {
+        audio.visible_location = state.location_lobby;
+    } else if (state.home_preview_open) {
+        audio.visible_location = pixel_town::Location::home;
+    } else if (state.locations.library_room.active()) {
+        audio.visible_location = pixel_town::Location::library;
+    } else if (state.session.has_pending_location()) {
+        audio.visible_location = state.session.pending_location();
+    }
+    audio.location_activity_started = state.session.location_started();
+    return audio;
 }
 
 void advance_to_ending(pixel_town::GameAppState& state) {
@@ -759,6 +791,8 @@ int main(int argc, char* argv[]) {
     SetWindowMinSize(display.logical_width, display.logical_height);
     SetTargetFPS(60);
 
+    pixel_town::AudioRuntime audio_runtime;
+
     RenderTexture2D canvas = LoadRenderTexture(display.logical_width, display.logical_height);
     const bool canvas_loaded = canvas.texture.id != 0;
     if (canvas_loaded) {
@@ -806,6 +840,11 @@ int main(int argc, char* argv[]) {
         } else {
             SetTextureFilter(ui_font.texture, TEXTURE_FILTER_POINT);
         }
+    }
+    if (resources.can_start && resources.audio_enabled && !audio_runtime.initialize()) {
+        resources.audio_enabled = false;
+        resources.issues.push_back(
+            {"audio/device", "raylib could not initialize or load audio", false});
     }
     pixel_town::DemoPresetLoadResult demo_load;
     std::string launch_note;
@@ -885,6 +924,7 @@ int main(int argc, char* argv[]) {
 
     pixel_town::VisualPrototypeState prototype;
     pixel_town::GameAppState game_flow;
+    pixel_town::AudioCueTracker audio_cue_tracker;
     const bool persistence_enabled = !capture_prototype && !capture_game_flow &&
                                      !capture_ui_diagnostics && !demo_args.requested;
     const std::filesystem::path application_directory = application_directory_from_argv(argv[0]);
@@ -1030,6 +1070,7 @@ int main(int argc, char* argv[]) {
         if (canvas_loaded) {
             UnloadRenderTexture(canvas);
         }
+        audio_runtime.shutdown();
         CloseWindow();
     };
     std::size_t capture_index = 0;
@@ -1069,7 +1110,8 @@ int main(int argc, char* argv[]) {
             game_flow.has_session) {
             game_flow.notice = "设置写入失败：静音只在本次运行中生效。";
         }
-        const bool audio_enabled = resources.audio_enabled && !interaction_runtime.muted();
+        const bool audio_enabled = resources.can_start && log_written &&
+                                   resources.audio_enabled && !interaction_runtime.muted();
 
         if (resources.can_start && log_written && !capture_game_flow && !capture_ui_diagnostics &&
             interaction_frame.game_updates_enabled) {
@@ -1094,6 +1136,8 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
+        audio_runtime.update(audio_cue_tracker.update(audio_scene_state(game_flow)),
+                             audio_enabled);
         BeginTextureMode(canvas);
         if (resources.can_start && log_written) {
             if (capture_prototype) {
