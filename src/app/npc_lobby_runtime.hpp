@@ -38,6 +38,7 @@ struct NpcLobbyStepResult {
 class NpcLobbyRuntime {
 public:
     [[nodiscard]] bool open(DialogueTrigger trigger);
+    [[nodiscard]] bool open(const DialogueScript& script);
     [[nodiscard]] NpcLobbyStepResult step(const NpcLobbyInput& input);
     [[nodiscard]] NpcLobbyPresentation presentation() const;
     [[nodiscard]] bool active() const noexcept { return active_; }
@@ -45,7 +46,7 @@ public:
 private:
     StoryDialogueCatalog dialogue_catalog_;
     DialogueRuntime dialogue_;
-    std::optional<DialogueTrigger> trigger_;
+    std::optional<DialogueScript> script_;
     float npc_animation_seconds_{0.0F};
     bool active_{false};
 };

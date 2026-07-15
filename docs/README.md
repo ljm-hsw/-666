@@ -25,6 +25,7 @@
 - [`CHARACTER_DIALOGUE_PLAN.md`](CHARACTER_DIALOGUE_PLAN.md)：P4 人物小人占位规格、共享对话、固定 NPC 待机动画、点击热点和 Issues 23-29 实施顺序。
 - [`RESTAURANT_VISUAL_SPEC.md`](RESTAURANT_VISUAL_SPEC.md)：餐馆 960×540 布局、背景、食物图标、倒计时和反馈资源槽位。
 - [`story/README.md`](story/README.md)：主线剧情、文案风格、MVP 文本草案、地点/NPC、结局回声和剧情接入规划。
+- [`story/LOCATION_EVENT_SCHEDULE.md`](story/LOCATION_EVENT_SCHEDULE.md)：地点首访教程、十日日常/意外事件矩阵、确定性选择和存档迁移边界。
 - [`VISUAL_PROTOTYPE.md`](VISUAL_PROTOTYPE.md)：P0 待审视觉方案、调色板、像素尺寸与资源命名候选。
 - [`IMAGEGEN_VISUAL_PLAN.md`](IMAGEGEN_VISUAL_PLAN.md)：960×540 画布迁移与 imagegen 页面背景/建筑资产规划。
 - [`SCENE_ASSET_PRODUCTION_PLAN.md`](SCENE_ASSET_PRODUCTION_PLAN.md)：酒馆、图书馆和便利店的 imagegen 分件批次、人工拼接、固定 NPC/玩法热点交接与恢复 Issue 门槛。

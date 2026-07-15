@@ -5,11 +5,19 @@
 namespace pixel_town {
 
 bool NpcLobbyRuntime::open(DialogueTrigger trigger) {
-    if (dialogue_catalog_.find(trigger) == nullptr) {
+    const DialogueScript* script = dialogue_catalog_.find(trigger);
+    if (script == nullptr) {
+        return false;
+    }
+    return open(*script);
+}
+
+bool NpcLobbyRuntime::open(const DialogueScript& script) {
+    if (script.lines.empty()) {
         return false;
     }
     dialogue_ = DialogueRuntime{};
-    trigger_ = trigger;
+    script_ = script;
     npc_animation_seconds_ = 0.0F;
     active_ = true;
     return true;
@@ -43,9 +51,7 @@ NpcLobbyStepResult NpcLobbyRuntime::step(const NpcLobbyInput& input) {
     }
 
     if (input.interaction_activated) {
-        const DialogueScript* script =
-            trigger_.has_value() ? dialogue_catalog_.find(*trigger_) : nullptr;
-        if (script == nullptr || !dialogue_.open(*script)) {
+        if (!script_.has_value() || !dialogue_.open(*script_)) {
             return {NpcLobbyStepStatus::rejected, "NPC 对话暂时不可用。"};
         }
         return {NpcLobbyStepStatus::dialogue_opened, "已开始与 NPC 交谈。"};

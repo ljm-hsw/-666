@@ -16,7 +16,8 @@
 namespace pixel_town {
 namespace {
 
-constexpr int save_format_version = 1;
+constexpr int save_format_version = 2;
+constexpr int legacy_save_format_version = 1;
 
 std::string phase_name(GamePhase phase) {
     switch (phase) {
@@ -285,6 +286,12 @@ std::string serialize_session(const GameSession& session) {
     output << "store_inventory=" << serialize_store_inventory(snapshot.store_inventory) << "\n";
     output << "tavern_wins=" << snapshot.tavern_wins << "\n";
     output << "tavern_losses=" << snapshot.tavern_losses << "\n";
+    output << "location_visits_home=" << snapshot.location_visits.home << "\n";
+    output << "location_visits_restaurant=" << snapshot.location_visits.restaurant << "\n";
+    output << "location_visits_convenience_store="
+           << snapshot.location_visits.convenience_store << "\n";
+    output << "location_visits_library=" << snapshot.location_visits.library << "\n";
+    output << "location_visits_tavern=" << snapshot.location_visits.tavern << "\n";
     return output.str();
 }
 
@@ -330,11 +337,21 @@ bool is_valid_store_inventory(const std::vector<StoreInventoryItem>& inventory) 
     return true;
 }
 
+bool is_valid_location_visits(const LocationVisitCounts& visits) {
+    return visits.home >= 0 && visits.home <= 10 && visits.restaurant >= 0 &&
+           visits.restaurant <= 10 && visits.convenience_store >= 0 &&
+           visits.convenience_store <= 10 && visits.library >= 0 &&
+           visits.library <= 10 && visits.tavern >= 0 && visits.tavern <= 10;
+}
+
 bool is_valid_snapshot_combination(const GameSessionSnapshot& snapshot) {
     if (!is_valid_player_state(snapshot.player)) {
         return false;
     }
     if (!is_valid_store_inventory(snapshot.store_inventory)) {
+        return false;
+    }
+    if (!is_valid_location_visits(snapshot.location_visits)) {
         return false;
     }
     for (std::size_t index = 0; index < snapshot.applied_result_ids.size(); ++index) {
@@ -453,7 +470,7 @@ LoadGameResult load_session(const std::filesystem::path& path) {
     if (!parse_int(values, "format_version", version)) {
         return {SaveStatus::corrupt, GameSession::new_game(), "save file is missing version"};
     }
-    if (version != save_format_version) {
+    if (version != legacy_save_format_version && version != save_format_version) {
         return {SaveStatus::incompatible_version, GameSession::new_game(),
                 "save file version is not compatible"};
     }
@@ -491,6 +508,15 @@ LoadGameResult load_session(const std::filesystem::path& path) {
     if (values.find("tavern_losses") != values.end() &&
         !parse_int(values, "tavern_losses", snapshot.tavern_losses)) {
         return {SaveStatus::corrupt, GameSession::new_game(), "save file has invalid values"};
+    }
+    if (version == save_format_version &&
+        (!parse_int(values, "location_visits_home", snapshot.location_visits.home) ||
+         !parse_int(values, "location_visits_restaurant", snapshot.location_visits.restaurant) ||
+         !parse_int(values, "location_visits_convenience_store",
+                    snapshot.location_visits.convenience_store) ||
+         !parse_int(values, "location_visits_library", snapshot.location_visits.library) ||
+         !parse_int(values, "location_visits_tavern", snapshot.location_visits.tavern))) {
+        return {SaveStatus::corrupt, GameSession::new_game(), "save file is missing fields"};
     }
     const auto store_inventory = values.find("store_inventory");
     if (!parse_phase(phase->second, snapshot.phase) ||

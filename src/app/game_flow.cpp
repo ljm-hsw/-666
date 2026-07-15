@@ -10,6 +10,7 @@
 #include "app/ui_primitives.hpp"
 #include "core/ending_rules.hpp"
 #include "core/location_lobby.hpp"
+#include "core/location_story.hpp"
 #include "core/scene_collision.hpp"
 #include "core/story_text.hpp"
 #include "ui/scene_viewport.hpp"
@@ -1175,6 +1176,7 @@ const char* game_flow_glyphs() {
         result += store_runtime_glyphs();
         result += tavern_ui_glyphs();
         result += StoryDialogueCatalog{}.glyphs();
+        result += LocationStoryCatalog{}.glyphs();
         return result;
     }();
     return glyphs.c_str();
@@ -1395,7 +1397,8 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 return;
             }
             if (location == Location::library) {
-                if (state.locations.library_room.open()) {
+                if (open_daytime_story_lobby(state.session, state.locations, location,
+                                             state.notice)) {
                     state.notice =
                         "已进入图书馆：点击柜台管理员开始交谈。";
                 } else {
@@ -1405,11 +1408,8 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             }
             if (location == Location::restaurant ||
                 location == Location::convenience_store) {
-                const DialogueTrigger trigger =
-                    location == Location::restaurant
-                        ? DialogueTrigger::restaurant_owner_intro
-                        : DialogueTrigger::convenience_store_owner_intro;
-                if (!state.locations.npc_lobby.open(trigger)) {
+                if (!open_daytime_story_lobby(state.session, state.locations, location,
+                                             state.notice)) {
                     state.notice =
                         location == Location::restaurant
                             ? "餐馆老板对话暂时不可用。"

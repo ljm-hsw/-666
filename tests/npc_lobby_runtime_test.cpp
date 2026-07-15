@@ -61,3 +61,26 @@ TEST_CASE("fixed NPC lobby can return without requesting its activity") {
     CHECK_FALSE(lobby.active());
     CHECK(result.notice.find("未消耗") != std::string::npos);
 }
+
+TEST_CASE("fixed NPC lobby can play a selected location story script") {
+    pixel_town::NpcLobbyRuntime lobby;
+    const pixel_town::DialogueScript script{
+        pixel_town::DialogueTrigger::restaurant_owner_intro,
+        {{"餐馆老板", "新菜单刚换好，先把桌号听清。"},
+         {"主角", "我会先确认桌号，再开始上菜。"}}};
+    REQUIRE(lobby.open(script));
+
+    pixel_town::NpcLobbyInput input;
+    input.interaction_activated = true;
+    CHECK(lobby.step(input).status ==
+          pixel_town::NpcLobbyStepStatus::dialogue_opened);
+    REQUIRE(lobby.presentation().dialogue.has_value());
+    CHECK(lobby.presentation().dialogue->text.find("新菜单") !=
+          std::string::npos);
+
+    input = {};
+    input.interaction_activated = true;
+    input.back_pressed = true;
+    CHECK(lobby.step(input).status == pixel_town::NpcLobbyStepStatus::unchanged);
+    CHECK(lobby.presentation().dialogue->current_line == 1);
+}

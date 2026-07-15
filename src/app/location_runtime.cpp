@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "app/ui_primitives.hpp"
+#include "core/location_story.hpp"
 #include "locations/convenience_store.hpp"
 
 namespace pixel_town {
@@ -180,6 +181,39 @@ void prepare_store_runtime(LocationRuntimeState& runtime) {
     runtime.store_selected_product_index = 0;
     runtime.store_feedback = "点击商品行，再用减号/加号调整进货并选择价格档。";
     ensure_store_runtime_plan(runtime, config);
+}
+
+bool open_daytime_story_lobby(const GameSession& session,
+                              LocationRuntimeState& runtime, Location location,
+                              std::string& notice) {
+    const LocationStorySelection selection = LocationStoryCatalog{}.select(
+        location_story_context(session, location));
+    if (selection.script.lines.empty()) {
+        notice = "地点剧情暂时不可用。";
+        return false;
+    }
+
+    switch (location) {
+        case Location::restaurant:
+        case Location::convenience_store:
+            if (!runtime.npc_lobby.open(selection.script)) {
+                notice = "地点 NPC 对话暂时不可用。";
+                return false;
+            }
+            return true;
+        case Location::library:
+            if (!runtime.library_room.open(selection.script)) {
+                notice = "图书馆场景加载失败。";
+                return false;
+            }
+            return true;
+        case Location::home:
+        case Location::tavern:
+            notice = "该地点不使用白天剧情大厅。";
+            return false;
+    }
+    notice = "地点剧情暂时不可用。";
+    return false;
 }
 
 StorePlanFeedback apply_store_plan_action(LocationRuntimeState& runtime,

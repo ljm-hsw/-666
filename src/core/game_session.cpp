@@ -121,7 +121,14 @@ bool operator==(const GameSessionSnapshot& left, const GameSessionSnapshot& righ
            left.applied_result_ids == right.applied_result_ids &&
            left.store_inventory == right.store_inventory &&
            left.tavern_wins == right.tavern_wins &&
-           left.tavern_losses == right.tavern_losses;
+           left.tavern_losses == right.tavern_losses &&
+           left.location_visits == right.location_visits;
+}
+
+bool operator==(const LocationVisitCounts& left, const LocationVisitCounts& right) {
+    return left.home == right.home && left.restaurant == right.restaurant &&
+           left.convenience_store == right.convenience_store &&
+           left.library == right.library && left.tavern == right.tavern;
 }
 
 GameSession GameSession::new_game(unsigned int seed) {
@@ -138,6 +145,22 @@ unsigned int GameSession::location_seed(Location location,
                                         unsigned int session_index) const noexcept {
     const unsigned int stream = static_cast<unsigned int>(location) + 1U;
     return derive_seed(seed_, day_, stream, session_index);
+}
+
+int GameSession::location_visit_count(Location location) const noexcept {
+    switch (location) {
+        case Location::home:
+            return location_visits_.home;
+        case Location::restaurant:
+            return location_visits_.restaurant;
+        case Location::convenience_store:
+            return location_visits_.convenience_store;
+        case Location::library:
+            return location_visits_.library;
+        case Location::tavern:
+            return location_visits_.tavern;
+    }
+    return 0;
 }
 
 Location GameSession::pending_location() const noexcept {
@@ -288,6 +311,9 @@ ApplyResult GameSession::apply_action_result(const ActionResult& result) {
         last_summary_ = result.summary;
         tavern_wins_ += result.tavern_win_delta;
         tavern_losses_ += result.tavern_loss_delta;
+        if (result.outcome == ActionOutcome::completed) {
+            record_completed_visit(result.location);
+        }
         clear_pending_location();
         phase_ = GamePhase::night_choice;
         return {true, "白天行动已结算。"};
@@ -303,6 +329,9 @@ ApplyResult GameSession::apply_action_result(const ActionResult& result) {
         last_summary_ = result.summary;
         tavern_wins_ += result.tavern_win_delta;
         tavern_losses_ += result.tavern_loss_delta;
+        if (result.outcome == ActionOutcome::completed) {
+            record_completed_visit(result.location);
+        }
         clear_pending_location();
         phase_ = GamePhase::day_summary;
         return {true, "夜晚行动已结算。"};
@@ -355,7 +384,8 @@ GameSessionSnapshot GameSession::snapshot() const {
                                applied_result_ids_,
                                store_inventory_,
                                tavern_wins_,
-                               tavern_losses_};
+                               tavern_losses_,
+                               location_visits_};
 }
 
 GameSession GameSession::from_snapshot(const GameSessionSnapshot& snapshot) {
@@ -378,6 +408,7 @@ GameSession GameSession::from_snapshot(const GameSessionSnapshot& snapshot) {
     session.store_inventory_ = snapshot.store_inventory;
     session.tavern_wins_ = snapshot.tavern_wins;
     session.tavern_losses_ = snapshot.tavern_losses;
+    session.location_visits_ = snapshot.location_visits;
     return session;
 }
 
@@ -398,6 +429,26 @@ void GameSession::apply_delta(const StatDelta& delta) {
     player_.reputation = clamp_value(player_.reputation + delta.reputation, 0, 100);
     player_.knowledge = clamp_value(player_.knowledge + delta.knowledge, 0, 100);
     player_.mood = clamp_value(player_.mood + delta.mood, 0, 100);
+}
+
+void GameSession::record_completed_visit(Location location) {
+    switch (location) {
+        case Location::home:
+            ++location_visits_.home;
+            return;
+        case Location::restaurant:
+            ++location_visits_.restaurant;
+            return;
+        case Location::convenience_store:
+            ++location_visits_.convenience_store;
+            return;
+        case Location::library:
+            ++location_visits_.library;
+            return;
+        case Location::tavern:
+            ++location_visits_.tavern;
+            return;
+    }
 }
 
 bool GameSession::create_final_ending(const EndingConfig& config) {

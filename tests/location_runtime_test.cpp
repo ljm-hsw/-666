@@ -244,6 +244,30 @@ TEST_CASE("restaurant owner dialogue hands off to untouched work preparation") {
     CHECK(runtime.restaurant_timer == doctest::Approx(0.0F));
 }
 
+TEST_CASE("restaurant lobby opens its selected returning-visit story without mutating session") {
+    auto snapshot = pixel_town::GameSession::new_game(20260715U).snapshot();
+    snapshot.day = 2;
+    snapshot.location_visits.restaurant = 1;
+    auto session = pixel_town::GameSession::from_snapshot(snapshot);
+    const auto before = session.snapshot();
+    pixel_town::LocationRuntimeState runtime;
+    std::string notice;
+
+    REQUIRE(pixel_town::open_daytime_story_lobby(
+        session, runtime, pixel_town::Location::restaurant, notice));
+    REQUIRE(runtime.npc_lobby.active());
+    CHECK(session.snapshot() == before);
+
+    pixel_town::NpcLobbyInput input;
+    input.interaction_activated = true;
+    CHECK(pixel_town::step_restaurant_lobby(session, runtime, input, notice).status ==
+          pixel_town::NpcLobbyStepStatus::dialogue_opened);
+    REQUIRE(runtime.npc_lobby.presentation().dialogue.has_value());
+    CHECK(runtime.npc_lobby.presentation().dialogue->text.find("新菜单") !=
+          std::string::npos);
+    CHECK(session.snapshot() == before);
+}
+
 TEST_CASE("convenience store owner dialogue hands off to unchanged planning") {
     auto session = pixel_town::GameSession::new_game(20260714U);
     const auto session_before_dialogue = session.snapshot();
@@ -293,6 +317,67 @@ TEST_CASE("convenience store owner dialogue hands off to unchanged planning") {
         {pixel_town::StorePlanActionType::increase_purchase, 0});
     CHECK(changed.accepted);
     CHECK(changed.changed);
+}
+
+TEST_CASE("daytime story lobbies preserve rain incidents and library handoff") {
+    unsigned int rainy_seed = 0;
+    for (unsigned int seed = 1; seed <= 128; ++seed) {
+        auto snapshot = pixel_town::GameSession::new_game(seed).snapshot();
+        snapshot.day = 5;
+        const auto candidate = pixel_town::GameSession::from_snapshot(snapshot);
+        if (candidate.current_day_context().weather == "小雨") {
+            rainy_seed = seed;
+            break;
+        }
+    }
+    REQUIRE(rainy_seed != 0);
+
+    auto store_snapshot = pixel_town::GameSession::new_game(rainy_seed).snapshot();
+    store_snapshot.day = 5;
+    store_snapshot.location_visits.convenience_store = 1;
+    auto store_session = pixel_town::GameSession::from_snapshot(store_snapshot);
+    const auto store_before = store_session.snapshot();
+    pixel_town::LocationRuntimeState store_runtime;
+    std::string notice;
+    REQUIRE(pixel_town::open_daytime_story_lobby(
+        store_session, store_runtime, pixel_town::Location::convenience_store, notice));
+
+    pixel_town::NpcLobbyInput store_input;
+    store_input.interaction_activated = true;
+    CHECK(pixel_town::step_store_lobby(store_session, store_runtime, store_input, notice)
+              .status == pixel_town::NpcLobbyStepStatus::dialogue_opened);
+    REQUIRE(store_runtime.npc_lobby.presentation().dialogue.has_value());
+    CHECK(store_runtime.npc_lobby.presentation().dialogue->text.find("雨伞") !=
+          std::string::npos);
+    CHECK(store_session.snapshot() == store_before);
+
+    auto library_snapshot = pixel_town::GameSession::new_game(20260715U).snapshot();
+    library_snapshot.day = 8;
+    library_snapshot.location_visits.library = 1;
+    auto library_session = pixel_town::GameSession::from_snapshot(library_snapshot);
+    pixel_town::LocationRuntimeState library_runtime;
+    REQUIRE(pixel_town::open_daytime_story_lobby(
+        library_session, library_runtime, pixel_town::Location::library, notice));
+
+    pixel_town::LibraryRoomInput library_input;
+    library_input.administrator_activated = true;
+    CHECK(pixel_town::step_library_room(library_session, library_runtime, library_input,
+                                        notice)
+              .status == pixel_town::LibraryRoomStepStatus::dialogue_opened);
+    REQUIRE(library_runtime.library_room.presentation().dialogue.has_value());
+    CHECK(library_runtime.library_room.presentation().dialogue->text.find("旧地图") !=
+          std::string::npos);
+
+    library_input = {};
+    library_input.dialogue.advance_pressed = true;
+    CHECK(pixel_town::step_library_room(library_session, library_runtime, library_input,
+                                        notice)
+              .status == pixel_town::LibraryRoomStepStatus::changed);
+    CHECK(pixel_town::step_library_room(library_session, library_runtime, library_input,
+                                        notice)
+              .status == pixel_town::LibraryRoomStepStatus::work_requested);
+    CHECK(library_session.phase() == pixel_town::GamePhase::day_location);
+    CHECK(library_runtime.library.active());
 }
 
 TEST_CASE("library organizing UI reserves separate pickup and held-book spaces") {

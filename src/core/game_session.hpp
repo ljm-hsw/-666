@@ -24,6 +24,21 @@ enum class Location {
     tavern,
 };
 
+struct LocationVisitCounts {
+    int home{0};
+    int restaurant{0};
+    int convenience_store{0};
+    int library{0};
+    int tavern{0};
+};
+
+[[nodiscard]] bool operator==(const LocationVisitCounts& left,
+                              const LocationVisitCounts& right);
+[[nodiscard]] inline bool operator!=(const LocationVisitCounts& left,
+                                     const LocationVisitCounts& right) {
+    return !(left == right);
+}
+
 enum class ActionSlot {
     day,
     night,
@@ -109,6 +124,7 @@ struct GameSessionSnapshot {
     std::vector<StoreInventoryItem> store_inventory;
     int tavern_wins{0};
     int tavern_losses{0};
+    LocationVisitCounts location_visits{};
 };
 
 [[nodiscard]] bool operator==(const GameSessionSnapshot& left,
@@ -141,6 +157,7 @@ public:
     [[nodiscard]] int active_result_id() const noexcept { return active_result_id_; }
     [[nodiscard]] int tavern_wins() const noexcept { return tavern_wins_; }
     [[nodiscard]] int tavern_losses() const noexcept { return tavern_losses_; }
+    [[nodiscard]] int location_visit_count(Location location) const noexcept;
     [[nodiscard]] const std::vector<StoreInventoryItem>& store_inventory() const noexcept {
         return store_inventory_;
     }
@@ -177,10 +194,12 @@ private:
     std::vector<StoreInventoryItem> store_inventory_;
     int tavern_wins_{0};
     int tavern_losses_{0};
+    LocationVisitCounts location_visits_{};
 
     [[nodiscard]] bool result_was_applied(int result_id) const;
     void clear_pending_location();
     void apply_delta(const StatDelta& delta);
+    void record_completed_visit(Location location);
     [[nodiscard]] bool create_final_ending(const EndingConfig& config);
 };
 

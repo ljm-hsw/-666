@@ -40,3 +40,4 @@ User stories: 16, 19, 54, 57, 58, 61
 - 2026-07-14：诊断截图新增 `store-dialogue-first.png` 与 `store-dialogue-last.png`；初次复查发现诊断提示“固定热点”的“固”未进入字形清单，补齐后重新生成，店主大厅、首句、末句和经营准备页均无缺字、重叠或越框。
 - TDD RED：共享目录测试先因缺少 `DialogueTrigger::convenience_store_owner_intro` 编译失败；端到端测试再因缺少 `step_store_lobby` 编译失败。
 - TDD GREEN：`./build/pixel_town_tests` 共 236 个测试、2570 个断言全部通过；`ctest --test-dir build --output-on-failure` 通过 1/1；`./build/pixel_town --capture-ui-diagnostics` 成功生成全部 35 张诊断截图。
+- 2026-07-15：本 issue 的三句固定对话重新定义为便利店首访教程基线；后续天气、库存、日常/意外事件由 Issue 30/31 扩展，不重新打开已完成的经营交接切片。

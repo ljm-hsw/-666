@@ -43,3 +43,4 @@ User stories: 1, 7, 9, 10, 28, 42, 57, 58
 - 2026-07-14：人物继续使用共享程序 fallback，最终镇长/主角纹理和表情由 Issue 17 人工批准。诊断截图 `mayor-dialogue.png`、`protagonist-opening-dialogue.png`、`home-reflection-dialogue.png` 已逐张复查，无缺字、重叠或越框。
 - TDD RED：生命周期文本测试先因缺少 `mayor_new_game_intro` / `home_rest_reflection` 编译失败；运行期测试再因缺少 `story_lifecycle_runtime.hpp` 失败；回家结算测试因缺少 `step_story_lifecycle` 失败；恢复测试最后因缺少 `should_replay_new_game_opening` 失败。
 - TDD GREEN：`./build/pixel_town_tests` 共 240 个测试、2627 个断言全部通过；`ctest --test-dir build --output-on-failure` 通过 1/1；`./build/pixel_town --capture-ui-diagnostics` 成功生成全部 38 张诊断截图。
+- 2026-07-15：镇长开场保持新游戏主线入口；现有回家独白作为首访基线，后续游戏日的家庭日记、天气和回收事件由 Issue 30/32 扩展，休息只结算一次的契约不变。

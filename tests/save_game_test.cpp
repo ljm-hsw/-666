@@ -92,7 +92,7 @@ TEST_CASE("save file includes versioned future module fields") {
             pixel_town::SaveStatus::ok);
 
     const std::string text = read_text(save_path);
-    CHECK(text.find("format_version=1\n") != std::string::npos);
+    CHECK(text.find("format_version=2\n") != std::string::npos);
     CHECK(text.find("seed=42\n") != std::string::npos);
     CHECK(text.find("day=1\n") != std::string::npos);
     CHECK(text.find("phase=night_choice\n") != std::string::npos);
@@ -100,6 +100,25 @@ TEST_CASE("save file includes versioned future module fields") {
     CHECK(text.find("store_inventory=") != std::string::npos);
     CHECK(text.find("tavern_wins=") != std::string::npos);
     CHECK(text.find("tavern_losses=") != std::string::npos);
+}
+
+TEST_CASE("v2 saves preserve completed location narrative visits") {
+    TempSaveDir temp;
+    const auto save_path = temp.path() / "slot1.sav";
+    const auto saved = session_after_day_result();
+    REQUIRE(saved.location_visit_count(pixel_town::Location::library) == 1);
+
+    REQUIRE(pixel_town::save_session_atomic(save_path, saved).status ==
+            pixel_town::SaveStatus::ok);
+    const std::string text = read_text(save_path);
+    CHECK(text.find("format_version=2\n") != std::string::npos);
+    CHECK(text.find("location_visits_home=0\n") != std::string::npos);
+    CHECK(text.find("location_visits_library=1\n") != std::string::npos);
+
+    const auto loaded = pixel_town::load_session(save_path);
+    REQUIRE(loaded.status == pixel_town::SaveStatus::ok);
+    CHECK(loaded.session.location_visit_count(pixel_town::Location::library) == 1);
+    CHECK(loaded.session.location_visit_count(pixel_town::Location::restaurant) == 0);
 }
 
 TEST_CASE("legacy v1 saves without tavern record default to zero") {
@@ -134,6 +153,38 @@ TEST_CASE("legacy v1 saves without tavern record default to zero") {
     REQUIRE(loaded.status == pixel_town::SaveStatus::ok);
     CHECK(loaded.session.tavern_wins() == 0);
     CHECK(loaded.session.tavern_losses() == 0);
+    CHECK(loaded.session.location_visit_count(pixel_town::Location::home) == 0);
+    CHECK(loaded.session.location_visit_count(pixel_town::Location::restaurant) == 0);
+    CHECK(loaded.session.location_visit_count(pixel_town::Location::convenience_store) == 0);
+    CHECK(loaded.session.location_visit_count(pixel_town::Location::library) == 0);
+    CHECK(loaded.session.location_visit_count(pixel_town::Location::tavern) == 0);
+}
+
+TEST_CASE("v2 saves reject missing or negative location visit fields") {
+    TempSaveDir temp;
+    const auto source_path = temp.path() / "source.sav";
+    const auto missing_path = temp.path() / "missing.sav";
+    const auto invalid_path = temp.path() / "invalid.sav";
+    REQUIRE(pixel_town::save_session_atomic(source_path, session_after_day_result()).status ==
+            pixel_town::SaveStatus::ok);
+
+    std::string missing = read_text(source_path);
+    const std::size_t library_line = missing.find("location_visits_library=");
+    REQUIRE(library_line != std::string::npos);
+    const std::size_t library_line_end = missing.find('\n', library_line);
+    REQUIRE(library_line_end != std::string::npos);
+    missing.erase(library_line, library_line_end - library_line + 1);
+    write_text(missing_path, missing);
+
+    std::string invalid = read_text(source_path);
+    const std::size_t library_value = invalid.find("location_visits_library=1");
+    REQUIRE(library_value != std::string::npos);
+    invalid.replace(library_value, std::string{"location_visits_library=1"}.size(),
+                    "location_visits_library=-1");
+    write_text(invalid_path, invalid);
+
+    CHECK(pixel_town::load_session(missing_path).status == pixel_town::SaveStatus::corrupt);
+    CHECK(pixel_town::load_session(invalid_path).status == pixel_town::SaveStatus::corrupt);
 }
 
 TEST_CASE("store inventory round trips through save file") {

@@ -76,6 +76,10 @@ struct LocationRuntimeState {
 
 void prepare_restaurant_runtime(LocationRuntimeState& runtime, unsigned int seed);
 void prepare_store_runtime(LocationRuntimeState& runtime);
+[[nodiscard]] bool open_daytime_story_lobby(const GameSession& session,
+                                             LocationRuntimeState& runtime,
+                                             Location location,
+                                             std::string& notice);
 [[nodiscard]] StorePlanFeedback apply_store_plan_action(
     LocationRuntimeState& runtime, const GameSession& session, StorePlanAction action);
 [[nodiscard]] std::string store_runtime_glyphs();

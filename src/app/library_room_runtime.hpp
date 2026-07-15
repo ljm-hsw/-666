@@ -38,6 +38,7 @@ struct LibraryRoomStepResult {
 class LibraryRoomRuntime {
 public:
     [[nodiscard]] bool open();
+    [[nodiscard]] bool open(const DialogueScript& script);
     [[nodiscard]] LibraryRoomStepResult step(const LibraryRoomInput& input);
     [[nodiscard]] LibraryRoomPresentation presentation() const;
     [[nodiscard]] bool active() const noexcept { return active_; }
@@ -45,6 +46,7 @@ public:
 private:
     StoryDialogueCatalog dialogue_catalog_;
     DialogueRuntime dialogue_;
+    std::optional<DialogueScript> script_;
     float administrator_animation_seconds_{0.0F};
     bool active_{false};
 };

@@ -89,6 +89,51 @@ TEST_CASE("day action result applies once and moves to night choice") {
     CHECK_FALSE(session.apply_action_result(result).accepted);
 }
 
+TEST_CASE("completed restaurant action records one narrative visit exactly once") {
+    auto session = pixel_town::GameSession::new_game();
+    CHECK(session.location_visit_count(pixel_town::Location::restaurant) == 0);
+
+    REQUIRE(session.enter_location(pixel_town::Location::restaurant));
+    REQUIRE(session.start_location() != 0);
+    const auto result = pixel_town::test_support::completed_location_result(session);
+
+    REQUIRE(session.apply_action_result(result).accepted);
+    CHECK(session.location_visit_count(pixel_town::Location::restaurant) == 1);
+
+    CHECK_FALSE(session.apply_action_result(result).accepted);
+    CHECK(session.location_visit_count(pixel_town::Location::restaurant) == 1);
+}
+
+TEST_CASE("only completed actions add visits for all five locations") {
+    auto session = pixel_town::GameSession::new_game();
+
+    complete_day_with_rest(session, pixel_town::Location::restaurant);
+
+    REQUIRE(session.enter_location(pixel_town::Location::convenience_store));
+    REQUIRE(session.start_location() != 0);
+    REQUIRE(session.apply_action_result(
+                pixel_town::test_support::completed_location_result(session))
+                .accepted);
+    REQUIRE(session.enter_location(pixel_town::Location::tavern));
+    REQUIRE(session.start_location() != 0);
+    REQUIRE(session.apply_action_result(
+                pixel_town::test_support::completed_location_result(session))
+                .accepted);
+    REQUIRE(session.finish_day_summary());
+
+    complete_day_with_rest(session, pixel_town::Location::library);
+
+    REQUIRE(session.enter_location(pixel_town::Location::restaurant));
+    REQUIRE(session.start_location() != 0);
+    REQUIRE(session.apply_action_result(session.abandon_current_location()).accepted);
+
+    CHECK(session.location_visit_count(pixel_town::Location::restaurant) == 1);
+    CHECK(session.location_visit_count(pixel_town::Location::convenience_store) == 1);
+    CHECK(session.location_visit_count(pixel_town::Location::library) == 1);
+    CHECK(session.location_visit_count(pixel_town::Location::tavern) == 1);
+    CHECK(session.location_visit_count(pixel_town::Location::home) == 2);
+}
+
 TEST_CASE("full one-day path reaches day two") {
     auto session = pixel_town::GameSession::new_game();
 

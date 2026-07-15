@@ -41,3 +41,4 @@ User stories: 11, 12, 54, 57, 58, 61
 - 2026-07-14：诊断截图新增 `restaurant-dialogue-first.png` 与 `restaurant-dialogue-last.png`。逐张复查首句/末句页码、继续/关闭按钮、背景、状态栏、中文字形和三行边界均正常；批量捕获在每张图前清空离屏画布，消除末图残帧/黑帧。
 - TDD RED：剧情目录测试先因缺少 `DialogueTrigger::restaurant_owner_intro` 编译失败；固定 NPC 运行期测试再因缺少 `app/npc_lobby_runtime.hpp` 编译失败；餐馆交接测试最后因缺少 `step_restaurant_lobby` 和 `LocationRuntimeState::npc_lobby` 编译失败。
 - TDD GREEN：`./build/pixel_town_tests` 共 234 个测试、2534 个断言全部通过；`ctest --test-dir build --output-on-failure` 通过 1/1；`./build/pixel_town --capture-ui-diagnostics` 成功生成全部 33 张诊断截图。
+- 2026-07-15：本 issue 的三句固定对话重新定义为餐馆首访教程基线；后续日常/意外事件由 Issue 30/31 扩展，不重新打开已完成的 UI 与玩法交接切片。

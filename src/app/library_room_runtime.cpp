@@ -5,7 +5,17 @@
 namespace pixel_town {
 
 bool LibraryRoomRuntime::open() {
+    const DialogueScript* script = dialogue_catalog_.find(
+        DialogueTrigger::library_administrator_intro);
+    return script != nullptr && open(*script);
+}
+
+bool LibraryRoomRuntime::open(const DialogueScript& script) {
+    if (script.lines.empty()) {
+        return false;
+    }
     dialogue_ = DialogueRuntime{};
+    script_ = script;
     administrator_animation_seconds_ = 0.0F;
     active_ = true;
     return true;
@@ -43,9 +53,7 @@ LibraryRoomStepResult LibraryRoomRuntime::step(const LibraryRoomInput& input) {
     }
 
     if (input.administrator_activated) {
-        const auto* script = dialogue_catalog_.find(
-            DialogueTrigger::library_administrator_intro);
-        if (script == nullptr || !dialogue_.open(*script)) {
+        if (!script_.has_value() || !dialogue_.open(*script_)) {
             return {LibraryRoomStepStatus::rejected,
                     "管理员对话暂时不可用。"};
         }

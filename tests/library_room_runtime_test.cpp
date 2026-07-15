@@ -53,3 +53,24 @@ TEST_CASE("library room can return without consuming work") {
     CHECK_FALSE(room.active());
     CHECK(closed.notice.find("未消耗") != std::string::npos);
 }
+
+TEST_CASE("library room can play a selected location story script") {
+    pixel_town::LibraryRoomRuntime room;
+    const pixel_town::DialogueScript script{
+        pixel_town::DialogueTrigger::library_administrator_intro,
+        {{"管理员", "新借书卡刚装进盒子，先慢慢熟悉分类。"}}};
+    REQUIRE(room.open(script));
+
+    pixel_town::LibraryRoomInput input;
+    input.administrator_activated = true;
+    CHECK(room.step(input).status ==
+          pixel_town::LibraryRoomStepStatus::dialogue_opened);
+    REQUIRE(room.presentation().dialogue.has_value());
+    CHECK(room.presentation().dialogue->text.find("借书卡") !=
+          std::string::npos);
+
+    input = {};
+    input.back_pressed = true;
+    CHECK(room.step(input).status == pixel_town::LibraryRoomStepStatus::unchanged);
+    CHECK(room.presentation().dialogue->current_line == 1);
+}

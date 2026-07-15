@@ -10,6 +10,7 @@
 - [`MVP_TEXT_PACK.md`](MVP_TEXT_PACK.md)：S 级 MVP 可直接接入文本，包括开场、每日提示、地点摘要、评议会和七结局初版文案。
 - [`STYLE_GUIDE.md`](STYLE_GUIDE.md)：文案风格、禁区、示例对照和 UI 文案约束。
 - [`LOCATIONS_AND_NPCS.md`](LOCATIONS_AND_NPCS.md)：地点叙事职责、A 级 NPC 三段式和 B 级触发碎片。
+- [`LOCATION_EVENT_SCHEDULE.md`](LOCATION_EVENT_SCHEDULE.md)：地点首访教程、第 2-10 天日常/意外事件矩阵、确定性选择与存档边界。
 - [`ENDING_AND_ECHOES.md`](ENDING_AND_ECHOES.md)：选择回声、统计来源、第十天评议会和七主结局叙事方向。
 - [`STORY_INTEGRATION_PLAN.md`](STORY_INTEGRATION_PLAN.md)：结合当前代码结构的剧情接入方案和 issue 分阶段规划。
 
@@ -17,5 +18,5 @@
 
 - 主线剧情基调以本目录文档为准：放松、日常、温暖、不评判。
 - MVP 先落地 S 级文本：开场背景、十天每日提示、地点行动结果摘要、每日总结、第十天评议会和主结局文本。
-- A/B/C 级内容只作为后续迭代方向，不得反向制造当前 MVP 的复杂 NPC、好感度、对话树或任务链压力。
-- 本目录提供叙事和文案契约，不直接改变 C++ 状态机、存档格式、行动结果结构或地点规则。
+- A 级地点事件按“首访教程 + 后续日常/意外事件”实施；仍不得反向制造复杂 NPC、好感度、对话树或任务链压力。
+- 本目录提供叙事和文案契约；地点事件选择只依赖 v2 的完成访问次数，不改变状态机、行动结果结构或地点玩法规则。

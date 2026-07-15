@@ -10,6 +10,7 @@ add_library(pixel_town_core
   src/core/ending_rules.cpp
   src/core/game_session.cpp
   src/core/location_lobby.cpp
+  src/core/location_story.cpp
   src/core/scene_collision.cpp
   src/core/story_dialogue.cpp
   src/core/story_text.cpp
@@ -123,6 +124,7 @@ add_executable(pixel_town_tests
   tests/tavern_runtime_test.cpp
   tests/test_library.cpp
   tests/library_organizing_test.cpp
+  tests/location_story_test.cpp
 )
 target_link_libraries(pixel_town_tests PRIVATE pixel_town_io pixel_town_app_logic)
 target_include_directories(pixel_town_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/doctest")

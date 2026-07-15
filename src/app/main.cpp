@@ -346,11 +346,11 @@ void setup_location_lobby_diagnostic(pixel_town::GameAppState& state,
     }
     if (location == pixel_town::Location::restaurant ||
         location == pixel_town::Location::convenience_store) {
-        const auto trigger =
-            location == pixel_town::Location::restaurant
-                ? pixel_town::DialogueTrigger::restaurant_owner_intro
-                : pixel_town::DialogueTrigger::convenience_store_owner_intro;
-        (void)state.locations.npc_lobby.open(trigger);
+        if (!pixel_town::open_daytime_story_lobby(
+                state.session, state.locations, location, state.notice)) {
+            state.notice = "诊断：地点剧情加载失败。";
+            return;
+        }
     }
     state.location_lobby = location;
     if (location == pixel_town::Location::restaurant) {
@@ -377,6 +377,68 @@ void setup_location_lobby_dialogue_diagnostic(
     state.notice = location == pixel_town::Location::restaurant
                        ? "诊断：餐馆老板主线对话。"
                        : "诊断：便利店店主主线对话。";
+}
+
+void set_location_visit_count(pixel_town::LocationVisitCounts& visits,
+                              pixel_town::Location location, int value) {
+    switch (location) {
+        case pixel_town::Location::restaurant:
+            visits.restaurant = value;
+            return;
+        case pixel_town::Location::convenience_store:
+            visits.convenience_store = value;
+            return;
+        case pixel_town::Location::library:
+            visits.library = value;
+            return;
+        case pixel_town::Location::tavern:
+            visits.tavern = value;
+            return;
+        case pixel_town::Location::home:
+            visits.home = value;
+            return;
+    }
+}
+
+void setup_daytime_story_diagnostic(pixel_town::GameAppState& state,
+                                    pixel_town::Location location, int day,
+                                    bool needs_rain) {
+    unsigned int seed = 20260715U;
+    if (needs_rain) {
+        for (unsigned int candidate = 1; candidate <= 128; ++candidate) {
+            auto snapshot = pixel_town::GameSession::new_game(candidate).snapshot();
+            snapshot.day = day;
+            if (pixel_town::GameSession::from_snapshot(snapshot)
+                    .current_day_context()
+                    .weather == "小雨") {
+                seed = candidate;
+                break;
+            }
+        }
+    }
+    state = pixel_town::GameAppState{};
+    state.has_session = true;
+    auto snapshot = pixel_town::GameSession::new_game(seed).snapshot();
+    snapshot.day = day;
+    set_location_visit_count(snapshot.location_visits, location, 1);
+    state.session = pixel_town::GameSession::from_snapshot(snapshot);
+    if (!pixel_town::open_daytime_story_lobby(state.session, state.locations,
+                                               location, state.notice)) {
+        state.notice = "诊断：地点剧情加载失败。";
+        return;
+    }
+
+    if (location == pixel_town::Location::library) {
+        pixel_town::LibraryRoomInput input;
+        input.administrator_activated = true;
+        (void)state.locations.library_room.step(input);
+    } else {
+        state.location_lobby = location;
+        pixel_town::NpcLobbyInput input;
+        input.interaction_activated = true;
+        (void)state.locations.npc_lobby.step(input);
+    }
+    state.notice = "诊断：地点日程剧情对话。";
 }
 
 void setup_story_lifecycle_diagnostic(
@@ -588,9 +650,25 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
             setup_story_lifecycle_diagnostic(
                 state, pixel_town::StoryLifecycleContext::new_game_opening, 1);
             break;
-        default:
+        case 37:
             setup_story_lifecycle_diagnostic(
                 state, pixel_town::StoryLifecycleContext::home_rest, 0);
+            break;
+        case 38:
+            setup_daytime_story_diagnostic(state, pixel_town::Location::restaurant,
+                                           5, true);
+            break;
+        case 39:
+            setup_daytime_story_diagnostic(
+                state, pixel_town::Location::convenience_store, 5, true);
+            break;
+        case 40:
+            setup_daytime_story_diagnostic(state, pixel_town::Location::library,
+                                           8, false);
+            break;
+        default:
+            setup_daytime_story_diagnostic(state, pixel_town::Location::restaurant,
+                                           10, false);
             break;
     }
 }
@@ -838,7 +916,7 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 38> ui_diagnostic_capture_paths{
+    const std::array<const char*, 42> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/store-prepare.png",
@@ -877,6 +955,10 @@ int main(int argc, char* argv[]) {
         "ui-diagnostics-captures/mayor-dialogue.png",
         "ui-diagnostics-captures/protagonist-opening-dialogue.png",
         "ui-diagnostics-captures/home-reflection-dialogue.png",
+        "ui-diagnostics-captures/restaurant-rain-story.png",
+        "ui-diagnostics-captures/store-rain-story.png",
+        "ui-diagnostics-captures/library-old-market-story.png",
+        "ui-diagnostics-captures/restaurant-day-ten-story.png",
     };
     auto unload_resources = [&]() {
         pixel_town::unload_tavern_assets(game_flow.locations.tavern_assets);
@@ -907,29 +989,6 @@ int main(int argc, char* argv[]) {
         }
         CloseWindow();
     };
-    if (capture_ui_diagnostics) {
-        bool exported_all = capture_ready && canvas_loaded && resources.can_start && log_written;
-        if (exported_all) {
-            for (std::size_t index = 0; index < ui_diagnostic_capture_paths.size(); ++index) {
-                setup_ui_diagnostic_capture(game_flow, index);
-                BeginTextureMode(canvas);
-                ClearBackground(BLACK);
-                pixel_town::draw_game_flow(ui_font, title_background, town_marker, kenney_tiles,
-                                           generated_full_map_scene, generated_map_background,
-                                           generated_buildings, scene_assets, game_flow,
-                                           resources.audio_enabled && !interaction_runtime.muted(),
-                                           false, Vector2{-1.0F, -1.0F});
-                EndTextureMode();
-                exported_all =
-                    export_canvas_capture(canvas, ui_diagnostic_capture_paths[index],
-                                          display.window_width, display.window_height) &&
-                    std::filesystem::is_regular_file(ui_diagnostic_capture_paths[index]) &&
-                    exported_all;
-            }
-        }
-        unload_resources();
-        return exported_all ? 0 : 1;
-    }
     std::size_t capture_index = 0;
     int capture_delay = 0;
     while (!WindowShouldClose()) {
