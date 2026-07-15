@@ -1060,6 +1060,10 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
     }
 
     if (ui_state.scene_state == LibrarySceneState::room_view) {
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            engine.give_up();
+            return true;
+        }
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             std::string npc_id;
             if (scene.handle_click(library_mouse, npc_id)) {
@@ -1071,11 +1075,19 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
         }
         return false;
     } else if (ui_state.scene_state == LibrarySceneState::intro) {
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            engine.give_up();
+            return true;
+        }
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             ui_state.scene_state = LibrarySceneState::npc_talk;
             return false;
         }
     } else if (ui_state.scene_state == LibrarySceneState::npc_talk) {
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            engine.give_up();
+            return true;
+        }
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             if (engine.has_pending_plot_event()) {
                 ui_state.scene_state = LibrarySceneState::plot_event;
@@ -1087,11 +1099,19 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
             return false;
         }
     } else if (ui_state.scene_state == LibrarySceneState::plot_event) {
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            engine.give_up();
+            return true;
+        }
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             ui_state.scene_state = LibrarySceneState::organizing;
             return false;
         }
     } else if (ui_state.scene_state == LibrarySceneState::feedback) {
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            engine.give_up();
+            return true;
+        }
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             ui_state.scene_state = LibrarySceneState::organizing;
             return false;
@@ -1195,12 +1215,16 @@ bool handle_library_input(LibraryRuleEngine& engine, LibraryUIState& ui_state,
             }
         }
     } else if (ui_state.scene_state == LibrarySceneState::map_reveal) {
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            engine.give_up();
+            return true;
+        }
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             ui_state.scene_state = LibrarySceneState::organizing;
             return false;
         }
     } else if (ui_state.scene_state == LibrarySceneState::summary) {
-        if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             return true;
         }
     }

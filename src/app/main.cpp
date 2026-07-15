@@ -35,6 +35,7 @@ extern "C" {
 #include "io/resource_diagnostics.hpp"
 #include "io/save_game.hpp"
 #include "io/startup_log.hpp"
+#include "locations/library_data.hpp"
 
 namespace {
 
@@ -216,6 +217,7 @@ int main(int argc, char* argv[]) {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(display.window_width, display.window_height, "Pixel Town: Ten-Day Plan");
     SetWindowMinSize(display.logical_width, display.logical_height);
+    SetExitKey(KEY_NULL);
     SetTargetFPS(60);
 
     RenderTexture2D canvas = LoadRenderTexture(display.logical_width, display.logical_height);
@@ -238,10 +240,22 @@ int main(int argc, char* argv[]) {
         } else {
             SetTextureFilter(town_marker, TEXTURE_FILTER_POINT);
         }
-        const std::string required_glyphs =
+        std::string required_glyphs_full =
             std::string{pixel_town::visual_prototype_glyphs()} + pixel_town::game_flow_glyphs();
+
+        auto library_data_result = pixel_town::library::load_data("assets/data/library_data.txt");
+        if (library_data_result.success) {
+            required_glyphs_full += pixel_town::library::collect_all_text_characters(library_data_result.data);
+        }
+
+        required_glyphs_full += "欢奖励望获得你需要从书架找到正确书籍类别回答答对知识声望额外";
+
+        std::sort(required_glyphs_full.begin(), required_glyphs_full.end());
+        auto last = std::unique(required_glyphs_full.begin(), required_glyphs_full.end());
+        required_glyphs_full.erase(last, required_glyphs_full.end());
+
         int codepoint_count = 0;
-        int* codepoints = LoadCodepoints(required_glyphs.c_str(), &codepoint_count);
+        int* codepoints = LoadCodepoints(required_glyphs_full.c_str(), &codepoint_count);
         const int font_pixel_size = capture_prototype ? 12 : 24;
         ui_font = LoadFontEx("assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf",
                              font_pixel_size, codepoints, codepoint_count);
