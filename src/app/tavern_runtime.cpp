@@ -51,6 +51,7 @@ void TavernRuntime::reset() {
     active_result_id_ = 0;
     player_at_start_ = PlayerState{};
     pending_settlement_.reset();
+    location_story_.reset();
     dialogue_ = DialogueRuntime{};
 }
 
@@ -67,7 +68,16 @@ TavernOpenResult TavernRuntime::open(GameSession& session) {
     }
     reset();
     active_ = true;
-    return {TavernOpenStatus::opened, "已进入酒馆，选择挑战和赌注。"};
+    const LocationStorySelection selection = LocationStoryCatalog{}.select(
+        location_story_context(session, Location::tavern));
+    location_story_ = selection.script;
+    if (!dialogue_.open(*location_story_)) {
+        (void)session.return_to_map();
+        reset();
+        return {TavernOpenStatus::denied, "酒馆剧情暂时无法打开。"};
+    }
+    screen_ = TavernScreen::npc_dialog;
+    return {TavernOpenStatus::opened, "已进入酒馆，先听酒保说说今晚的事。"};
 }
 
 TavernStepResult TavernRuntime::step(GameSession& session,
@@ -109,9 +119,7 @@ TavernStepResult TavernRuntime::step(GameSession& session,
             return step_result(TavernStepStatus::unchanged, frame_notice);
         }
         if (clicked(layout.npc_hotspot, input)) {
-            const auto* script = dialogue_catalog_.find(
-                DialogueTrigger::tavern_bartender_intro);
-            if (script == nullptr || !dialogue_.open(*script)) {
+            if (!location_story_.has_value() || !dialogue_.open(*location_story_)) {
                 feedback_ = "酒保对话暂时无法打开。";
                 return step_result(TavernStepStatus::rejected, feedback_);
             }
@@ -463,6 +471,7 @@ const char* tavern_ui_glyphs() {
            "五子棋开始骗子骰子开始提高叫点或质疑电脑已调整为最小合法叫点请再次确认"
            "已经无法继续加价请选择质疑×……?!():";
         result += StoryDialogueCatalog{}.glyphs();
+        result += LocationStoryCatalog{}.glyphs();
         return result;
     }();
     return glyphs.c_str();

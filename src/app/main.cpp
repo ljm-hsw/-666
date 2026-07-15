@@ -484,7 +484,11 @@ void setup_story_lifecycle_diagnostic(
         state.has_session = true;
         state.session = pixel_town::GameSession::new_game(20260714U);
     }
-    (void)state.locations.story_lifecycle.open(context);
+    if (context == pixel_town::StoryLifecycleContext::home_rest) {
+        (void)state.locations.story_lifecycle.open_home_rest(state.session);
+    } else {
+        (void)state.locations.story_lifecycle.open(context);
+    }
     pixel_town::DialogueFrameInput input;
     input.advance_pressed = true;
     for (int line = 0; line < dialogue_line; ++line) {
@@ -525,28 +529,26 @@ void setup_tavern_diagnostic(pixel_town::GameAppState& state,
     (void)state.locations.tavern.open(state.session);
     pixel_town::ensure_tavern_assets_loaded(state.locations.tavern_assets);
     if (screen == pixel_town::TavernScreen::npc_dialog) {
-        const auto layout = pixel_town::tavern_layout();
         pixel_town::TavernFrameInput input;
-        input.pointer = pixel_town::TavernCanvasPoint{
-            (layout.npc_hotspot.x + layout.npc_hotspot.width * 0.5F) *
-                pixel_town::ui::design_to_canvas_scale,
-            (layout.npc_hotspot.y + layout.npc_hotspot.height * 0.5F) *
-                pixel_town::ui::design_to_canvas_scale,
-            true};
-        input.primary_pressed = true;
-        (void)state.locations.tavern.step(state.session, input);
         for (int line = 0; line < dialogue_line; ++line) {
-            input = {};
             input.enter_pressed = true;
             (void)state.locations.tavern.step(state.session, input);
+            input = {};
         }
         if (missing_bartender &&
             state.locations.tavern_assets.bartender_sheet.id != 0) {
             UnloadTexture(state.locations.tavern_assets.bartender_sheet);
             state.locations.tavern_assets.bartender_sheet = {};
         }
-    } else if (screen != pixel_town::TavernScreen::lobby) {
+    } else {
         pixel_town::TavernFrameInput input;
+        input.escape_pressed = true;
+        (void)state.locations.tavern.step(state.session, input);
+        if (screen == pixel_town::TavernScreen::lobby) {
+            state.notice = "诊断：酒馆页面。";
+            return;
+        }
+        input = {};
         input.space_pressed = true;
         (void)state.locations.tavern.step(state.session, input);
         if (screen == pixel_town::TavernScreen::gomoku ||
@@ -560,6 +562,48 @@ void setup_tavern_diagnostic(pixel_town::GameAppState& state,
         }
     }
     state.notice = "诊断：酒馆页面。";
+}
+
+void setup_night_story_diagnostic(pixel_town::GameAppState& state,
+                                  pixel_town::Location location, int day,
+                                  int completed_visits, bool needs_rain = false) {
+    unsigned int seed = 20260715U;
+    if (needs_rain) {
+        for (unsigned int candidate = 1; candidate <= 256; ++candidate) {
+            auto candidate_snapshot =
+                pixel_town::GameSession::new_game(candidate).snapshot();
+            candidate_snapshot.day = day;
+            if (pixel_town::GameSession::from_snapshot(candidate_snapshot)
+                    .current_day_context()
+                    .weather == "小雨") {
+                seed = candidate;
+                break;
+            }
+        }
+    }
+
+    pixel_town::TavernVisualAssets tavern_assets = state.locations.tavern_assets;
+    state.locations.tavern_assets = {};
+    state = pixel_town::GameAppState{};
+    state.locations.tavern_assets = tavern_assets;
+    state.has_session = true;
+    auto snapshot = pixel_town::GameSession::new_game(seed).snapshot();
+    snapshot.day = day;
+    snapshot.phase = pixel_town::GamePhase::night_choice;
+    snapshot.day_action_done = true;
+    set_location_visit_count(snapshot.location_visits, location,
+                             completed_visits);
+    state.session = pixel_town::GameSession::from_snapshot(snapshot);
+
+    if (location == pixel_town::Location::tavern) {
+        (void)state.locations.tavern.open(state.session);
+        pixel_town::ensure_tavern_assets_loaded(state.locations.tavern_assets);
+        state.notice = "诊断：酒馆日程剧情。";
+    } else {
+        state.home_preview_open = true;
+        (void)state.locations.story_lifecycle.open_home_rest(state.session);
+        state.notice = "诊断：回家日程独白。";
+    }
 }
 
 void setup_npc_idle_frame_diagnostic(pixel_town::GameAppState& state,
@@ -736,8 +780,32 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
             setup_npc_idle_frame_diagnostic(
                 state, pixel_town::Location::convenience_store);
             break;
-        default:
+        case 44:
             setup_npc_idle_frame_diagnostic(state, pixel_town::Location::tavern);
+            break;
+        case 45:
+            setup_night_story_diagnostic(state, pixel_town::Location::tavern,
+                                         1, 0);
+            break;
+        case 46:
+            setup_night_story_diagnostic(state, pixel_town::Location::tavern,
+                                         6, 1);
+            break;
+        case 47:
+            setup_night_story_diagnostic(state, pixel_town::Location::tavern,
+                                         8, 1);
+            break;
+        case 48:
+            setup_night_story_diagnostic(state, pixel_town::Location::home,
+                                         1, 0);
+            break;
+        case 49:
+            setup_night_story_diagnostic(state, pixel_town::Location::home,
+                                         5, 1, true);
+            break;
+        default:
+            setup_night_story_diagnostic(state, pixel_town::Location::home,
+                                         10, 1);
             break;
     }
 }
@@ -996,7 +1064,7 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 45> ui_diagnostic_capture_paths{
+    const std::array<const char*, 51> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/store-prepare.png",
@@ -1042,6 +1110,12 @@ int main(int argc, char* argv[]) {
         "ui-diagnostics-captures/restaurant-npc-idle-frame.png",
         "ui-diagnostics-captures/store-npc-idle-frame.png",
         "ui-diagnostics-captures/tavern-npc-idle-frame.png",
+        "ui-diagnostics-captures/tavern-story-tutorial.png",
+        "ui-diagnostics-captures/tavern-story-black-piece.png",
+        "ui-diagnostics-captures/tavern-story-old-photo.png",
+        "ui-diagnostics-captures/home-story-tutorial.png",
+        "ui-diagnostics-captures/home-story-rainy-night.png",
+        "ui-diagnostics-captures/home-story-day-ten.png",
     };
     auto unload_resources = [&]() {
         pixel_town::unload_tavern_assets(game_flow.locations.tavern_assets);

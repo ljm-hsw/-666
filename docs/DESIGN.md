@@ -287,10 +287,10 @@ P2/P3 合并地点后，应用层按以下 Module 维持 Locality：
 - `EndingRules`：raylib-free 最终结算 Module，负责库存折价、固定优先级、单项归一化比较，以及返回唯一主结局、成长路线和判定依据。
 - `library_runtime`：raylib-free 的图书馆流程 Module，以 `open / step / presentation / active` 为 public Interface，拥有模式互斥、确定性上下文、咨询/整理规则生命周期、反馈和结果提交顺序；不建立全地点 `ILocation`。
 - `location_result_adapter`：图书馆结果 Adapter，只负责把共享 `LibraryWorkResult` 转换为统一 `ActionResult`。
-- `story_lifecycle_runtime`：raylib-free 的新游戏开场/回家独白 Module，只保存当前无奖励对话上下文和行号；开场完成不修改会话，回家完成委托既有 `home_rest_result()`，不新增阶段或存档字段。
+- `story_lifecycle_runtime`：raylib-free 的新游戏开场/回家事件 Module，只保存当前无奖励对话上下文和行号；开场完成不修改会话，回家通过 `location_story` 选择首访或当日脚本，关闭或跳过后委托既有 `home_rest_result()`，不新增阶段或存档字段。
 - `location_runtime`：白天地点 UI Adapter，负责餐馆与便利店的临时运行状态，并通过 `open_daytime_story_lobby()` 把 `location_story` 的只读选择结果交给餐馆/便利店 NPC 大厅或图书馆固定管理员；其 `LocationRuntimeState` 另行拥有共享对话运行期和酒馆视觉资源生命周期。
 - `location_lobby`：raylib-free 场景大厅布局契约，为餐馆、便利店、图书馆和家提供标题、NPC 热点、返回按钮和主要活动按钮；酒馆明确不复用该配置。
-- `tavern_runtime`：raylib-free 酒馆流程 Module，以 `open / step / presentation / active` 为 public Interface，接收显式帧输入并隐藏大厅、棋局、骰局、电脑行动和结果提交顺序。
+- `tavern_runtime`：raylib-free 酒馆流程 Module，以 `open / step / presentation / active` 为 public Interface，接收显式帧输入并隐藏地点剧情、大厅、棋局、骰局、电脑行动和结果提交顺序；每次进入先展示 `location_story` 的确定性脚本，关闭后才开放酒保与桌游热点。
 - `tavern_challenge_settlement`：raylib-free 结算 Module，接收真实游戏终局并推导挑战类型与胜负，校验配置、结果 ID、赌注和现金，只构造现有夜晚 `ActionResult`，不应用全局状态。
 - `tavern_view`：酒馆只读绘制 Module，使用共享设计网格、`ui_primitives` 和 `TavernVisualAssets`，不直接修改玩法状态、玩家状态、阶段或酒馆战绩。
 - `library_room_runtime`：图书馆固定管理员协调 Module，接收帧时间、热点点击、返回和对话输入，提供待机动画时间与只读对话 presentation；对话关闭后只发出开始工作的语义请求。

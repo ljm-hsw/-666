@@ -5,6 +5,7 @@
 
 #include "app/dialogue_runtime.hpp"
 #include "core/game_session.hpp"
+#include "core/location_story.hpp"
 #include "core/story_dialogue.hpp"
 
 namespace pixel_town {
@@ -37,6 +38,7 @@ struct StoryLifecyclePresentation {
 class StoryLifecycleRuntime {
 public:
     [[nodiscard]] bool open(StoryLifecycleContext context);
+    [[nodiscard]] bool open_home_rest(const GameSession& session);
     [[nodiscard]] StoryLifecycleStepResult step(
         const DialogueFrameInput& input);
     [[nodiscard]] StoryLifecyclePresentation presentation() const;

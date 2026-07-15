@@ -111,6 +111,30 @@ DialogueScript daily_script(Location location, int day) {
         return location_script(location, "捐来的旧书里夹着褪色价签，先放到整理桌上。",
                                "这张价签也许和旧集市有关。");
     }
+    if (location == Location::tavern && day == 2) {
+        return location_script(location, "常客给新面孔挪了半张桌子。先看清玩法，再慢慢坐下。",
+                               "我先熟悉这里的节奏，不急着下注。");
+    }
+    if (location == Location::tavern && day == 4) {
+        return location_script(location, "有人带来一本旧棋谱，正争论哪一步更稳。",
+                               "我会看清局面，也会记得骰盅那边的规矩。");
+    }
+    if (location == Location::tavern && day == 9) {
+        return location_script(location, "常客已经替你留了位置，玩法和赌注还是由你自己选。",
+                               "熟悉归熟悉，今晚的选择仍要认真。");
+    }
+    if (location == Location::home && day == 2) {
+        return location_script(location, "地图上还空着几条路，先把今天走过的地方补上。",
+                               "确认休息后再合上日记，明天继续。");
+    }
+    if (location == Location::home && day == 4) {
+        return location_script(location, "借来的书放在灯下，屋里终于安静下来。",
+                               "今晚休息好，明天再把没读完的页数接上。");
+    }
+    if (location == Location::home && day == 9) {
+        return location_script(location, "已经知道哪盏灯会最晚熄，这间屋也更像住过。",
+                               "再休息一晚，就要整理这十天的答案了。");
+    }
     if (location == Location::home && day == 7) {
         return {tutorial_trigger_for(location),
                 {{"主角", "窗边晾着今天用过的外套。把灯留暖一点，明天再继续。"}}};
@@ -131,6 +155,10 @@ DialogueScript incident_script(Location location, int day, const std::string& we
         return location_script(location, "窗边有几页书受潮了，先别把它们和干书混在一起。",
                                "我会先把需要整理的书看清楚。");
     }
+    if (location == Location::home && day == 5 && weather == "小雨") {
+        return location_script(location, "窗缝漏进几滴雨，灯下的日记先往里挪一挪。",
+                               "检查好窗边，再确认休息，恢复规则不变。");
+    }
     if (location == Location::restaurant && day == 8) {
         return location_script(location, "旧集市用过的大汤锅擦出来了，今天先放在后厨别多问。",
                                "大家好像都记得它，只是暂时不说。");
@@ -142,6 +170,14 @@ DialogueScript incident_script(Location location, int day, const std::string& we
     if (location == Location::library && day == 8) {
         return location_script(location, "旧地图从借书卡盒后滑出来，边缘圈着几个摊位。",
                                "我会先记住这些圈出的地方。");
+    }
+    if (location == Location::tavern && day == 8) {
+        return location_script(location, "旧照片从相框里滑了一点，里面的人都围着棋桌笑。",
+                               "我先把相框摆正，再选择今晚的玩法。");
+    }
+    if (location == Location::home && day == 8) {
+        return location_script(location, "旧海报的一角又翘起来了，灯也短暂闪了两下。",
+                               "把海报贴平就好，今晚仍只结算一次休息。");
     }
     if (location == Location::tavern && day == 6) {
         return location_script(location, "昨晚有枚黑棋子卡在桌缝。先别急着坐，替我看看有没有别的落下。",
@@ -160,8 +196,9 @@ std::string incident_id(Location location, int day, const std::string& weather) 
             case Location::library:
                 return "library_day_5_damp_pages";
             case Location::tavern:
-            case Location::home:
                 break;
+            case Location::home:
+                return "home_day_5_leaking_window";
         }
     }
     if (day == 8) {
@@ -173,8 +210,9 @@ std::string incident_id(Location location, int day, const std::string& weather) 
             case Location::library:
                 return "library_day_8_old_market_map";
             case Location::tavern:
+                return "tavern_day_8_old_photo";
             case Location::home:
-                break;
+                return "home_day_8_flickering_lamp";
         }
     }
     if (location == Location::tavern && day == 6) {
@@ -253,6 +291,13 @@ std::string LocationStoryCatalog::glyphs() const {
     }
     append_script_glyphs(glyphs, daily_script(Location::home, 7));
     append_script_glyphs(glyphs, incident_script(Location::tavern, 6, "微风"));
+    for (const Location location : {Location::tavern, Location::home}) {
+        for (const int day : {2, 4, 9}) {
+            append_script_glyphs(glyphs, daily_script(location, day));
+        }
+        append_script_glyphs(glyphs, incident_script(location, 8, "晴天"));
+    }
+    append_script_glyphs(glyphs, incident_script(Location::home, 5, "小雨"));
     return glyphs;
 }
 

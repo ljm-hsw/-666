@@ -52,8 +52,8 @@ const DialogueScript mayor_new_game_intro{
 const DialogueScript home_rest_reflection{
     DialogueTrigger::home_rest_reflection,
     {
-        {"主角", "今天先到这里。把灯留暖一点，明天再继续。"},
-        {"主角", "休息不是落后，是给下一天留一点力气。"},
+        {"主角", "确认休息会消耗今晚的行动，并恢复体力和心情，明天再继续。"},
+        {"主角", "如果还没准备好，返回地图不会结算今晚的休息。"},
     },
 };
 

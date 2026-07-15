@@ -1427,8 +1427,7 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
         }
         if (activated(home_preview_rest_button(), logical_mouse, KEY_ENTER) ||
             IsKeyPressed(KEY_SPACE)) {
-            if (state.locations.story_lifecycle.open(
-                    StoryLifecycleContext::home_rest)) {
+            if (state.locations.story_lifecycle.open_home_rest(state.session)) {
                 state.notice = "休息前，主角想和自己说几句话。";
             } else {
                 state.notice = "回家独白暂时不可用。";

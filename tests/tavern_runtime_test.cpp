@@ -38,6 +38,15 @@ pixel_town::GameSession different_active_tavern_session() {
     return session;
 }
 
+pixel_town::GameSession returning_tavern_session(int day) {
+    auto snapshot = pixel_town::GameSession::new_game(20260715U).snapshot();
+    snapshot.day = day;
+    snapshot.phase = pixel_town::GamePhase::night_choice;
+    snapshot.day_action_done = true;
+    snapshot.location_visits.tavern = 1;
+    return pixel_town::GameSession::from_snapshot(snapshot);
+}
+
 pixel_town::TavernFrameInput key_input(int digit = 0, bool space = false) {
     pixel_town::TavernFrameInput input;
     input.digit_pressed = digit;
@@ -57,9 +66,25 @@ pixel_town::TavernFrameInput click_input(pixel_town::TavernRect bounds) {
     return input;
 }
 
+void dismiss_opening_story(pixel_town::GameSession& session,
+                           pixel_town::TavernRuntime& runtime) {
+    REQUIRE(runtime.presentation().screen == pixel_town::TavernScreen::npc_dialog);
+    pixel_town::TavernFrameInput skip;
+    skip.escape_pressed = true;
+    REQUIRE(runtime.step(session, skip).status ==
+            pixel_town::TavernStepStatus::changed);
+    REQUIRE(runtime.presentation().screen == pixel_town::TavernScreen::lobby);
+}
+
+void open_tavern(pixel_town::GameSession& session,
+                 pixel_town::TavernRuntime& runtime) {
+    REQUIRE(runtime.open(session).status == pixel_town::TavernOpenStatus::opened);
+    dismiss_opening_story(session, runtime);
+}
+
 void start_gomoku(pixel_town::GameSession& session,
                   pixel_town::TavernRuntime& runtime) {
-    REQUIRE(runtime.open(session).status == pixel_town::TavernOpenStatus::opened);
+    open_tavern(session, runtime);
     REQUIRE(runtime.step(session, key_input(0, true)).status ==
             pixel_town::TavernStepStatus::changed);
     REQUIRE(runtime.step(session, key_input(1)).status ==
@@ -72,12 +97,72 @@ void start_gomoku(pixel_town::GameSession& session,
 
 }  // namespace
 
+TEST_CASE("tavern opens its selected story before table hotspots") {
+    auto session = session_at_night_choice();
+    auto expected = session;
+    REQUIRE(expected.enter_location(pixel_town::Location::tavern));
+    pixel_town::TavernRuntime runtime;
+
+    REQUIRE(runtime.open(session).status == pixel_town::TavernOpenStatus::opened);
+    auto view = runtime.presentation();
+    CHECK(view.screen == pixel_town::TavernScreen::npc_dialog);
+    REQUIRE(view.dialogue.has_value());
+    CHECK(view.dialogue->speaker == "酒保");
+    CHECK(view.dialogue->total_lines == 3);
+    CHECK(session.snapshot() == expected.snapshot());
+
+    const auto blocked = runtime.step(
+        session, click_input(pixel_town::tavern_layout().gomoku_hotspot));
+    CHECK(blocked.status == pixel_town::TavernStepStatus::unchanged);
+    CHECK(runtime.presentation().screen == pixel_town::TavernScreen::npc_dialog);
+    CHECK_FALSE(session.location_started());
+
+    pixel_town::TavernFrameInput skip;
+    skip.escape_pressed = true;
+    CHECK(runtime.step(session, skip).status == pixel_town::TavernStepStatus::changed);
+    CHECK(runtime.presentation().screen == pixel_town::TavernScreen::lobby);
+    CHECK(session.snapshot() == expected.snapshot());
+
+    CHECK(runtime.step(session, key_input(0, true)).status ==
+          pixel_town::TavernStepStatus::changed);
+    CHECK(runtime.presentation().screen ==
+          pixel_town::TavernScreen::challenge_select);
+    CHECK_FALSE(session.location_started());
+}
+
+TEST_CASE("returning tavern replays the same day event before challenge selection") {
+    auto session = returning_tavern_session(6);
+    const auto boundary = session.snapshot();
+    pixel_town::TavernRuntime runtime;
+
+    REQUIRE(runtime.open(session).status == pixel_town::TavernOpenStatus::opened);
+    const auto view = runtime.presentation();
+    REQUIRE(view.dialogue.has_value());
+    CHECK(view.dialogue->text.find("黑棋子") != std::string::npos);
+    CHECK(session.location_visit_count(pixel_town::Location::tavern) == 1);
+    CHECK_FALSE(session.location_started());
+
+    auto restored = pixel_town::GameSession::from_snapshot(boundary);
+    pixel_town::TavernRuntime restored_runtime;
+    REQUIRE(restored_runtime.open(restored).status ==
+            pixel_town::TavernOpenStatus::opened);
+    REQUIRE(restored_runtime.presentation().dialogue.has_value());
+    CHECK(restored_runtime.presentation().dialogue->text == view.dialogue->text);
+
+    dismiss_opening_story(session, runtime);
+    CHECK(runtime.step(session, click_input(pixel_town::tavern_layout().dice_hotspot))
+              .status == pixel_town::TavernStepStatus::changed);
+    CHECK(runtime.presentation().screen ==
+          pixel_town::TavernScreen::challenge_select);
+    CHECK_FALSE(session.location_started());
+    CHECK(session.location_visit_count(pixel_town::Location::tavern) == 1);
+}
+
 TEST_CASE("tavern runtime enters and starts one challenge through its public interface") {
     auto session = session_at_night_choice();
     pixel_town::TavernRuntime runtime;
 
-    const auto opened = runtime.open(session);
-    REQUIRE(opened.status == pixel_town::TavernOpenStatus::opened);
+    open_tavern(session, runtime);
     CHECK(runtime.active());
     CHECK(session.phase() == pixel_town::GamePhase::night_location);
     CHECK(runtime.presentation().screen == pixel_town::TavernScreen::lobby);
@@ -110,7 +195,7 @@ TEST_CASE("tavern runtime enters and starts one challenge through its public int
 TEST_CASE("tavern runtime returns to the night map before a challenge starts") {
     auto session = session_at_night_choice();
     pixel_town::TavernRuntime runtime;
-    REQUIRE(runtime.open(session).status == pixel_town::TavernOpenStatus::opened);
+    open_tavern(session, runtime);
 
     pixel_town::TavernFrameInput input;
     input.escape_pressed = true;
@@ -125,7 +210,7 @@ TEST_CASE("tavern runtime returns to the night map before a challenge starts") {
 TEST_CASE("bartender dialogue is modal and leaves the game session unchanged") {
     auto session = session_at_night_choice();
     pixel_town::TavernRuntime runtime;
-    REQUIRE(runtime.open(session).status == pixel_town::TavernOpenStatus::opened);
+    open_tavern(session, runtime);
     const auto before_dialogue = session.snapshot();
     const auto layout = pixel_town::tavern_layout();
 
@@ -171,7 +256,7 @@ TEST_CASE("tavern runtime keeps selection open when the bet is unaffordable") {
     snapshot.player.money = 5;
     session = pixel_town::GameSession::from_snapshot(snapshot);
     pixel_town::TavernRuntime runtime;
-    REQUIRE(runtime.open(session).status == pixel_town::TavernOpenStatus::opened);
+    open_tavern(session, runtime);
     REQUIRE(runtime.step(session, key_input(0, true)).status ==
             pixel_town::TavernStepStatus::changed);
     REQUIRE(runtime.step(session, key_input(5)).status ==
@@ -253,7 +338,7 @@ TEST_CASE("tavern runtime preserves a terminal challenge when core settlement re
 TEST_CASE("tavern presentation never exposes unrevealed computer dice") {
     auto session = session_at_night_choice();
     pixel_town::TavernRuntime runtime;
-    REQUIRE(runtime.open(session).status == pixel_town::TavernOpenStatus::opened);
+    open_tavern(session, runtime);
     REQUIRE(runtime.step(session, key_input(0, true)).status ==
             pixel_town::TavernStepStatus::changed);
     REQUIRE(runtime.step(session, key_input(2)).status ==
@@ -276,7 +361,7 @@ TEST_CASE("tavern presentation never exposes unrevealed computer dice") {
 TEST_CASE("tavern runtime completes a deterministic liars dice night") {
     auto session = session_at_night_choice();
     pixel_town::TavernRuntime runtime;
-    REQUIRE(runtime.open(session).status == pixel_town::TavernOpenStatus::opened);
+    open_tavern(session, runtime);
     REQUIRE(runtime.step(session, key_input(0, true)).status ==
             pixel_town::TavernStepStatus::changed);
     REQUIRE(runtime.step(session, key_input(2)).status ==

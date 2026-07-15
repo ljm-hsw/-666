@@ -160,3 +160,39 @@ TEST_CASE("each daytime location has three daily and two incident scripts") {
         }
     }
 }
+
+TEST_CASE("tavern and home each provide three daily and two incident stories") {
+    const pixel_town::LocationStoryCatalog catalog;
+
+    for (const int day : {2, 4, 9}) {
+        const auto tavern = catalog.select(
+            {pixel_town::Location::tavern, day, "晴天", "小镇节奏平稳", 1,
+             20260715U});
+        const auto home = catalog.select(
+            {pixel_town::Location::home, day, "晴天", "小镇节奏平稳", 1,
+             20260715U});
+        CHECK(tavern.kind == pixel_town::LocationStoryEventKind::daily);
+        CHECK(home.kind == pixel_town::LocationStoryEventKind::daily);
+        CHECK_FALSE(tavern.script.lines.empty());
+        CHECK_FALSE(home.script.lines.empty());
+    }
+
+    for (const auto& context : {
+             pixel_town::LocationStoryContext{
+                 pixel_town::Location::tavern, 6, "微风", "小镇节奏平稳", 1,
+                 20260715U},
+             pixel_town::LocationStoryContext{
+                 pixel_town::Location::tavern, 8, "晴天", "小镇节奏平稳", 1,
+                 20260715U},
+             pixel_town::LocationStoryContext{
+                 pixel_town::Location::home, 5, "小雨", "小镇节奏平稳", 1,
+                 20260715U},
+             pixel_town::LocationStoryContext{
+                 pixel_town::Location::home, 8, "晴天", "小镇节奏平稳", 1,
+                 20260715U},
+         }) {
+        const auto selection = catalog.select(context);
+        CHECK(selection.kind == pixel_town::LocationStoryEventKind::incident);
+        CHECK_FALSE(selection.script.lines.empty());
+    }
+}

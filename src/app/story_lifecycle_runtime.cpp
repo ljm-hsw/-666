@@ -26,6 +26,18 @@ bool StoryLifecycleRuntime::open(StoryLifecycleContext context) {
     return active_;
 }
 
+bool StoryLifecycleRuntime::open_home_rest(const GameSession& session) {
+    const LocationStorySelection selection = LocationStoryCatalog{}.select(
+        location_story_context(session, Location::home));
+    if (selection.script.lines.empty()) {
+        return false;
+    }
+    dialogue_ = DialogueRuntime{};
+    context_ = StoryLifecycleContext::home_rest;
+    active_ = dialogue_.open(selection.script);
+    return active_;
+}
+
 StoryLifecycleStepResult StoryLifecycleRuntime::step(
     const DialogueFrameInput& input) {
     if (!active_) {

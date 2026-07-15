@@ -6,6 +6,7 @@
 
 #include "app/dialogue_runtime.hpp"
 #include "core/game_session.hpp"
+#include "core/location_story.hpp"
 #include "core/tavern_rules.hpp"
 #include "locations/gomoku_rules.hpp"
 #include "locations/liars_dice_rules.hpp"
@@ -132,7 +133,7 @@ private:
     std::optional<ActionResult> pending_settlement_;
     TavernChallengeConfig config_{};
     TavernChallengeSettlement settlement_;
-    StoryDialogueCatalog dialogue_catalog_;
+    std::optional<DialogueScript> location_story_;
     DialogueRuntime dialogue_;
 
     void reset();
