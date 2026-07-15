@@ -10,6 +10,7 @@
 #include "app/library_runtime.hpp"
 #include "app/library_room_runtime.hpp"
 #include "app/npc_lobby_runtime.hpp"
+#include "app/story_lifecycle_runtime.hpp"
 #include "core/game_session.hpp"
 #include "app/tavern_runtime.hpp"
 #include "app/tavern_view.hpp"
@@ -50,6 +51,7 @@ struct LocationRuntimeState {
     int store_selected_product_index{0};
     std::string store_feedback;
     NpcLobbyRuntime npc_lobby;
+    StoryLifecycleRuntime story_lifecycle;
     LibraryRoomRuntime library_room;
     LibraryRuntime library;
     library::ui::LibraryUIState library_ui_state;

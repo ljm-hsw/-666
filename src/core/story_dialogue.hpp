@@ -10,6 +10,8 @@ enum class DialogueTrigger {
     library_administrator_intro,
     restaurant_owner_intro,
     convenience_store_owner_intro,
+    mayor_new_game_intro,
+    home_rest_reflection,
 };
 
 struct DialogueLine {

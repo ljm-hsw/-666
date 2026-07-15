@@ -379,6 +379,29 @@ void setup_location_lobby_dialogue_diagnostic(
                        : "诊断：便利店店主主线对话。";
 }
 
+void setup_story_lifecycle_diagnostic(
+    pixel_town::GameAppState& state,
+    pixel_town::StoryLifecycleContext context, int dialogue_line) {
+    if (context == pixel_town::StoryLifecycleContext::home_rest) {
+        setup_home_diagnostic(state);
+        state.collision_debug_visible = false;
+    } else {
+        state = pixel_town::GameAppState{};
+        state.has_session = true;
+        state.session = pixel_town::GameSession::new_game(20260714U);
+    }
+    (void)state.locations.story_lifecycle.open(context);
+    pixel_town::DialogueFrameInput input;
+    input.advance_pressed = true;
+    for (int line = 0; line < dialogue_line; ++line) {
+        (void)state.locations.story_lifecycle.step(input);
+    }
+    state.notice =
+        context == pixel_town::StoryLifecycleContext::home_rest
+            ? "诊断：主角回家独白。"
+            : "诊断：镇长与主角开场对话。";
+}
+
 void setup_tavern_diagnostic(pixel_town::GameAppState& state,
                              pixel_town::TavernScreen screen,
                              int dialogue_line = 0,
@@ -553,9 +576,21 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
             setup_location_lobby_dialogue_diagnostic(
                 state, pixel_town::Location::convenience_store, 0);
             break;
-        default:
+        case 34:
             setup_location_lobby_dialogue_diagnostic(
                 state, pixel_town::Location::convenience_store, 2);
+            break;
+        case 35:
+            setup_story_lifecycle_diagnostic(
+                state, pixel_town::StoryLifecycleContext::new_game_opening, 0);
+            break;
+        case 36:
+            setup_story_lifecycle_diagnostic(
+                state, pixel_town::StoryLifecycleContext::new_game_opening, 1);
+            break;
+        default:
+            setup_story_lifecycle_diagnostic(
+                state, pixel_town::StoryLifecycleContext::home_rest, 0);
             break;
     }
 }
@@ -803,7 +838,7 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 35> ui_diagnostic_capture_paths{
+    const std::array<const char*, 38> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/store-prepare.png",
@@ -839,6 +874,9 @@ int main(int argc, char* argv[]) {
         "ui-diagnostics-captures/restaurant-dialogue-last.png",
         "ui-diagnostics-captures/store-dialogue-first.png",
         "ui-diagnostics-captures/store-dialogue-last.png",
+        "ui-diagnostics-captures/mayor-dialogue.png",
+        "ui-diagnostics-captures/protagonist-opening-dialogue.png",
+        "ui-diagnostics-captures/home-reflection-dialogue.png",
     };
     auto unload_resources = [&]() {
         pixel_town::unload_tavern_assets(game_flow.locations.tavern_assets);

@@ -145,6 +145,12 @@ constexpr std::array ui_texts{
     "诊断：餐馆老板主线对话。",
     "诊断：便利店店主固定热点。",
     "诊断：便利店店主主线对话。",
+    "镇长正在介绍十日计划。",
+    "开场对话暂时不可用。",
+    "休息前，主角想和自己说几句话。",
+    "回家独白暂时不可用。",
+    "诊断：镇长与主角开场对话。",
+    "诊断：主角回家独白。",
     "继续到下一天",
     "十日计划完成",
     "主结局",
@@ -1191,6 +1197,10 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             state.session = state.resume_session;
             state.confirm_new_game_overwrite = false;
             state.notice = "已恢复最近的阶段边界。";
+            if (should_replay_new_game_opening(state.session)) {
+                (void)state.locations.story_lifecycle.open(
+                    StoryLifecycleContext::new_game_opening);
+            }
             return;
         }
         const bool new_game_requested =
@@ -1208,13 +1218,37 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             state.save_present = true;
             state.resume_available = false;
             state.confirm_new_game_overwrite = false;
-            state.notice = "第 1 天开始：请选择一个白天工作地点。";
+            if (state.locations.story_lifecycle.open(
+                    StoryLifecycleContext::new_game_opening)) {
+                state.notice = "镇长正在介绍十日计划。";
+            } else {
+                state.notice = "开场对话暂时不可用。";
+            }
         }
         return;
     }
 
     if (IsKeyPressed(KEY_F3)) {
         state.collision_debug_visible = !state.collision_debug_visible;
+    }
+
+    if (state.locations.story_lifecycle.active()) {
+        DialogueFrameInput input;
+        input.advance_pressed =
+            IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE) ||
+            IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+        input.skip_pressed = IsKeyPressed(KEY_ESCAPE);
+        const auto stepped = step_story_lifecycle(
+            state.session, state.locations.story_lifecycle, input);
+        if (!stepped.notice.empty()) {
+            state.notice = stepped.notice;
+        }
+        if (stepped.context == StoryLifecycleContext::home_rest &&
+            (stepped.action_applied ||
+             stepped.status == StoryLifecycleStepStatus::rejected)) {
+            state.home_preview_open = false;
+        }
+        return;
     }
 
     if (state.locations.library_room.active()) {
@@ -1326,11 +1360,11 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
         }
         if (activated(home_preview_rest_button(), logical_mouse, KEY_ENTER) ||
             IsKeyPressed(KEY_SPACE)) {
-            const auto applied = state.session.apply_action_result(
-                state.session.home_rest_result());
-            state.notice = applied.message;
-            if (applied.accepted) {
-                state.home_preview_open = false;
+            if (state.locations.story_lifecycle.open(
+                    StoryLifecycleContext::home_rest)) {
+                state.notice = "休息前，主角想和自己说几句话。";
+            } else {
+                state.notice = "回家独白暂时不可用。";
             }
             return;
         }
@@ -1465,6 +1499,26 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
                     bool audio_enabled, bool paused, Vector2 logical_mouse) {
     if (!state.has_session) {
         draw_title(font, title_background, state, logical_mouse);
+        if (paused) {
+            draw_pause_overlay(font, audio_enabled);
+        }
+        return;
+    }
+
+    if (state.locations.story_lifecycle.active()) {
+        const StoryLifecyclePresentation lifecycle =
+            state.locations.story_lifecycle.presentation();
+        if (lifecycle.context == StoryLifecycleContext::home_rest) {
+            draw_home_preview(font, scene_assets.home_interior, state,
+                              audio_enabled, logical_mouse);
+        } else {
+            draw_map(font, town_marker, kenney_tiles, generated_full_map_scene,
+                     generated_map_background, generated_buildings, state,
+                     audio_enabled, logical_mouse);
+        }
+        if (lifecycle.dialogue.has_value()) {
+            draw_npc_dialogue(font, *lifecycle.dialogue, logical_mouse);
+        }
         if (paused) {
             draw_pause_overlay(font, audio_enabled);
         }

@@ -286,7 +286,8 @@ P2/P3 合并地点后，应用层按以下 Module 维持 Locality：
 - `EndingRules`：raylib-free 最终结算 Module，负责库存折价、固定优先级、单项归一化比较，以及返回唯一主结局、成长路线和判定依据。
 - `library_runtime`：raylib-free 的图书馆流程 Module，以 `open / step / presentation / active` 为 public Interface，拥有模式互斥、确定性上下文、咨询/整理规则生命周期、反馈和结果提交顺序；不建立全地点 `ILocation`。
 - `location_result_adapter`：图书馆结果 Adapter，只负责把共享 `LibraryWorkResult` 转换为统一 `ActionResult`。
-- `location_runtime`：白天地点 UI Adapter，负责餐馆与便利店的临时运行状态，并把图书馆 raylib 输入/绘制接到 `LibraryRuntime`；其 `LocationRuntimeState` 另行拥有酒馆视觉资源的生命周期。
+- `story_lifecycle_runtime`：raylib-free 的新游戏开场/回家独白 Module，只保存当前无奖励对话上下文和行号；开场完成不修改会话，回家完成委托既有 `home_rest_result()`，不新增阶段或存档字段。
+- `location_runtime`：白天地点 UI Adapter，负责餐馆与便利店的临时运行状态，并把图书馆 raylib 输入/绘制接到 `LibraryRuntime`；其 `LocationRuntimeState` 另行拥有共享对话运行期和酒馆视觉资源生命周期。
 - `location_lobby`：raylib-free 场景大厅布局契约，为餐馆、便利店、图书馆和家提供标题、NPC 热点、返回按钮和主要活动按钮；酒馆明确不复用该配置。
 - `tavern_runtime`：raylib-free 酒馆流程 Module，以 `open / step / presentation / active` 为 public Interface，接收显式帧输入并隐藏大厅、棋局、骰局、电脑行动和结果提交顺序。
 - `tavern_challenge_settlement`：raylib-free 结算 Module，接收真实游戏终局并推导挑战类型与胜负，校验配置、结果 ID、赌注和现金，只构造现有夜晚 `ActionResult`，不应用全局状态。

@@ -121,3 +121,32 @@ TEST_CASE("convenience store owner dialogue extends the existing main story") {
         CHECK(glyphs.find(line.text) != std::string::npos);
     }
 }
+
+TEST_CASE("lifecycle dialogues extend the existing ten day main story") {
+    const pixel_town::StoryDialogueCatalog catalog;
+    const auto* opening =
+        catalog.find(pixel_town::DialogueTrigger::mayor_new_game_intro);
+    const auto* home =
+        catalog.find(pixel_town::DialogueTrigger::home_rest_reflection);
+
+    REQUIRE(opening != nullptr);
+    REQUIRE(opening->lines.size() == 4);
+    CHECK(opening->lines.front().speaker == "镇长");
+    CHECK(opening->lines[1].speaker == "主角");
+    CHECK(opening->lines.front().text.find("钥匙") != std::string::npos);
+    CHECK(opening->lines[1].text.find("十天") != std::string::npos);
+
+    REQUIRE(home != nullptr);
+    REQUIRE(home->lines.size() == 2);
+    CHECK(home->lines.front().speaker == "主角");
+    CHECK(home->lines.front().text.find("明天") != std::string::npos);
+    CHECK(home->lines.back().text.find("休息") != std::string::npos);
+
+    const std::string glyphs = catalog.glyphs();
+    for (const auto* script : {opening, home}) {
+        for (const auto& line : script->lines) {
+            CHECK(glyphs.find(line.speaker) != std::string::npos);
+            CHECK(glyphs.find(line.text) != std::string::npos);
+        }
+    }
+}

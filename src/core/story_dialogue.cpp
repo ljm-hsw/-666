@@ -39,6 +39,24 @@ const DialogueScript convenience_store_owner_intro{
     },
 };
 
+const DialogueScript mayor_new_game_intro{
+    DialogueTrigger::mayor_new_game_intro,
+    {
+        {"镇长", "欢迎来到像素小镇。这把钥匙和地图先交给你。"},
+        {"主角", "谢谢。我会在这里住十天，看看自己能过出怎样的日子。"},
+        {"镇长", "不用急着证明什么。白天做事，晚上也记得照顾自己。"},
+        {"主角", "好，我从今天开始，一天一天来。"},
+    },
+};
+
+const DialogueScript home_rest_reflection{
+    DialogueTrigger::home_rest_reflection,
+    {
+        {"主角", "今天先到这里。把灯留暖一点，明天再继续。"},
+        {"主角", "休息不是落后，是给下一天留一点力气。"},
+    },
+};
+
 }  // namespace
 
 const DialogueScript* StoryDialogueCatalog::find(DialogueTrigger trigger) const noexcept {
@@ -51,6 +69,10 @@ const DialogueScript* StoryDialogueCatalog::find(DialogueTrigger trigger) const 
             return &restaurant_owner_intro;
         case DialogueTrigger::convenience_store_owner_intro:
             return &convenience_store_owner_intro;
+        case DialogueTrigger::mayor_new_game_intro:
+            return &mayor_new_game_intro;
+        case DialogueTrigger::home_rest_reflection:
+            return &home_rest_reflection;
     }
     return nullptr;
 }
@@ -70,6 +92,14 @@ std::string StoryDialogueCatalog::glyphs() const {
         result += line.text;
     }
     for (const auto& line : convenience_store_owner_intro.lines) {
+        result += line.speaker;
+        result += line.text;
+    }
+    for (const auto& line : mayor_new_game_intro.lines) {
+        result += line.speaker;
+        result += line.text;
+    }
+    for (const auto& line : home_rest_reflection.lines) {
         result += line.speaker;
         result += line.text;
     }
