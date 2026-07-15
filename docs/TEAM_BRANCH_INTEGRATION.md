@@ -70,7 +70,8 @@ The following baseline behavior is intentionally preserved:
 - The archived Cozy Tavern lobby is licensed only for non-commercial projects and is no longer the
   runtime background. Its license evidence remains under the tavern asset directory; the current
   team-provided lobby has a separate unresolved component-license boundary recorded in `CREDITS.md`.
-  The bartender candidate has separate Pixel Crawler terms.
+  The current team-provided fixed NPC sheets have an unresolved author/tool/license boundary in
+  `CREDITS.md`; the archived Pixel Crawler terms apply only to the retired bartender candidate.
 
 ## Architecture refactor on 2026-07-09
 

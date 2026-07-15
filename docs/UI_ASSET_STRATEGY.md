@@ -12,7 +12,7 @@
 
 结论：imagegen 不阻塞地点逻辑开发；占位 UI 是 P2/P3 的合法交付方式，但必须保持布局可替换、逻辑可测试、结果统一。
 
-人物小人、主角/NPC 线性对话、统一对话框和固定 NPC 点击热点的占位接口与 P4 实施顺序见 [`CHARACTER_DIALOGUE_PLAN.md`](CHARACTER_DIALOGUE_PLAN.md)。首轮允许 32×32 单帧或短循环待机小人；基础功能稳定后再由 Issue 17 替换最终角色资产。
+人物小人、主角/NPC 线性对话、统一对话框和固定 NPC 点击热点的占位接口与 P4 实施顺序见 [`CHARACTER_DIALOGUE_PLAN.md`](CHARACTER_DIALOGUE_PLAN.md)。2026-07-15 已接入团队提供的四套 `4×64×96` 短循环待机小人；程序人物继续作为缺失资源 fallback，最终许可与保留决定仍由 Issue 17 收口。
 
 酒馆、图书馆和便利店的当前主体生产方式是 imagegen 分件加人工拼接，而不是直接采用一次生成的完整房间。分件批次、原始图归档、chroma-key 去背、合成 manifest、固定 NPC/玩法热点交接和恢复 Issue 门槛见 [`SCENE_ASSET_PRODUCTION_PLAN.md`](SCENE_ASSET_PRODUCTION_PLAN.md)。
 

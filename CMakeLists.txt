@@ -76,6 +76,8 @@ add_library(pixel_town_app_logic
   src/app/library_runtime.cpp
   src/app/location_result_adapter.cpp
   src/app/location_runtime.cpp
+  src/app/npc_sprite_spec.cpp
+  src/app/npc_sprite_view.cpp
   src/app/restaurant_ui_model.cpp
   src/app/scene_visual_assets.cpp
   src/app/tavern_view.cpp
@@ -109,6 +111,7 @@ add_executable(pixel_town_tests
   tests/location_lobby_test.cpp
   tests/location_runtime_test.cpp
   tests/npc_lobby_runtime_test.cpp
+  tests/npc_sprite_spec_test.cpp
   tests/story_lifecycle_runtime_test.cpp
   tests/library_room_runtime_test.cpp
   tests/library_runtime_test.cpp

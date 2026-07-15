@@ -7,6 +7,7 @@
 #include <string>
 
 #include "app/restaurant_ui_model.hpp"
+#include "app/npc_sprite_view.hpp"
 #include "app/ui_primitives.hpp"
 #include "core/ending_rules.hpp"
 #include "core/location_lobby.hpp"
@@ -864,7 +865,9 @@ void draw_collision_debug(Location location) {
 
 void draw_npc_dialogue(const Font& font,
                        const DialoguePresentation& dialogue,
-                       Vector2 mouse);
+                       Vector2 mouse, const Texture2D* npc_texture = nullptr,
+                       NpcSpriteKind npc_kind = NpcSpriteKind::salesclerk,
+                       float animation_seconds = 0.0F);
 
 void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets,
                          const GameAppState& state, bool audio_enabled,
@@ -910,13 +913,25 @@ void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets
     const float bob = idle_frame == 1 ? -1.0F : (idle_frame == 3 ? 1.0F : 0.0F);
     const float npc_base_y =
         npc_hotspot.y + npc_hotspot.height - 28.0F + bob;
-    DrawCircleV(scaled_point(Vector2{npc_center_x, npc_base_y - 18.0F}),
-                scaled(7.0F), Color{242, 207, 159, 220});
-    DrawRectangleRec(scaled_rect(Rectangle{npc_center_x - 7.0F, npc_base_y - 11.0F,
-                                           14.0F, 18.0F}),
-                     Color{67, 78, 74, 220});
     const Rectangle npc_label{npc_hotspot.x, npc_hotspot.y + npc_hotspot.height - 22.0F,
                               npc_hotspot.width, 24.0F};
+    const Texture2D& npc_texture = scene_npc_texture(scene_assets, location);
+    const NpcSpriteKind npc_kind =
+        location == Location::restaurant ? NpcSpriteKind::restaurant_chef
+                                         : NpcSpriteKind::salesclerk;
+    if (npc_texture.id != 0) {
+        draw_npc_sprite(
+            npc_texture, npc_kind, npc_lobby.npc_animation_seconds,
+            scaled_rect(Rectangle{npc_center_x - 22.0F,
+                                  npc_label.y - 64.0F + bob, 44.0F, 66.0F}));
+    } else {
+        DrawCircleV(scaled_point(Vector2{npc_center_x, npc_base_y - 18.0F}),
+                    scaled(7.0F), Color{242, 207, 159, 220});
+        DrawRectangleRec(
+            scaled_rect(Rectangle{npc_center_x - 7.0F, npc_base_y - 11.0F,
+                                  14.0F, 18.0F}),
+            Color{67, 78, 74, 220});
+    }
     panel(npc_label, npc_hovered ? Color{250, 238, 203, 248}
                                  : Color{46, 58, 57, 230});
     centered_text(font, spec->npc_label.c_str(), npc_label, 13,
@@ -937,23 +952,31 @@ void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets
     centered_text(font, spec->action_label.c_str(), action, 14, RAYWHITE);
 
     if (npc_lobby.dialogue.has_value()) {
-        draw_npc_dialogue(font, *npc_lobby.dialogue, mouse);
+        draw_npc_dialogue(font, *npc_lobby.dialogue, mouse, &npc_texture,
+                          npc_kind, npc_lobby.npc_animation_seconds);
     }
 }
 
 void draw_npc_dialogue(const Font& font,
                        const DialoguePresentation& dialogue,
-                       Vector2 mouse) {
+                       Vector2 mouse, const Texture2D* npc_texture,
+                       NpcSpriteKind npc_kind, float animation_seconds) {
     DrawRectangle(0, 0, ui::canvas_width, ui::canvas_height,
                   Color{20, 27, 29, 155});
     const Rectangle bounds{48, 226, 544, 116};
     panel(bounds, cream, gold);
     panel(Rectangle{60, 238, 62, 84}, Color{239, 220, 182, 255},
           Color{157, 111, 72, 255});
-    const Color coat = dialogue.speaker == "主角" ? green : slate;
-    DrawCircleV(scaled_point(Vector2{91, 259}), scaled(10),
-                Color{222, 188, 146, 255});
-    DrawRectangleRec(scaled_rect(Rectangle{78, 270, 26, 36}), coat);
+    if (npc_texture != nullptr && npc_texture->id != 0 &&
+        dialogue.speaker != "主角") {
+        draw_npc_sprite(*npc_texture, npc_kind, animation_seconds,
+                        scaled_rect(Rectangle{65, 240, 54, 80}));
+    } else {
+        const Color coat = dialogue.speaker == "主角" ? green : slate;
+        DrawCircleV(scaled_point(Vector2{91, 259}), scaled(10),
+                    Color{222, 188, 146, 255});
+        DrawRectangleRec(scaled_rect(Rectangle{78, 270, 26, 36}), coat);
+    }
 
     text(font, dialogue.speaker, 136, 238, 18, red);
     const std::string progress = std::to_string(dialogue.current_line) + " / " +
@@ -975,6 +998,7 @@ void draw_npc_dialogue(const Font& font,
 }
 
 void draw_library_room(const Font& font, const Texture2D& background,
+                       const Texture2D& administrator_texture,
                        const GameAppState& state, bool audio_enabled,
                        Vector2 mouse) {
     if (background.id != 0) {
@@ -1006,18 +1030,28 @@ void draw_library_room(const Font& font, const Texture2D& background,
         administrator_hotspot.x + administrator_hotspot.width * 0.70F;
     const float base_y =
         administrator_hotspot.y + administrator_hotspot.height * 0.78F + bob;
-    DrawEllipse(static_cast<int>(scaled(center_x)),
-                static_cast<int>(scaled(base_y + 12.0F)), scaled(11.0F),
-                scaled(4.0F), Color{25, 30, 31, 95});
-    DrawCircleV(scaled_point(Vector2{center_x, base_y - 13.0F}), scaled(8.0F),
-                Color{222, 188, 146, 255});
-    DrawRectangleRec(
-        scaled_rect(Rectangle{center_x - 9.0F, base_y - 5.0F, 18.0F, 25.0F}),
-        slate);
     const Rectangle administrator_label{
         administrator_hotspot.x + 8.0F,
         administrator_hotspot.y + administrator_hotspot.height - 24.0F,
         administrator_hotspot.width - 16.0F, 24.0F};
+    if (administrator_texture.id != 0) {
+        draw_npc_sprite(
+            administrator_texture, NpcSpriteKind::librarian,
+            room.administrator_animation_seconds,
+            scaled_rect(Rectangle{center_x - 22.0F,
+                                  administrator_label.y - 64.0F + bob, 44.0F,
+                                  66.0F}));
+    } else {
+        DrawEllipse(static_cast<int>(scaled(center_x)),
+                    static_cast<int>(scaled(base_y + 12.0F)), scaled(11.0F),
+                    scaled(4.0F), Color{25, 30, 31, 95});
+        DrawCircleV(scaled_point(Vector2{center_x, base_y - 13.0F}),
+                    scaled(8.0F), Color{222, 188, 146, 255});
+        DrawRectangleRec(
+            scaled_rect(Rectangle{center_x - 9.0F, base_y - 5.0F, 18.0F,
+                                  25.0F}),
+            slate);
+    }
     panel(administrator_label,
           administrator_hovered ? Color{250, 238, 203, 248}
                                 : Color{46, 58, 57, 230});
@@ -1029,7 +1063,9 @@ void draw_library_room(const Font& font, const Texture2D& background,
          RAYWHITE);
 
     if (room.dialogue.has_value()) {
-        draw_npc_dialogue(font, *room.dialogue, mouse);
+        draw_npc_dialogue(font, *room.dialogue, mouse,
+                          &administrator_texture, NpcSpriteKind::librarian,
+                          room.administrator_animation_seconds);
     }
 }
 
@@ -1526,8 +1562,9 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
     }
 
     if (state.locations.library_room.active()) {
-        draw_library_room(font, scene_assets.library_interior, state,
-                          audio_enabled, logical_mouse);
+        draw_library_room(font, scene_assets.library_interior,
+                          scene_assets.library_npc, state, audio_enabled,
+                          logical_mouse);
         if (paused) {
             draw_pause_overlay(font, audio_enabled);
         }

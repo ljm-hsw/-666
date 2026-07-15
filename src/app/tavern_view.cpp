@@ -4,6 +4,8 @@
 #include <string>
 
 #include "app/tavern_layout.hpp"
+#include "app/npc_sprite_spec.hpp"
+#include "app/npc_sprite_view.hpp"
 #include "app/ui_primitives.hpp"
 #include "ui/scene_viewport.hpp"
 #include "ui/ui_metrics.hpp"
@@ -14,14 +16,8 @@ namespace {
 constexpr Color tavern_dark{42, 31, 28, 235};
 constexpr Color tavern_warm{112, 65, 45, 240};
 constexpr Color muted_text{112, 103, 91, 255};
-constexpr int bartender_frame_count = 6;
-constexpr int bartender_frame_width = 64;
-constexpr int bartender_frame_height = 64;
-constexpr float bartender_frame_duration = 0.15F;
 constexpr const char* lobby_background_path =
     "assets/textures/ui/tavern/tavern_lobby.png";
-constexpr const char* bartender_sheet_path =
-    "assets/textures/ui/tavern/npc/bartender_idle_sheet.png";
 
 Rectangle to_rectangle(TavernRect bounds) {
     return Rectangle{bounds.x, bounds.y, bounds.width, bounds.height};
@@ -86,7 +82,7 @@ void draw_lobby_fallback() {
 
 void draw_bartender(const TavernPresentation& presentation,
                     const TavernVisualAssets& assets) {
-    const Rectangle destination = scaled_rect(Rectangle{42, 91, 66, 76});
+    const Rectangle destination = scaled_rect(Rectangle{50, 91, 50, 76});
     if (assets.bartender_sheet.id == 0) {
         DrawCircleV(Vector2{destination.x + destination.width * 0.5F,
                             destination.y + destination.height * 0.23F},
@@ -98,14 +94,8 @@ void draw_bartender(const TavernPresentation& presentation,
                          Color{55, 49, 45, 255});
         return;
     }
-    const int frame = static_cast<int>(presentation.bartender_animation_seconds /
-                                       bartender_frame_duration) %
-                      bartender_frame_count;
-    const Rectangle source{static_cast<float>(frame * bartender_frame_width), 0.0F,
-                           static_cast<float>(bartender_frame_width),
-                           static_cast<float>(bartender_frame_height)};
-    DrawTexturePro(assets.bartender_sheet, source, destination, Vector2{0, 0}, 0.0F,
-                   WHITE);
+    draw_npc_sprite(assets.bartender_sheet, NpcSpriteKind::bartender,
+                    presentation.bartender_animation_seconds, destination);
 }
 
 void draw_labeled_hotspot(const Font& font, TavernRect bounds, const char* label,
@@ -211,14 +201,8 @@ void draw_dialog_character(const TavernPresentation& presentation,
     panel(slot, Color{239, 220, 182, 255}, Color{157, 111, 72, 255});
     const Rectangle destination = scaled_rect(Rectangle{94, 214, 50, 78});
     if (dialogue.speaker == "酒保" && assets.bartender_sheet.id != 0) {
-        const int frame = static_cast<int>(presentation.bartender_animation_seconds /
-                                           bartender_frame_duration) %
-                          bartender_frame_count;
-        const Rectangle source{static_cast<float>(frame * bartender_frame_width), 0.0F,
-                               static_cast<float>(bartender_frame_width),
-                               static_cast<float>(bartender_frame_height)};
-        DrawTexturePro(assets.bartender_sheet, source, destination, Vector2{0, 0},
-                       0.0F, WHITE);
+        draw_npc_sprite(assets.bartender_sheet, NpcSpriteKind::bartender,
+                        presentation.bartender_animation_seconds, destination);
         return;
     }
     const Color coat = dialogue.speaker == "主角" ? green : tavern_dark;
@@ -474,7 +458,8 @@ void ensure_tavern_assets_loaded(TavernVisualAssets& assets) {
     }
     assets.attempted = true;
     assets.lobby_background = LoadTexture(lobby_background_path);
-    assets.bartender_sheet = LoadTexture(bartender_sheet_path);
+    assets.bartender_sheet =
+        LoadTexture(npc_sprite_spec(NpcSpriteKind::bartender).runtime_path);
     if (assets.lobby_background.id != 0) {
         SetTextureFilter(assets.lobby_background, TEXTURE_FILTER_POINT);
     }

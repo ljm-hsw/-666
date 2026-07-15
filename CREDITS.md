@@ -122,21 +122,21 @@
 
 该资源是项目内 P1 地图 UI 的候选生成资产，不是第三方素材，也不是最终美术批准结果。当前代码把处理后的 sprite sheet 作为地图页主体建筑资源优先显示；缺失时仍回退到 Kenney/代码绘制方案。是否进入最终交付仍需 Issue 03 或后续美术验收确认。
 
-## Pixel Crawler Free Pack Tavern NPC Candidate
+## Team-Provided Fixed NPC Sprite Candidates
 
-- 名称：Pixel Crawler - Free Pack / Citizen_F Tavern_A Walk Down Sheet
-- 作者：Anokolisa
-- 版本：Pixel Crawler - Free Pack 2.1（上游页面于 2026-07-07 更新）
-- 来源：`https://anokolisa.itch.io/free-pixel-art-asset-pack-topdown-tileset-rpg-16x16-sprites`
-- 原始包内路径：`Entities/Npc's/Citizen_F/Tavern_A/Walk/Walk_Down-Sheet.png`
-- 许可证/条款：允许用于商业、学习或其他功能性项目；允许修改；不得将素材本身作为最终产品单独销售
-- 条款文件：[`assets/textures/ui/tavern/LICENSES/pixel_crawler_free_pack_terms.txt`](assets/textures/ui/tavern/LICENSES/pixel_crawler_free_pack_terms.txt)
-- 条款文件 SHA-256：`6eea461769c5c89126b3b566cd9e11dea9e56a386b6f9cf5e134939c6d53b4d1`
-- 仓库路径：[`assets/textures/ui/tavern/npc/bartender_idle_sheet.png`](assets/textures/ui/tavern/npc/bartender_idle_sheet.png)
-- 仓库文件 SHA-256：`d54f1d1c859a0481efc21e8e3029e097238c160808bc409524fc578be97f7dba`
-- 当前用途：酒馆老板 NPC 的 6 帧、每帧 64×64 向下动画候选
+- 提供方式：团队于 2026-07-15 提供的透明 PNG；仓库不记录聊天工具或个人目录路径。
+- 统一规格：`256×96` RGBA，横排 4 帧，每帧 `64×96`，最近邻采样，运行时每帧 `0.18s`。
+- 便利店售货员：[`assets/textures/ui/convenience_store/npc/salesclerk_idle_sheet.png`](assets/textures/ui/convenience_store/npc/salesclerk_idle_sheet.png)，SHA-256 `689b93b54bbc80bd8ef083dc2700677f3e92b1fdc97e97cce7da655db88ed101`。
+- 酒保：[`assets/textures/ui/tavern/npc/bartender_idle_sheet.png`](assets/textures/ui/tavern/npc/bartender_idle_sheet.png)，SHA-256 `aadc190dc24c5103484a3498ec107a2c8f22aab172deee228888e3a11ea73757`。
+- 餐馆厨师：[`assets/textures/ui/restaurant/npc/chef_idle_sheet.png`](assets/textures/ui/restaurant/npc/chef_idle_sheet.png)，SHA-256 `26a7adcfe4d2c25c6f8b78c07f274743debdd6fa17a0229cd7f31e0a5acd90d8`。
+- 图书管理员：[`assets/textures/ui/library/npc/librarian_idle_sheet.png`](assets/textures/ui/library/npc/librarian_idle_sheet.png)，SHA-256 `643980db5e2e2f8d3282add90a4e6a00fd5106793b407ba7fc4aaabf9dd61446`。
+- 当前用途：餐馆、便利店、图书馆和酒馆的固定热点待机小人及共享对话框人物槽；资源缺失时仍回退到程序绘制人物。
+- imagegen 决策：四张表的 16 个单帧哈希均不同，实机不同时间点截图也发生变化，因此本批没有为凑帧数生成不一致的中间帧。
+- 许可边界：原作者、生成工具和可再分发/商用许可仍待团队补齐；在 Issue 17 完成人工验收和授权确认前只能作为项目候选资源，不能据此宣称可商用最终美术。
 
-该资源仍需 P4 视觉验收。若替换或重新绘制，应同步更新本节和文件哈希。
+旧 Pixel Crawler 酒保候选已退出运行时。其条款文件仍保留在
+[`assets/textures/ui/tavern/LICENSES/pixel_crawler_free_pack_terms.txt`](assets/textures/ui/tavern/LICENSES/pixel_crawler_free_pack_terms.txt)
+作为历史来源记录，不再描述当前 `bartender_idle_sheet.png`。
 
 ## Cozy Tavern Interior Pack Free Tavern Lobby Candidate
 

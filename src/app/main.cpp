@@ -521,6 +521,23 @@ void setup_tavern_diagnostic(pixel_town::GameAppState& state,
     state.notice = "诊断：酒馆页面。";
 }
 
+void setup_npc_idle_frame_diagnostic(pixel_town::GameAppState& state,
+                                     pixel_town::Location location) {
+    constexpr float second_frame_time = 0.22F;
+    if (location == pixel_town::Location::tavern) {
+        setup_tavern_diagnostic(state, pixel_town::TavernScreen::lobby);
+        pixel_town::TavernFrameInput input;
+        input.elapsed_seconds = second_frame_time;
+        (void)state.locations.tavern.step(state.session, input);
+    } else {
+        setup_location_lobby_diagnostic(state, location);
+        pixel_town::NpcLobbyInput input;
+        input.elapsed_seconds = second_frame_time;
+        (void)state.locations.npc_lobby.step(input);
+    }
+    state.notice = "诊断：固定 NPC 第二待机帧。";
+}
+
 void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t capture_index) {
     switch (capture_index) {
         case 0:
@@ -666,9 +683,20 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
             setup_daytime_story_diagnostic(state, pixel_town::Location::library,
                                            8, false);
             break;
-        default:
+        case 41:
             setup_daytime_story_diagnostic(state, pixel_town::Location::restaurant,
                                            10, false);
+            break;
+        case 42:
+            setup_npc_idle_frame_diagnostic(
+                state, pixel_town::Location::restaurant);
+            break;
+        case 43:
+            setup_npc_idle_frame_diagnostic(
+                state, pixel_town::Location::convenience_store);
+            break;
+        default:
+            setup_npc_idle_frame_diagnostic(state, pixel_town::Location::tavern);
             break;
     }
 }
@@ -916,7 +944,7 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 42> ui_diagnostic_capture_paths{
+    const std::array<const char*, 45> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/store-prepare.png",
@@ -959,6 +987,9 @@ int main(int argc, char* argv[]) {
         "ui-diagnostics-captures/store-rain-story.png",
         "ui-diagnostics-captures/library-old-market-story.png",
         "ui-diagnostics-captures/restaurant-day-ten-story.png",
+        "ui-diagnostics-captures/restaurant-npc-idle-frame.png",
+        "ui-diagnostics-captures/store-npc-idle-frame.png",
+        "ui-diagnostics-captures/tavern-npc-idle-frame.png",
     };
     auto unload_resources = [&]() {
         pixel_town::unload_tavern_assets(game_flow.locations.tavern_assets);

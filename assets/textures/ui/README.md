@@ -8,9 +8,12 @@ This directory stores runtime UI texture candidates grouped by module.
   - `tavern/npc/`: tavern NPC sprite sheets and character texture candidates.
   - `tavern/LICENSES/`: local copies of third-party tavern asset terms.
 - `restaurant/restaurant_interior.png`: 960×540 restaurant runtime background.
+- `restaurant/npc/chef_idle_sheet.png`: four-frame team-provided restaurant NPC candidate.
 - `home/home_interior.png`: 960×540 home runtime background used by the rest confirmation scene.
 - `library/library_interior.png`: 960×540 library runtime background used behind the existing library flow.
+- `library/npc/librarian_idle_sheet.png`: four-frame team-provided librarian candidate.
 - `convenience_store/convenience_store_interior.png`: 960×540 convenience-store runtime background.
+- `convenience_store/npc/salesclerk_idle_sheet.png`: four-frame team-provided salesclerk candidate.
 - `tavern/tavern_lobby.png`: 960×540 team-provided tavern runtime background.
 - Sources and processing records for these five team-provided composites live under
   `assets/art_sources/manual_composites/`.
