@@ -131,8 +131,9 @@
 - 餐馆厨师：[`assets/textures/ui/restaurant/npc/chef_idle_sheet.png`](assets/textures/ui/restaurant/npc/chef_idle_sheet.png)，SHA-256 `26a7adcfe4d2c25c6f8b78c07f274743debdd6fa17a0229cd7f31e0a5acd90d8`。
 - 图书管理员：[`assets/textures/ui/library/npc/librarian_idle_sheet.png`](assets/textures/ui/library/npc/librarian_idle_sheet.png)，SHA-256 `643980db5e2e2f8d3282add90a4e6a00fd5106793b407ba7fc4aaabf9dd61446`。
 - 主角：[`assets/textures/ui/characters/protagonist_idle_sheet.png`](assets/textures/ui/characters/protagonist_idle_sheet.png)，SHA-256 `fc8871c4512429a948f39d2fc24a6303f7a49e5515d6a9ca207bd4473bc24e05`。
-- 当前用途：餐馆、便利店、图书馆和酒馆的固定热点待机小人，以及这些场景、开场和回家剧情的共享对话框人物槽；资源缺失时仍回退到程序绘制人物。
-- imagegen 决策：五张表的 20 个单帧均已满足当前四帧规格，本批没有为凑帧数生成风格不一致的中间帧。
+- 镇长：[`assets/textures/ui/characters/mayor_idle_sheet.png`](assets/textures/ui/characters/mayor_idle_sheet.png)，SHA-256 `1b13443dbc0b3a92ff4a9bab9a0e22c9971961677906e6ea77a343e276bfa788`。
+- 当前用途：餐馆、便利店、图书馆和酒馆的固定热点待机小人，以及各地点、开场和回家剧情的共享对话框人物槽；资源缺失时仍回退到程序绘制人物。
+- imagegen 决策：六张表的 24 个单帧均已满足当前四帧规格，本批没有为凑帧数生成风格不一致的中间帧。
 - 许可边界：原作者、生成工具和可再分发/商用许可仍待团队补齐；在 Issue 17 完成人工验收和授权确认前只能作为项目候选资源，不能据此宣称可商用最终美术。
 
 旧 Pixel Crawler 酒保候选已退出运行时。其条款文件仍保留在

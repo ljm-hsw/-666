@@ -12,6 +12,7 @@ TEST_CASE("fixed character sprite sheets share one four-frame layout") {
         NpcSpriteKind::restaurant_chef,
         NpcSpriteKind::librarian,
         NpcSpriteKind::protagonist,
+        NpcSpriteKind::mayor,
     };
 
     for (const auto kind : kinds) {

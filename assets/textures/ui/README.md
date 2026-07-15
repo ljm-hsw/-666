@@ -15,6 +15,7 @@ This directory stores runtime UI texture candidates grouped by module.
 - `convenience_store/convenience_store_interior.png`: 960×540 convenience-store runtime background.
 - `convenience_store/npc/salesclerk_idle_sheet.png`: four-frame team-provided salesclerk candidate.
 - `characters/protagonist_idle_sheet.png`: shared four-frame team-provided protagonist candidate used by dialogue portraits.
+- `characters/mayor_idle_sheet.png`: shared four-frame team-provided mayor candidate used by opening dialogue portraits.
 - `tavern/tavern_lobby.png`: 960×540 team-provided tavern runtime background.
 - Sources and processing records for these five team-provided composites live under
   `assets/art_sources/manual_composites/`.

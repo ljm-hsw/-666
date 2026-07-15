@@ -18,6 +18,9 @@ constexpr NpcSpriteSpec librarian{
 constexpr NpcSpriteSpec protagonist{
     "assets/textures/ui/characters/protagonist_idle_sheet.png",
     64, 96, 4, 0.18F};
+constexpr NpcSpriteSpec mayor{
+    "assets/textures/ui/characters/mayor_idle_sheet.png",
+    64, 96, 4, 0.18F};
 
 }  // namespace
 
@@ -33,6 +36,8 @@ const NpcSpriteSpec& npc_sprite_spec(NpcSpriteKind kind) {
             return librarian;
         case NpcSpriteKind::protagonist:
             return protagonist;
+        case NpcSpriteKind::mayor:
+            return mayor;
     }
     return salesclerk;
 }

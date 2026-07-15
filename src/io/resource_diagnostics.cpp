@@ -86,6 +86,8 @@ std::vector<ResourceSpec> baseline_resource_manifest() {
         {"textures/ui/library/npc/librarian_idle_sheet.png", ResourceKind::texture, false},
         {"textures/ui/characters/protagonist_idle_sheet.png", ResourceKind::texture,
          false},
+        {"textures/ui/characters/mayor_idle_sheet.png", ResourceKind::texture,
+         false},
         {"textures/ui/restaurant/restaurant_interior.png", ResourceKind::texture, false},
         {"textures/ui/home/home_interior.png", ResourceKind::texture, false},
         {"textures/ui/library/library_interior.png", ResourceKind::texture, false},

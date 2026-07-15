@@ -8,6 +8,7 @@ enum class NpcSpriteKind {
     restaurant_chef,
     librarian,
     protagonist,
+    mayor,
 };
 
 struct NpcSpriteSpec {
