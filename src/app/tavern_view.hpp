@@ -9,6 +9,7 @@ namespace pixel_town {
 struct TavernVisualAssets {
     Texture2D lobby_background{};
     Texture2D bartender_sheet{};
+    Texture2D protagonist_sheet{};
     bool attempted{false};
 };
 

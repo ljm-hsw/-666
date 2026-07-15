@@ -56,6 +56,10 @@ void load_scene_visual_assets(SceneVisualAssets& assets) {
         assets.library_npc = load_optional_texture(
             npc_sprite_spec(NpcSpriteKind::librarian).runtime_path);
     }
+    if (assets.protagonist.id == 0) {
+        assets.protagonist = load_optional_texture(
+            npc_sprite_spec(NpcSpriteKind::protagonist).runtime_path);
+    }
     constexpr std::array<const char*, 6> organizing_book_paths = {
         "assets/textures/ui/library/organizing_books/history.png",
         "assets/textures/ui/library/organizing_books/science.png",
@@ -80,6 +84,7 @@ void unload_scene_visual_assets(SceneVisualAssets& assets) {
     unload_texture(assets.restaurant_npc);
     unload_texture(assets.convenience_store_npc);
     unload_texture(assets.library_npc);
+    unload_texture(assets.protagonist);
     for (auto& texture : assets.library_organizing_books) {
         unload_texture(texture);
     }

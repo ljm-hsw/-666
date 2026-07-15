@@ -16,6 +16,7 @@ struct SceneVisualAssets {
     Texture2D restaurant_npc{};
     Texture2D convenience_store_npc{};
     Texture2D library_npc{};
+    Texture2D protagonist{};
     std::array<Texture2D, 6> library_organizing_books{};
 };
 

@@ -867,7 +867,7 @@ void draw_npc_dialogue(const Font& font,
                        const DialoguePresentation& dialogue,
                        Vector2 mouse, const Texture2D* npc_texture = nullptr,
                        NpcSpriteKind npc_kind = NpcSpriteKind::salesclerk,
-                       float animation_seconds = 0.0F);
+                       const Texture2D* protagonist_texture = nullptr);
 
 void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets,
                          const GameAppState& state, bool audio_enabled,
@@ -953,24 +953,43 @@ void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets
 
     if (npc_lobby.dialogue.has_value()) {
         draw_npc_dialogue(font, *npc_lobby.dialogue, mouse, &npc_texture,
-                          npc_kind, npc_lobby.npc_animation_seconds);
+                          npc_kind, &scene_assets.protagonist);
     }
 }
 
 void draw_npc_dialogue(const Font& font,
                        const DialoguePresentation& dialogue,
                        Vector2 mouse, const Texture2D* npc_texture,
-                       NpcSpriteKind npc_kind, float animation_seconds) {
+                       NpcSpriteKind npc_kind,
+                       const Texture2D* protagonist_texture) {
     DrawRectangle(0, 0, ui::canvas_width, ui::canvas_height,
                   Color{20, 27, 29, 155});
     const Rectangle bounds{48, 226, 544, 116};
     panel(bounds, cream, gold);
-    panel(Rectangle{60, 238, 62, 84}, Color{239, 220, 182, 255},
+    const Rectangle portrait_slot{60, 238, 62, 84};
+    panel(portrait_slot, Color{239, 220, 182, 255},
           Color{157, 111, 72, 255});
-    if (npc_texture != nullptr && npc_texture->id != 0 &&
-        dialogue.speaker != "主角") {
-        draw_npc_sprite(*npc_texture, npc_kind, animation_seconds,
-                        scaled_rect(Rectangle{65, 240, 54, 80}));
+    const bool protagonist_speaking = dialogue.speaker == "主角";
+    const Texture2D* speaker_texture =
+        protagonist_speaking ? protagonist_texture : npc_texture;
+    const NpcSpriteKind speaker_kind = protagonist_speaking
+                                           ? NpcSpriteKind::protagonist
+                                           : npc_kind;
+    if (speaker_texture != nullptr && speaker_texture->id != 0) {
+        const NpcSpriteSpec& sprite = npc_sprite_spec(speaker_kind);
+        constexpr float portrait_height = 80.0F;
+        const float portrait_width =
+            portrait_height * static_cast<float>(sprite.frame_width) /
+            static_cast<float>(sprite.frame_height);
+        const Rectangle portrait_destination{
+            portrait_slot.x + (portrait_slot.width - portrait_width) * 0.5F,
+            portrait_slot.y + (portrait_slot.height - portrait_height) * 0.5F,
+            portrait_width, portrait_height};
+        // Dialogue portraits are identity anchors, not ambient scene animation.
+        // Freeze frame zero so per-frame transparent padding cannot make the
+        // character appear to drift inside the portrait slot.
+        draw_npc_sprite(*speaker_texture, speaker_kind, 0.0F,
+                        scaled_rect(portrait_destination));
     } else {
         const Color coat = dialogue.speaker == "主角" ? green : slate;
         DrawCircleV(scaled_point(Vector2{91, 259}), scaled(10),
@@ -999,6 +1018,7 @@ void draw_npc_dialogue(const Font& font,
 
 void draw_library_room(const Font& font, const Texture2D& background,
                        const Texture2D& administrator_texture,
+                       const Texture2D& protagonist_texture,
                        const GameAppState& state, bool audio_enabled,
                        Vector2 mouse) {
     if (background.id != 0) {
@@ -1065,7 +1085,7 @@ void draw_library_room(const Font& font, const Texture2D& background,
     if (room.dialogue.has_value()) {
         draw_npc_dialogue(font, *room.dialogue, mouse,
                           &administrator_texture, NpcSpriteKind::librarian,
-                          room.administrator_animation_seconds);
+                          &protagonist_texture);
     }
 }
 
@@ -1553,7 +1573,9 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
                      audio_enabled, logical_mouse);
         }
         if (lifecycle.dialogue.has_value()) {
-            draw_npc_dialogue(font, *lifecycle.dialogue, logical_mouse);
+            draw_npc_dialogue(font, *lifecycle.dialogue, logical_mouse, nullptr,
+                              NpcSpriteKind::salesclerk,
+                              &scene_assets.protagonist);
         }
         if (paused) {
             draw_pause_overlay(font, audio_enabled);
@@ -1563,7 +1585,8 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
 
     if (state.locations.library_room.active()) {
         draw_library_room(font, scene_assets.library_interior,
-                          scene_assets.library_npc, state, audio_enabled,
+                          scene_assets.library_npc, scene_assets.protagonist,
+                          state, audio_enabled,
                           logical_mouse);
         if (paused) {
             draw_pause_overlay(font, audio_enabled);

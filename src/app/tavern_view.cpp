@@ -194,15 +194,21 @@ void draw_selection(const Font& font, const TavernPresentation& presentation,
     centered_text(font, "返回大厅", layout.cancel_button, 15, ink);
 }
 
-void draw_dialog_character(const TavernPresentation& presentation,
-                           const TavernVisualAssets& assets,
+void draw_dialog_character(const TavernVisualAssets& assets,
                            const DialoguePresentation& dialogue) {
     const Rectangle slot{92, 208, 54, 92};
     panel(slot, Color{239, 220, 182, 255}, Color{157, 111, 72, 255});
     const Rectangle destination = scaled_rect(Rectangle{94, 214, 50, 78});
     if (dialogue.speaker == "酒保" && assets.bartender_sheet.id != 0) {
+        // Keep the dialogue portrait fixed even while the lobby NPC continues
+        // its ambient idle loop behind the modal overlay.
         draw_npc_sprite(assets.bartender_sheet, NpcSpriteKind::bartender,
-                        presentation.bartender_animation_seconds, destination);
+                        0.0F, destination);
+        return;
+    }
+    if (dialogue.speaker == "主角" && assets.protagonist_sheet.id != 0) {
+        draw_npc_sprite(assets.protagonist_sheet, NpcSpriteKind::protagonist,
+                        0.0F, destination);
         return;
     }
     const Color coat = dialogue.speaker == "主角" ? green : tavern_dark;
@@ -226,7 +232,7 @@ void draw_npc_dialog(const Font& font, const TavernPresentation& presentation,
         return;
     }
     const DialoguePresentation& dialogue = *presentation.dialogue;
-    draw_dialog_character(presentation, assets, dialogue);
+    draw_dialog_character(assets, dialogue);
     text(font, dialogue.speaker, 160, 202, 18, red);
     const std::string progress = std::to_string(dialogue.current_line) + " / " +
                                  std::to_string(dialogue.total_lines);
@@ -457,14 +463,25 @@ void ensure_tavern_assets_loaded(TavernVisualAssets& assets) {
         return;
     }
     assets.attempted = true;
-    assets.lobby_background = LoadTexture(lobby_background_path);
-    assets.bartender_sheet =
-        LoadTexture(npc_sprite_spec(NpcSpriteKind::bartender).runtime_path);
+    if (assets.lobby_background.id == 0) {
+        assets.lobby_background = LoadTexture(lobby_background_path);
+    }
+    if (assets.bartender_sheet.id == 0) {
+        assets.bartender_sheet =
+            LoadTexture(npc_sprite_spec(NpcSpriteKind::bartender).runtime_path);
+    }
+    if (assets.protagonist_sheet.id == 0) {
+        assets.protagonist_sheet =
+            LoadTexture(npc_sprite_spec(NpcSpriteKind::protagonist).runtime_path);
+    }
     if (assets.lobby_background.id != 0) {
         SetTextureFilter(assets.lobby_background, TEXTURE_FILTER_POINT);
     }
     if (assets.bartender_sheet.id != 0) {
         SetTextureFilter(assets.bartender_sheet, TEXTURE_FILTER_POINT);
+    }
+    if (assets.protagonist_sheet.id != 0) {
+        SetTextureFilter(assets.protagonist_sheet, TEXTURE_FILTER_POINT);
     }
 }
 
@@ -476,6 +493,10 @@ void unload_tavern_assets(TavernVisualAssets& assets) {
     if (assets.bartender_sheet.id != 0) {
         UnloadTexture(assets.bartender_sheet);
         assets.bartender_sheet = {};
+    }
+    if (assets.protagonist_sheet.id != 0) {
+        UnloadTexture(assets.protagonist_sheet);
+        assets.protagonist_sheet = {};
     }
     assets.attempted = false;
 }

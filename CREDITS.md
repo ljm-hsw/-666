@@ -122,7 +122,7 @@
 
 该资源是项目内 P1 地图 UI 的候选生成资产，不是第三方素材，也不是最终美术批准结果。当前代码把处理后的 sprite sheet 作为地图页主体建筑资源优先显示；缺失时仍回退到 Kenney/代码绘制方案。是否进入最终交付仍需 Issue 03 或后续美术验收确认。
 
-## Team-Provided Fixed NPC Sprite Candidates
+## Team-Provided Fixed Character Sprite Candidates
 
 - 提供方式：团队于 2026-07-15 提供的透明 PNG；仓库不记录聊天工具或个人目录路径。
 - 统一规格：`256×96` RGBA，横排 4 帧，每帧 `64×96`，最近邻采样，运行时每帧 `0.18s`。
@@ -130,8 +130,9 @@
 - 酒保：[`assets/textures/ui/tavern/npc/bartender_idle_sheet.png`](assets/textures/ui/tavern/npc/bartender_idle_sheet.png)，SHA-256 `aadc190dc24c5103484a3498ec107a2c8f22aab172deee228888e3a11ea73757`。
 - 餐馆厨师：[`assets/textures/ui/restaurant/npc/chef_idle_sheet.png`](assets/textures/ui/restaurant/npc/chef_idle_sheet.png)，SHA-256 `26a7adcfe4d2c25c6f8b78c07f274743debdd6fa17a0229cd7f31e0a5acd90d8`。
 - 图书管理员：[`assets/textures/ui/library/npc/librarian_idle_sheet.png`](assets/textures/ui/library/npc/librarian_idle_sheet.png)，SHA-256 `643980db5e2e2f8d3282add90a4e6a00fd5106793b407ba7fc4aaabf9dd61446`。
-- 当前用途：餐馆、便利店、图书馆和酒馆的固定热点待机小人及共享对话框人物槽；资源缺失时仍回退到程序绘制人物。
-- imagegen 决策：四张表的 16 个单帧哈希均不同，实机不同时间点截图也发生变化，因此本批没有为凑帧数生成不一致的中间帧。
+- 主角：[`assets/textures/ui/characters/protagonist_idle_sheet.png`](assets/textures/ui/characters/protagonist_idle_sheet.png)，SHA-256 `fc8871c4512429a948f39d2fc24a6303f7a49e5515d6a9ca207bd4473bc24e05`。
+- 当前用途：餐馆、便利店、图书馆和酒馆的固定热点待机小人，以及这些场景、开场和回家剧情的共享对话框人物槽；资源缺失时仍回退到程序绘制人物。
+- imagegen 决策：五张表的 20 个单帧均已满足当前四帧规格，本批没有为凑帧数生成风格不一致的中间帧。
 - 许可边界：原作者、生成工具和可再分发/商用许可仍待团队补齐；在 Issue 17 完成人工验收和授权确认前只能作为项目候选资源，不能据此宣称可商用最终美术。
 
 旧 Pixel Crawler 酒保候选已退出运行时。其条款文件仍保留在

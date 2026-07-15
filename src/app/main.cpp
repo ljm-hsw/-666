@@ -468,8 +468,17 @@ void setup_tavern_diagnostic(pixel_town::GameAppState& state,
                              pixel_town::TavernScreen screen,
                              int dialogue_line = 0,
                              bool missing_bartender = false) {
-    pixel_town::unload_tavern_assets(state.locations.tavern_assets);
+    // Reuse the same GPU textures across adjacent diagnostic states. Repeated
+    // unload/reload cycles can make a capture observe the fallback between two
+    // otherwise identical dialogue pages.
+    pixel_town::TavernVisualAssets tavern_assets =
+        state.locations.tavern_assets;
+    state.locations.tavern_assets = {};
     state = pixel_town::GameAppState{};
+    state.locations.tavern_assets = tavern_assets;
+    if (state.locations.tavern_assets.bartender_sheet.id == 0) {
+        state.locations.tavern_assets.attempted = false;
+    }
     state.has_session = true;
     state.session = pixel_town::GameSession::new_game(20260710U);
     (void)state.session.enter_location(pixel_town::Location::restaurant);

@@ -4,13 +4,14 @@
 
 #include "app/npc_sprite_spec.hpp"
 
-TEST_CASE("fixed NPC sprite sheets share one four-frame layout") {
+TEST_CASE("fixed character sprite sheets share one four-frame layout") {
     using pixel_town::NpcSpriteKind;
     constexpr std::array kinds{
         NpcSpriteKind::salesclerk,
         NpcSpriteKind::bartender,
         NpcSpriteKind::restaurant_chef,
         NpcSpriteKind::librarian,
+        NpcSpriteKind::protagonist,
     };
 
     for (const auto kind : kinds) {

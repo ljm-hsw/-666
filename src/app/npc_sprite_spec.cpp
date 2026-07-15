@@ -15,6 +15,9 @@ constexpr NpcSpriteSpec restaurant_chef{
 constexpr NpcSpriteSpec librarian{
     "assets/textures/ui/library/npc/librarian_idle_sheet.png",
     64, 96, 4, 0.18F};
+constexpr NpcSpriteSpec protagonist{
+    "assets/textures/ui/characters/protagonist_idle_sheet.png",
+    64, 96, 4, 0.18F};
 
 }  // namespace
 
@@ -28,6 +31,8 @@ const NpcSpriteSpec& npc_sprite_spec(NpcSpriteKind kind) {
             return restaurant_chef;
         case NpcSpriteKind::librarian:
             return librarian;
+        case NpcSpriteKind::protagonist:
+            return protagonist;
     }
     return salesclerk;
 }
