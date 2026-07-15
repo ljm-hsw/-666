@@ -753,6 +753,9 @@ int main(int argc, char* argv[]) {
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(display.window_width, display.window_height, "Pixel Town: Ten-Day Plan");
+    // Esc belongs to the game flow (back, cancel, skip, or abandon). Keep
+    // WindowShouldClose() reserved for the operating-system window close action.
+    SetExitKey(KEY_NULL);
     SetWindowMinSize(display.logical_width, display.logical_height);
     SetTargetFPS(60);
 
