@@ -194,6 +194,18 @@ TEST_CASE("Library UI state starts from intro instructions") {
     CHECK(ui_state.scene_state == pixel_town::library::ui::LibrarySceneState::intro);
 }
 
+TEST_CASE("Library UI wrapping preserves complete UTF-8 codepoints") {
+    const auto codepoints =
+        pixel_town::library::ui::split_utf8_codepoints("欢迎\n奖励");
+
+    REQUIRE(codepoints.size() == 5);
+    CHECK(codepoints[0] == "欢");
+    CHECK(codepoints[1] == "迎");
+    CHECK(codepoints[2] == "\n");
+    CHECK(codepoints[3] == "奖");
+    CHECK(codepoints[4] == "励");
+}
+
 TEST_CASE("Library NPC idle animation never changes its fixed position") {
     pixel_town::library::NpcManager manager;
     manager.add_npc(pixel_town::library::NpcData{

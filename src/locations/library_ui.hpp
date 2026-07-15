@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include <raylib.h>
 
@@ -59,6 +60,9 @@ struct LibraryRenderConfig {
     int logical_height{360};
     Texture2D background{};
 };
+
+[[nodiscard]] std::vector<std::string> split_utf8_codepoints(
+    const std::string& text);
 
 void draw_library_scene(const LibraryReaderPresentation& presentation,
                         const LibraryUIState& ui_state,

@@ -255,7 +255,7 @@ LoadResult load_library_data(const std::string& file_path) {
             event.required_visits = required_visits;
             event.required_knowledge = required_knowledge;
         } else if (starts_with(trimmed, "WELCOME ")) {
-            result.data.welcome_message = trim(trimmed.substr(9));
+            result.data.welcome_message = trim(trimmed.substr(8));
         } else if (starts_with(trimmed, "WORK_INTRO ")) {
             result.data.work_intro = trim(trimmed.substr(11));
         } else {

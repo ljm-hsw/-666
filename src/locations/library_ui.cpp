@@ -15,6 +15,37 @@
 
 namespace pixel_town::library::ui {
 
+std::vector<std::string> split_utf8_codepoints(const std::string& text) {
+    std::vector<std::string> codepoints;
+    for (std::size_t offset = 0; offset < text.size();) {
+        const unsigned char leading =
+            static_cast<unsigned char>(text[offset]);
+        std::size_t length = 1;
+        if ((leading & 0xE0U) == 0xC0U) {
+            length = 2;
+        } else if ((leading & 0xF0U) == 0xE0U) {
+            length = 3;
+        } else if ((leading & 0xF8U) == 0xF0U) {
+            length = 4;
+        }
+        if (offset + length > text.size()) {
+            length = 1;
+        } else {
+            for (std::size_t index = 1; index < length; ++index) {
+                const unsigned char continuation =
+                    static_cast<unsigned char>(text[offset + index]);
+                if ((continuation & 0xC0U) != 0x80U) {
+                    length = 1;
+                    break;
+                }
+            }
+        }
+        codepoints.emplace_back(text.substr(offset, length));
+        offset += length;
+    }
+    return codepoints;
+}
+
 namespace {
 
 constexpr Color ink{45, 52, 54, 255};
@@ -103,8 +134,8 @@ void draw_text_wrapped(const Font& font, const std::string& text, float x, float
     float current_y = scaled(y);
     
     std::string line;
-    for (char c : text) {
-        if (c == '\n') {
+    for (const std::string& codepoint : split_utf8_codepoints(text)) {
+        if (codepoint == "\n") {
             DrawTextEx(font, line.c_str(), Vector2{current_x, current_y}, font_size, 1.0F, color);
             line.clear();
             current_y += scaled(line_height);
@@ -112,16 +143,16 @@ void draw_text_wrapped(const Font& font, const std::string& text, float x, float
             continue;
         }
         
-        std::string test_line = line + c;
+        std::string test_line = line + codepoint;
         Vector2 test_size = MeasureTextEx(font, test_line.c_str(), font_size, 1.0F);
         
         if (test_size.x > max_width && !line.empty()) {
             DrawTextEx(font, line.c_str(), Vector2{current_x, current_y}, font_size, 1.0F, color);
-            line = c;
+            line = codepoint;
             current_y += scaled(line_height);
             current_x = scaled(x);
         } else {
-            line += c;
+            line += codepoint;
         }
     }
     

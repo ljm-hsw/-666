@@ -65,6 +65,11 @@ TEST_CASE("library runtime completes reader consultation through the same lifecy
                 {pixel_town::LibraryIntentType::select_reader, {}})
                 .status == pixel_town::LibraryStepStatus::changed);
 
+    const auto introduction = runtime.presentation();
+    REQUIRE(introduction.reader.has_value());
+    CHECK(introduction.reader->welcome_message == "欢迎来到小镇图书馆");
+    CHECK(introduction.reader->work_intro.find("读者会提出各种问题") == 0);
+
     while (true) {
         const auto view = runtime.presentation();
         REQUIRE(view.reader.has_value());
