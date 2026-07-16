@@ -36,6 +36,7 @@ void LibraryRuleEngine::start_session(const DailyContext& context) {
     session_state_.is_active = true;
     session_state_.is_in_intro = true;
     gave_up_ = false;
+    npc_interaction_.map_revealed = context.map_revealed;
 
     shuffled_questions_ = data_.questions;
     shuffle_questions(context.random_seed);

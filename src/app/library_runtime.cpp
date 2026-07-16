@@ -53,7 +53,12 @@ LibraryOpenResult LibraryRuntime::open(GameSession& session,
     }
 
     data_ = data;
-    ++visits_;
+    const int completed_visits =
+        session.location_visit_count(Location::library);
+    visits_ = completed_visits + 1;
+    map_revealed_ = map_revealed_ ||
+                    completed_visits >=
+                        library::default_library_config().visits_threshold_for_map;
     active_ = true;
     mode_ = LibraryRuntimeMode::selection;
     reader_.reset();
@@ -106,6 +111,7 @@ LibraryStepResult LibraryRuntime::step(GameSession& session,
                 Location::library, static_cast<unsigned int>(visits_));
             context.library_visits = visits_;
             context.current_knowledge = session.player().knowledge;
+            context.map_revealed = map_revealed_;
             reader_->start_session(context);
             reader_->update_npc_relationship(session.player().knowledge, visits_);
             organizing_.reset();
@@ -133,6 +139,18 @@ LibraryStepResult LibraryRuntime::step(GameSession& session,
     }
 
     if (mode_ == LibraryRuntimeMode::reader_consultation && reader_) {
+        if (intent.type == LibraryIntentType::acknowledge_map) {
+            if (!reader_->should_reveal_map(
+                    reader_->get_current_context().current_knowledge,
+                    reader_->get_current_context().library_visits)) {
+                feedback_ = "旧地图已经收下，不会重复展示。";
+                return step_result(LibraryStepStatus::rejected, feedback_);
+            }
+            reader_->reveal_map();
+            map_revealed_ = true;
+            feedback_ = "已收下旧集市地图。";
+            return step_result(LibraryStepStatus::changed, feedback_);
+        }
         if (intent.type == LibraryIntentType::answer_category) {
             if (!reader_->is_session_active()) {
                 feedback_ = "本次读者咨询已经完成。";

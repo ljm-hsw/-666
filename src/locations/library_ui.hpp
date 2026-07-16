@@ -60,6 +60,7 @@ struct LibraryRenderConfig {
     int logical_width{640};
     int logical_height{360};
     Texture2D background{};
+    Texture2D old_map{};
 };
 
 [[nodiscard]] std::vector<std::string> split_utf8_codepoints(

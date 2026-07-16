@@ -35,6 +35,16 @@
 
 这六张书堆用于图书馆整理模式的散落书、错架书和手持槽显示，不包含第三方素材声明。它们仍是项目自制候选美术，最终交付前需完成人工视觉验收。
 
+## Imagegen 图书馆旧集市地图候选
+
+- 生成方式：内置 imagegen，按图书馆旧地图剧情页面的暖色像素风要求生成；画面不包含生成文字或 UI
+- 生成与接入日期：2026-07-16
+- 候选源图：[`assets/art_sources/imagegen/library/old_town_map_source.png`](assets/art_sources/imagegen/library/old_town_map_source.png)
+- 运行时路径：[`assets/textures/ui/library/old_town_map.png`](assets/textures/ui/library/old_town_map.png)
+- 尺寸、处理和 SHA-256：[`assets/art_sources/imagegen/library/README.md`](assets/art_sources/imagegen/library/README.md)
+
+该地图替换读者咨询模式中原有的程序线段占位图；中文标题和剧情说明仍由程序字体绘制。资源属于项目自制候选美术，最终交付前需完成人工视觉验收。
+
 ## Fusion Pixel Font
 
 - 名称：Fusion Pixel Font 12px Proportional zh_hans

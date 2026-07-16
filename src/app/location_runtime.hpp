@@ -119,6 +119,7 @@ void update_store_selection(LocationRuntimeState& runtime, const GameSession& se
                                             Vector2 logical_mouse);
 void draw_active_library(const Font& font, const LocationRuntimeState& runtime,
                          Vector2 logical_mouse, const Texture2D& background,
+                         const Texture2D& old_map,
                          const std::array<Texture2D, 6>& organizing_book_textures);
 
 }  // namespace pixel_town

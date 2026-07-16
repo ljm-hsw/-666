@@ -23,6 +23,7 @@ enum class LibraryIntentType {
     pick_up_book,
     place_on_shelf,
     answer_category,
+    acknowledge_map,
     finish_reader,
     abandon,
 };

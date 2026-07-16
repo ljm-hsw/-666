@@ -26,6 +26,11 @@ static_assert(PIXEL_TOWN_DAY_LIMIT == 5 || PIXEL_TOWN_DAY_LIMIT == 10,
     return is_five_day_showcase_build() ? "五日展示版本" : "十日经营计划";
 }
 
+[[nodiscard]] constexpr const char* game_window_title() noexcept {
+    return is_five_day_showcase_build() ? "Pixel Town: Five-Day Showcase"
+                                        : "Pixel Town: Ten-Day Plan";
+}
+
 [[nodiscard]] constexpr const char* game_plan_intro_notice() noexcept {
     return is_five_day_showcase_build() ? "镇长正在介绍五日展示计划。"
                                         : "镇长正在介绍十日计划。";

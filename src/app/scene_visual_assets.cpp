@@ -44,6 +44,10 @@ void load_scene_visual_assets(SceneVisualAssets& assets) {
         assets.library_interior =
             load_optional_texture("assets/textures/ui/library/library_interior.png");
     }
+    if (assets.library_old_map.id == 0) {
+        assets.library_old_map =
+            load_optional_texture("assets/textures/ui/library/old_town_map.png");
+    }
     if (assets.restaurant_npc.id == 0) {
         assets.restaurant_npc = load_optional_texture(
             npc_sprite_spec(NpcSpriteKind::restaurant_chef).runtime_path);
@@ -85,6 +89,7 @@ void unload_scene_visual_assets(SceneVisualAssets& assets) {
     unload_texture(assets.convenience_store_interior);
     unload_texture(assets.home_interior);
     unload_texture(assets.library_interior);
+    unload_texture(assets.library_old_map);
     unload_texture(assets.restaurant_npc);
     unload_texture(assets.convenience_store_npc);
     unload_texture(assets.library_npc);

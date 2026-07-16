@@ -36,6 +36,8 @@ Issue 27/28 已按固定 NPC 方案历史收口；Issue 33 只在其上新增主
 
 2026-07-15，团队提供的餐馆厨师、便利店售货员、图书管理员和酒保透明精灵表已作为独立 NPC 管线接入。四套资源统一为 `256×96` 横排四帧，场景背景仍不烘焙人物；运行时通过共享 `NpcSpriteSpec` 选择帧，并在资源缺失时回退到程序人物。四帧差异和实机截图已验证，当前无需 imagegen 补中间帧；来源与许可仍由 Issue 17 收口。
 
+2026-07-16，图书馆读者咨询中的旧地图页面新增独立 imagegen 候选 `assets/textures/ui/library/old_town_map.png`。图片只承担旧集市道路、桥梁、地标和路线标记的视觉表达，不包含文字、按钮或人物；标题、剧情说明和交互继续由程序绘制。源图、处理尺寸和哈希记录在 [`../assets/art_sources/imagegen/library/README.md`](../assets/art_sources/imagegen/library/README.md)，资源缺失时仍保留简化程序地图回退。
+
 ## 临时执行顺序
 
 - Issue 23 已完成，不回退其共享对话能力。

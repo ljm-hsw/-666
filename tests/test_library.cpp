@@ -240,6 +240,19 @@ TEST_CASE("Library UI instructions can be reviewed from answering state") {
     CHECK_FALSE(ui_state.return_to_answering_after_intro);
 }
 
+TEST_CASE("runtime font text includes punctuation loaded from library data") {
+    const auto loaded =
+        pixel_town::library::load_library_data("assets/data/library_data.txt");
+    REQUIRE(loaded.success);
+
+    const std::string glyph_text =
+        pixel_town::library::collect_all_text_characters(loaded.data);
+
+    CHECK(glyph_text.find('"') != std::string::npos);
+    CHECK(glyph_text.find("？") != std::string::npos);
+    CHECK(glyph_text.find("世界上最高的山峰是什么？") != std::string::npos);
+}
+
 TEST_CASE("Library rule engine - start session") {
     pixel_town::library::LibraryData data = create_test_data();
     pixel_town::library::LibraryConfig config =

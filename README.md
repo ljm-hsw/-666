@@ -130,6 +130,13 @@ cmake --build build-five-day --target pixel_town --config Release --parallel
 .\build-five-day\Release\pixel_town_five_day.exe
 ```
 
+Windows Release 交付目录可通过安装目标生成；该目录包含可执行文件和运行时 `assets/`，可直接复制到其他 Windows 10/11 x64 机器：
+
+```powershell
+cmake --install build --config Release --prefix dist\pixel-town-ten-day
+cmake --install build-five-day --config Release --prefix dist\pixel-town-five-day
+```
+
 应用默认创建 960×540 窗口，并以 1:1 点采样显示 960×540 逻辑画布。删除 `build/` 后重复以上命令即可验证干净构建；构建目录和本机工具目录 `.tools/` 均不会提交。
 
 普通构建进入当前十日完整循环：标题页点击“新游戏”进入第一日地图，选择一个白天地点完成工作；夜晚可以回家，也可以在酒馆完成一局五子棋或一场骗子骰子淘汰赛；第十日总结后完成库存清算并进入唯一正式主结局。五日展示构建复用相同玩法与结局，只把最终日压缩为第 5 天。

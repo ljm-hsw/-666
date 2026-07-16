@@ -114,17 +114,30 @@ Release：
 
 应用默认打开 960×540 窗口，使用 960×540 逻辑画布。
 
-### 2.5 Windows 常用检查命令
+### 2.5 生成可复制的 Windows Release 目录
+
+普通构建目录适合开发；团队交付、双击运行或从快捷方式启动时，使用 CMake 安装目标生成包含运行时资源的完整目录：
+
+```powershell
+cmake --build build --target pixel_town --config Release --parallel
+cmake --install build --config Release --prefix dist\pixel-town-ten-day
+.\dist\pixel-town-ten-day\pixel_town.exe
+```
+
+需要复制整个 `dist\pixel-town-ten-day\`，不能只复制 EXE。程序会优先读取 EXE 旁的 `assets\`，并把 `saves\` 与 `logs\` 写在该发布目录内；因此从资源管理器双击、快捷方式或不同工作目录启动时都不再依赖仓库根目录。
+
+### 2.6 Windows 常用检查命令
 
 构建五日展示版（独立 Release 目录）：
 
 ```powershell
 cmake -S . -B build-five-day -G "Visual Studio 17 2022" -A x64 -DPIXEL_TOWN_DAY_LIMIT=5 -DPIXEL_TOWN_BUILD_TESTS=OFF
 cmake --build build-five-day --target pixel_town --config Release --parallel
-.\build-five-day\Release\pixel_town_five_day.exe
+cmake --install build-five-day --config Release --prefix dist\pixel-town-five-day
+.\dist\pixel-town-five-day\pixel_town_five_day.exe
 ```
 
-该变体在第五个完整昼夜后进入库存清算与正式结局。输出名和构建目录均与十日版不同，因此便携存档位于 `build-five-day\Release\saves\`。完整回归套件仍由默认十日构建执行，五日边界另有核心单元测试；尚未在目标 Windows 机器完成实机验收。
+该变体在第五个完整昼夜后进入库存清算与正式结局。输出名、构建目录和安装目录均与十日版不同，因此便携存档位于 `dist\pixel-town-five-day\saves\`。完整回归套件仍由默认十日构建执行，五日边界另有核心单元测试；尚未在目标 Windows 机器完成实机验收。
 
 生成 P1 核心流程截图：
 
@@ -345,7 +358,7 @@ assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf
 
 ### Windows 上运行位置不对导致找不到资源
 
-当前应用从进程工作目录读取 `assets/`。开发阶段请从仓库根目录运行可执行文件，或确保运行目录能访问仓库内 `assets/`。
+先执行第 2.5 节的 `cmake --install`，再复制并运行完整的 `dist\pixel-town-ten-day\` 或 `dist\pixel-town-five-day\`。程序优先读取 EXE 旁的 `assets\`；只有开发构建旁没有资源目录时，才回退到当前启动目录的 `assets\`。若仍然失败，请确认没有只复制 EXE，并查看发布目录内的 `logs\latest.log`。
 
 ### 构建过程中访问网络
 

@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <raylib.h>
 
@@ -17,7 +18,6 @@
 extern "C" {
 __declspec(dllimport) unsigned long __stdcall GetModuleFileNameW(
     void* hModule, wchar_t* lpFilename, unsigned long nSize);
-constexpr unsigned long MAX_PATH_W = 260;
 }
 #elif defined(__APPLE__)
 #include <mach-o/dyld.h>
@@ -35,8 +35,10 @@ constexpr unsigned long MAX_PATH_W = 260;
 #include "io/app_settings.hpp"
 #include "io/demo_preset.hpp"
 #include "io/resource_diagnostics.hpp"
+#include "io/runtime_paths.hpp"
 #include "io/save_game.hpp"
 #include "io/startup_log.hpp"
+#include "locations/library_data.hpp"
 #include "ui/ui_metrics.hpp"
 
 namespace {
@@ -913,8 +915,13 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
         case 58:
             setup_navigation_diagnostic(state, NavigationDiagnostic::tavern_dice);
             break;
-        default:
+        case 59:
             setup_navigation_diagnostic(state, NavigationDiagnostic::home_bed);
+            break;
+        default:
+            setup_library_diagnostic(
+                state, pixel_town::library::ui::LibrarySceneState::map_reveal);
+            state.notice = "诊断：图书馆旧集市地图。";
             break;
     }
 }
@@ -958,10 +965,28 @@ int main(int argc, char* argv[]) {
     const bool capture_ui_diagnostics =
         !demo_args.requested && argc == 2 &&
         std::string_view{argv[1]} == "--capture-ui-diagnostics";
+    const std::filesystem::path application_directory =
+        application_directory_from_argv(argc > 0 ? argv[0] : nullptr);
+    std::error_code launch_directory_error;
+    std::filesystem::path launch_directory =
+        std::filesystem::current_path(launch_directory_error);
+    if (launch_directory_error || launch_directory.empty()) {
+        launch_directory = application_directory;
+    }
+    const std::filesystem::path runtime_root =
+        pixel_town::select_runtime_root(application_directory, launch_directory);
+    std::error_code runtime_root_error;
+    std::filesystem::current_path(runtime_root, runtime_root_error);
     auto resources = pixel_town::validate_resources("assets", pixel_town::baseline_resource_manifest());
+    if (runtime_root_error) {
+        resources.can_start = false;
+        resources.issues.push_back(
+            {"runtime_root", "could not activate application resource directory", true});
+    }
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(display.window_width, display.window_height, "Pixel Town: Ten-Day Plan");
+    InitWindow(display.window_width, display.window_height,
+               pixel_town::game_window_title());
     // Esc belongs to the game flow (back, cancel, skip, or abandon). Keep
     // WindowShouldClose() reserved for the operating-system window close action.
     SetExitKey(KEY_NULL);
@@ -990,13 +1015,33 @@ int main(int argc, char* argv[]) {
         } else {
             SetTextureFilter(town_marker, TEXTURE_FILTER_POINT);
         }
-        const std::string required_glyphs =
-            std::string{pixel_town::visual_prototype_glyphs()} + pixel_town::game_flow_glyphs();
+        std::string required_glyphs =
+            std::string{pixel_town::visual_prototype_glyphs()} +
+            pixel_town::game_flow_glyphs();
+        const auto library_font_data = pixel_town::library::load_library_data(
+            "assets/data/library_data.txt");
+        if (library_font_data.success) {
+            required_glyphs += pixel_town::library::collect_all_text_characters(
+                library_font_data.data);
+        }
         int codepoint_count = 0;
-        int* codepoints = LoadCodepoints(required_glyphs.c_str(), &codepoint_count);
+        int* loaded_codepoints =
+            LoadCodepoints(required_glyphs.c_str(), &codepoint_count);
+        std::vector<int> codepoints;
+        if (loaded_codepoints != nullptr && codepoint_count > 0) {
+            codepoints.assign(loaded_codepoints,
+                              loaded_codepoints + codepoint_count);
+        }
+        if (loaded_codepoints != nullptr) {
+            UnloadCodepoints(loaded_codepoints);
+        }
+        std::sort(codepoints.begin(), codepoints.end());
+        codepoints.erase(std::unique(codepoints.begin(), codepoints.end()),
+                         codepoints.end());
+        codepoint_count = static_cast<int>(codepoints.size());
         const int font_pixel_size = capture_prototype ? 12 : 24;
         ui_font = LoadFontEx("assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf",
-                             font_pixel_size, codepoints, codepoint_count);
+                             font_pixel_size, codepoints.data(), codepoint_count);
         bool required_glyphs_available = ui_font.texture.id != 0;
         if (required_glyphs_available) {
             for (int index = 0; index < codepoint_count; ++index) {
@@ -1008,7 +1053,6 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
-        UnloadCodepoints(codepoints);
         if (!required_glyphs_available) {
             resources.can_start = false;
             resources.issues.push_back(
@@ -1104,7 +1148,6 @@ int main(int argc, char* argv[]) {
     pixel_town::AudioCueTracker audio_cue_tracker;
     const bool persistence_enabled = !capture_prototype && !capture_game_flow &&
                                      !capture_ui_diagnostics && !demo_args.requested;
-    const std::filesystem::path application_directory = application_directory_from_argv(argv[0]);
     const std::filesystem::path save_path = pixel_town::default_save_path(application_directory);
     const std::filesystem::path settings_path =
         pixel_town::default_settings_path(application_directory);
@@ -1173,7 +1216,7 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 60> ui_diagnostic_capture_paths{
+    const std::array<const char*, 61> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/store-prepare.png",
@@ -1234,6 +1277,7 @@ int main(int argc, char* argv[]) {
         "ui-diagnostics-captures/navigation-tavern-gomoku.png",
         "ui-diagnostics-captures/navigation-tavern-dice.png",
         "ui-diagnostics-captures/navigation-home-bed.png",
+        "ui-diagnostics-captures/library-old-town-map.png",
     };
     auto unload_resources = [&]() {
         pixel_town::unload_tavern_assets(game_flow.locations.tavern_assets);

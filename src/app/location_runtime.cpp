@@ -654,6 +654,7 @@ bool update_started_location(GameSession& session, LocationRuntimeState& runtime
 
 void draw_active_library(const Font& font, const LocationRuntimeState& runtime,
                          Vector2 logical_mouse, const Texture2D& background,
+                         const Texture2D& old_map,
                          const std::array<Texture2D, 6>& organizing_book_textures) {
     if (!runtime.library.active()) {
         return;
@@ -677,6 +678,7 @@ void draw_active_library(const Font& font, const LocationRuntimeState& runtime,
     render_config.logical_width = 640;
     render_config.logical_height = 360;
     render_config.background = background;
+    render_config.old_map = old_map;
     library::ui::draw_library_scene(*presentation.reader, runtime.library_ui_state,
                                     render_config, font, logical_mouse);
 }

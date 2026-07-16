@@ -560,29 +560,38 @@ void draw_map_reveal_screen(const LibraryReaderPresentation& presentation,
         draw_pixel_bookshelf(450, 80, 160, 120);
     }
 
-    panel(Rectangle{50, 80, 540, 180}, Color{240, 230, 210, 255});
-    DrawRectangle(scaled(70), scaled(100), scaled(500), scaled(140), Color{255, 250, 240, 255});
-    DrawRectangleLinesEx(scaled_rect(Rectangle{70, 100, 500, 140}), 3.0F, Color{100, 80, 60, 255});
+    panel(Rectangle{50, 48, 540, 212}, Color{240, 230, 210, 255});
+    const Rectangle map_destination{58, 55, 524, 198};
+    if (config.old_map.id != 0) {
+        const Rectangle source{0.0F, 0.0F,
+                               static_cast<float>(config.old_map.width),
+                               static_cast<float>(config.old_map.height)};
+        DrawTexturePro(config.old_map, source, scaled_rect(map_destination),
+                       Vector2{0.0F, 0.0F}, 0.0F, WHITE);
+    } else {
+        DrawRectangleRec(scaled_rect(map_destination), Color{255, 250, 240, 255});
+        DrawRectangleLinesEx(scaled_rect(map_destination), 3.0F,
+                             Color{100, 80, 60, 255});
+        DrawLine(scaled(120), scaled(110), scaled(220), scaled(155),
+                 Color{150, 100, 50, 200});
+        DrawLine(scaled(220), scaled(155), scaled(360), scaled(105),
+                 Color{50, 100, 150, 200});
+        DrawLine(scaled(360), scaled(105), scaled(500), scaled(190),
+                 Color{50, 150, 100, 200});
+        DrawCircle(scaled(220), scaled(155), scaled(5), Color{190, 45, 45, 255});
+        DrawCircle(scaled(360), scaled(105), scaled(5), Color{190, 45, 45, 255});
+    }
+    DrawRectangleLinesEx(scaled_rect(map_destination), 2.0F,
+                         Color{100, 80, 60, 255});
+    DrawRectangle(scaled(66), scaled(63), scaled(116), scaled(28),
+                  Color{244, 220, 165, 235});
+    DrawRectangleLinesEx(scaled_rect(Rectangle{66, 63, 116, 28}), 2.0F,
+                         Color{100, 60, 30, 255});
+    text(font, "旧集市地图", 78, 68, 16, Color{100, 60, 30, 255});
 
-    DrawLine(scaled(120), scaled(130), scaled(180), scaled(130), Color{150, 50, 50, 200});
-    DrawLine(scaled(120), scaled(150), scaled(200), scaled(150), Color{50, 100, 150, 200});
-    DrawLine(scaled(120), scaled(170), scaled(220), scaled(170), Color{150, 100, 50, 200});
-    DrawLine(scaled(120), scaled(190), scaled(160), scaled(190), Color{50, 150, 100, 200});
-    DrawLine(scaled(280), scaled(130), scaled(380), scaled(130), Color{150, 50, 50, 200});
-    DrawLine(scaled(280), scaled(150), scaled(420), scaled(150), Color{50, 100, 150, 200});
-    DrawLine(scaled(280), scaled(170), scaled(360), scaled(170), Color{150, 100, 50, 200});
-    DrawLine(scaled(280), scaled(190), scaled(320), scaled(190), Color{50, 150, 100, 200});
-
-    DrawCircle(scaled(150), scaled(125), scaled(4), Color{255, 0, 0, 200});
-    DrawCircle(scaled(330), scaled(125), scaled(4), Color{255, 0, 0, 200});
-    DrawCircle(scaled(150), scaled(195), scaled(4), Color{255, 0, 0, 200});
-    DrawCircle(scaled(330), scaled(195), scaled(4), Color{255, 0, 0, 200});
-
-    text(font, "旧地图", 270, 85, 24, Color{100, 60, 30, 255});
-
-    panel(Rectangle{50, 254, 540, 50}, paper);
-    draw_text_wrapped(font, presentation.old_map_reveal_dialogue, 70, 266,
-                      scaled(500), 18, 14, ink);
+    panel(Rectangle{50, 264, 540, 42}, paper);
+    draw_text_wrapped(font, presentation.old_map_reveal_dialogue, 70, 272,
+                      scaled(500), 17, 14, ink);
 
     const int btn_y = 314;
     const int btn_w = 200;
@@ -944,7 +953,7 @@ LibraryIntent handle_library_input(const LibraryReaderPresentation& presentation
     } else if (ui_state.scene_state == LibrarySceneState::map_reveal) {
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             ui_state.scene_state = LibrarySceneState::answering;
-            return {};
+            return {LibraryIntentType::acknowledge_map, {}};
         }
     } else if (ui_state.scene_state == LibrarySceneState::summary) {
         if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {

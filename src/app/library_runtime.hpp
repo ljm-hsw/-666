@@ -56,6 +56,7 @@ private:
     std::unique_ptr<library::LibraryRuleEngine> reader_;
     std::unique_ptr<library::LibraryOrganizingSession> organizing_;
     int visits_{0};
+    bool map_revealed_{false};
     int active_result_id_{0};
     std::string feedback_;
 

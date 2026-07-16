@@ -106,6 +106,7 @@ TEST_CASE("production baseline manifest keeps the startup resource contract") {
                  false);
     require_spec("textures/ui/home/home_interior.png", ResourceKind::texture, false);
     require_spec("textures/ui/library/library_interior.png", ResourceKind::texture, false);
+    require_spec("textures/ui/library/old_town_map.png", ResourceKind::texture, false);
     require_spec("textures/ui/library/organizing_books/history.png",
                  ResourceKind::texture, false);
     require_spec("textures/ui/library/organizing_books/science.png",

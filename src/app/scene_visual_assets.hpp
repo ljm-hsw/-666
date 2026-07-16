@@ -13,6 +13,7 @@ struct SceneVisualAssets {
     Texture2D convenience_store_interior{};
     Texture2D home_interior{};
     Texture2D library_interior{};
+    Texture2D library_old_map{};
     Texture2D restaurant_npc{};
     Texture2D convenience_store_npc{};
     Texture2D library_npc{};

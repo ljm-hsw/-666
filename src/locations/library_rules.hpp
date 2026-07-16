@@ -27,6 +27,7 @@ struct DailyContext {
     uint64_t random_seed{0};
     int library_visits{0};
     int current_knowledge{0};
+    bool map_revealed{false};
 };
 
 struct LibraryConfig {

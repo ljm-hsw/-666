@@ -1880,6 +1880,7 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
     if (state.locations.library.active()) {
         draw_active_library(font, state.locations, logical_mouse,
                             scene_assets.library_interior,
+                            scene_assets.library_old_map,
                             scene_assets.library_organizing_books);
         if (state.collision_debug_visible) {
             draw_collision_debug(Location::library);

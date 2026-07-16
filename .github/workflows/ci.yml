@@ -8,7 +8,7 @@ jobs:
   build-and-test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -32,3 +32,39 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Install Windows ten-day release layout
+        if: runner.os == 'Windows'
+        run: cmake --install build --config Release --prefix dist/pixel-town-ten-day
+
+      - name: Configure Windows five-day showcase
+        if: runner.os == 'Windows'
+        run: >-
+          cmake -S . -B build-five-day -G "Visual Studio 17 2022" -A x64
+          -DPIXEL_TOWN_DAY_LIMIT=5 -DPIXEL_TOWN_BUILD_TESTS=OFF
+
+      - name: Build Windows five-day showcase
+        if: runner.os == 'Windows'
+        run: cmake --build build-five-day --target pixel_town --config Release --parallel
+
+      - name: Install Windows five-day release layout
+        if: runner.os == 'Windows'
+        run: cmake --install build-five-day --config Release --prefix dist/pixel-town-five-day
+
+      - name: Verify Windows release layouts
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $requiredFiles = @(
+            "dist/pixel-town-ten-day/pixel_town.exe",
+            "dist/pixel-town-five-day/pixel_town_five_day.exe",
+            "dist/pixel-town-ten-day/assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf",
+            "dist/pixel-town-five-day/assets/data/baseline.txt",
+            "dist/pixel-town-ten-day/CREDITS.md",
+            "dist/pixel-town-five-day/licenses/raylib-LICENSE.txt"
+          )
+          foreach ($path in $requiredFiles) {
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+              throw "Missing Windows release artifact: $path"
+            }
+          }

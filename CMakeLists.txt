@@ -6,6 +6,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(MSVC)
+  add_compile_options(/utf-8)
+endif()
+
 set(PIXEL_TOWN_DAY_LIMIT "10" CACHE STRING
     "Playable days before final settlement (10 for full game, 5 for showcase)")
 option(PIXEL_TOWN_BUILD_TESTS "Build the full ten-day regression suite" ON)
@@ -35,6 +39,7 @@ add_library(pixel_town_io
   src/io/app_settings.cpp
   src/io/demo_preset.cpp
   src/io/resource_diagnostics.cpp
+  src/io/runtime_paths.cpp
   src/io/save_game.cpp
   src/io/startup_log.cpp
 )
@@ -113,6 +118,22 @@ if(PIXEL_TOWN_DAY_LIMIT EQUAL 5)
   set_target_properties(pixel_town PROPERTIES OUTPUT_NAME "pixel_town_five_day")
 endif()
 
+install(TARGETS pixel_town RUNTIME DESTINATION .)
+foreach(runtime_asset_directory IN ITEMS audio data fonts)
+  install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets/${runtime_asset_directory}"
+          DESTINATION assets)
+endforeach()
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets/textures" DESTINATION assets
+        PATTERN "*_source.png" EXCLUDE
+        PATTERN "Tiles" EXCLUDE
+        PATTERN "tilemap.png" EXCLUDE)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/README.md" DESTINATION assets)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/CREDITS.md" DESTINATION .)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/raylib/LICENSE"
+        DESTINATION licenses RENAME raylib-LICENSE.txt)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/doctest/LICENSE.txt"
+        DESTINATION licenses RENAME doctest-LICENSE.txt)
+
 if(PIXEL_TOWN_BUILD_TESTS)
   enable_testing()
 
@@ -141,6 +162,7 @@ if(PIXEL_TOWN_BUILD_TESTS)
   tests/app_settings_test.cpp
   tests/convenience_store_test.cpp
   tests/resource_diagnostics_test.cpp
+  tests/runtime_paths_test.cpp
   tests/save_game_test.cpp
   tests/restaurant_test.cpp
   tests/story_text_test.cpp

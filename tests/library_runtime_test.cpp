@@ -95,6 +95,57 @@ TEST_CASE("library runtime completes reader consultation through the same lifecy
     CHECK(session.player().stamina == 65);
 }
 
+TEST_CASE("old town map is acknowledged once and does not repeat after resume") {
+    const auto loaded =
+        pixel_town::library::load_library_data("assets/data/library_data.txt");
+    REQUIRE(loaded.success);
+
+    auto second_visit_snapshot =
+        pixel_town::GameSession::new_game(20260714U).snapshot();
+    second_visit_snapshot.day = 2;
+    second_visit_snapshot.player.knowledge = 50;
+    second_visit_snapshot.location_visits.library = 1;
+    auto second_visit =
+        pixel_town::GameSession::from_snapshot(second_visit_snapshot);
+    REQUIRE(second_visit.enter_location(pixel_town::Location::library));
+
+    pixel_town::LibraryRuntime runtime;
+    REQUIRE(runtime.open(second_visit, loaded.data).status ==
+            pixel_town::LibraryOpenStatus::opened);
+    REQUIRE(runtime.step(
+                second_visit,
+                {pixel_town::LibraryIntentType::select_reader, {}})
+                .status == pixel_town::LibraryStepStatus::changed);
+    REQUIRE(runtime.presentation().reader.has_value());
+    CHECK(runtime.presentation().reader->should_reveal_map);
+
+    CHECK(runtime.step(
+              second_visit,
+              {pixel_town::LibraryIntentType::acknowledge_map, {}})
+              .status == pixel_town::LibraryStepStatus::changed);
+    REQUIRE(runtime.presentation().reader.has_value());
+    CHECK_FALSE(runtime.presentation().reader->should_reveal_map);
+
+    auto third_visit_snapshot =
+        pixel_town::GameSession::new_game(20260714U).snapshot();
+    third_visit_snapshot.day = 3;
+    third_visit_snapshot.player.knowledge = 50;
+    third_visit_snapshot.location_visits.library = 2;
+    auto third_visit =
+        pixel_town::GameSession::from_snapshot(third_visit_snapshot);
+    REQUIRE(third_visit.enter_location(pixel_town::Location::library));
+
+    pixel_town::LibraryRuntime resumed_runtime;
+    REQUIRE(resumed_runtime.open(third_visit, loaded.data).status ==
+            pixel_town::LibraryOpenStatus::opened);
+    REQUIRE(resumed_runtime.step(
+                third_visit,
+                {pixel_town::LibraryIntentType::select_reader, {}})
+                .status == pixel_town::LibraryStepStatus::changed);
+    REQUIRE(resumed_runtime.presentation().reader.has_value());
+    CHECK_FALSE(resumed_runtime.presentation().reader->should_reveal_map);
+}
+
 TEST_CASE("abandoning reader consultation discards partial rewards") {
     auto session = pixel_town::GameSession::new_game(20260714U);
     const auto player_before = session.player();
