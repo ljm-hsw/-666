@@ -1,3 +1,4 @@
+// 固定对话脚本目录；不读取输入、不绘制窗口、不改变游戏状态。
 #include "core/story_dialogue.hpp"
 
 namespace pixel_town {

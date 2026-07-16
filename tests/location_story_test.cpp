@@ -119,6 +119,49 @@ TEST_CASE("location story catalog exposes its new event glyphs") {
     CHECK(glyphs.find("雨伞一下少了不少") != std::string::npos);
     CHECK(glyphs.find("黑棋子卡在桌缝") != std::string::npos);
     CHECK(glyphs.find("晚上大家会看看") != std::string::npos);
+    CHECK(glyphs.find("带了一碗热汤来看看你") != std::string::npos);
+    CHECK(glyphs.find("今晚的访客") != std::string::npos);
+}
+
+TEST_CASE("returning home receives one deterministic visitor every night") {
+    const pixel_town::LocationStoryCatalog catalog;
+    const char* expected_speakers[] = {
+        "餐馆老板", "便利店店主", "管理员", "镇长",
+        "餐馆老板", "便利店店主", "管理员", "镇长", "镇长",
+    };
+
+    for (int day = 2; day <= 10; ++day) {
+        const auto selection = catalog.select(
+            {pixel_town::Location::home, day,
+             day == 5 ? "小雨" : "晴天", "小镇节奏平稳", 1,
+             20260715U});
+        INFO("day=" << day);
+        REQUIRE(selection.script.lines.size() >= 2);
+        CHECK(selection.script.lines.front().speaker ==
+              expected_speakers[day - 2]);
+        CHECK(selection.script.lines.back().speaker == "主角");
+    }
+
+    const auto clear_day_five = catalog.select(
+        {pixel_town::Location::home, 5, "晴天", "小镇节奏平稳", 1,
+         20260715U});
+    REQUIRE(clear_day_five.script.lines.size() >= 2);
+    CHECK(clear_day_five.script.lines.front().speaker == "镇长");
+}
+
+TEST_CASE("first home visitor explains rest without applying side effects") {
+    const pixel_town::LocationStoryContext context{
+        pixel_town::Location::home, 6, "晴天", "小镇节奏平稳", 0,
+        20260715U};
+
+    const auto selection = pixel_town::LocationStoryCatalog{}.select(context);
+
+    CHECK(selection.kind == pixel_town::LocationStoryEventKind::tutorial);
+    CHECK(selection.id == "home_tutorial");
+    REQUIRE(selection.script.lines.size() >= 2);
+    CHECK(selection.script.lines.front().speaker == "镇长");
+    CHECK(selection.script.lines.front().text.find("确认休息") !=
+          std::string::npos);
 }
 
 TEST_CASE("returning restaurant selects its rainy day five incident") {

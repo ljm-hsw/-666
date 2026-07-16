@@ -1,3 +1,4 @@
+// 主角移动、朝向、邻近互动和出口检测；只依赖静态场景碰撞布局。
 #include "core/scene_navigation.hpp"
 
 #include <cmath>
@@ -9,6 +10,11 @@ namespace {
 
 constexpr SceneSize player_collision_size{24.0F, 24.0F};
 constexpr float player_speed = 160.0F;
+constexpr const char* navigation_closed_notice = "室内导航尚未打开。";
+constexpr const char* invalid_frame_time_notice = "室内导航收到非法帧时间。";
+constexpr const char* interaction_unavailable_notice =
+    "附近没有可以互动的目标。";
+constexpr const char* movement_blocked_notice = "前方被家具或墙体挡住了。";
 
 struct InteractionTarget {
     SceneInteractionKind kind{SceneInteractionKind::npc};
@@ -79,6 +85,11 @@ bool same_position(ScenePoint left, ScenePoint right) noexcept {
 
 }  // namespace
 
+std::string scene_navigation_glyphs() {
+    return std::string{navigation_closed_notice} + invalid_frame_time_notice +
+           interaction_unavailable_notice + movement_blocked_notice;
+}
+
 bool SceneNavigationRuntime::open(Location location) {
     const IndoorSceneLayout* layout = find_indoor_scene_layout(location);
     if (layout == nullptr ||
@@ -103,18 +114,18 @@ SceneNavigationStepResult SceneNavigationRuntime::step(
     const SceneNavigationInput& input) {
     if (layout_ == nullptr) {
         return {SceneNavigationStepStatus::rejected, std::nullopt,
-                "室内导航尚未打开。"};
+                navigation_closed_notice};
     }
     if (!std::isfinite(input.elapsed_seconds) || input.elapsed_seconds < 0.0F) {
         return {SceneNavigationStepStatus::rejected, std::nullopt,
-                "室内导航收到非法帧时间。"};
+                invalid_frame_time_notice};
     }
 
     if (input.interact_pressed) {
         const auto interaction = nearby_interaction(*layout_, player_position_);
         if (!interaction.has_value()) {
             return {SceneNavigationStepStatus::interaction_unavailable,
-                    std::nullopt, "附近没有可以互动的目标。"};
+                    std::nullopt, interaction_unavailable_notice};
         }
         return {SceneNavigationStepStatus::interaction_activated, interaction,
                 {}};
@@ -149,7 +160,7 @@ SceneNavigationStepResult SceneNavigationRuntime::step(
     player_position_ = next;
     if (!moving_) {
         return {SceneNavigationStepStatus::blocked, std::nullopt,
-                "前方被家具或墙体挡住了。"};
+                movement_blocked_notice};
     }
     animation_seconds_ += input.elapsed_seconds;
     return {SceneNavigationStepStatus::moved, std::nullopt, {}};

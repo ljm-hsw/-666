@@ -1,3 +1,4 @@
+// 全局交互策略：暂停、静音、失焦和最小化时决定是否允许游戏更新。
 #pragma once
 
 #include <algorithm>

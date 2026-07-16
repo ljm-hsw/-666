@@ -1,3 +1,4 @@
+// 酒馆领域标签和基础结算辅助；具体五子棋/骰子规则位于 locations 层。
 #include "core/tavern_rules.hpp"
 
 #include <string>

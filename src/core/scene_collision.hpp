@@ -1,3 +1,4 @@
+// raylib-free 静态碰撞布局：描述可行走区域、家具碰撞体和出口触发区。
 #pragma once
 
 #include <string>

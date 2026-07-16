@@ -1,3 +1,4 @@
+// 酒馆共享领域契约：挑战类型、赌注和统一结算所需的数据结构。
 #pragma once
 
 #include <string>

@@ -1,3 +1,4 @@
+// raylib-free 主角导航 Runtime：消费显式移动/互动意图，返回只读展示状态。
 #pragma once
 
 #include <optional>
@@ -54,6 +55,8 @@ struct SceneNavigationPresentation {
     float animation_seconds{0.0F};
     std::optional<SceneInteractionKind> nearby_interaction;
 };
+
+[[nodiscard]] std::string scene_navigation_glyphs();
 
 class SceneNavigationRuntime {
 public:

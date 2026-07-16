@@ -605,7 +605,7 @@ void setup_night_story_diagnostic(pixel_town::GameAppState& state,
     } else {
         state.home_preview_open = true;
         (void)state.locations.story_lifecycle.open_home_rest(state.session);
-        state.notice = "诊断：回家日程独白。";
+        state.notice = "诊断：回家访客剧情。";
     }
 }
 
@@ -882,20 +882,32 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
                                          10, 1);
             break;
         case 51:
+            setup_night_story_diagnostic(state, pixel_town::Location::home,
+                                         2, 1);
+            break;
+        case 52:
+            setup_night_story_diagnostic(state, pixel_town::Location::home,
+                                         3, 1);
+            break;
+        case 53:
+            setup_night_story_diagnostic(state, pixel_town::Location::home,
+                                         4, 1);
+            break;
+        case 54:
             setup_navigation_diagnostic(
                 state, NavigationDiagnostic::restaurant_owner);
             break;
-        case 52:
+        case 55:
             setup_navigation_diagnostic(state, NavigationDiagnostic::store_owner);
             break;
-        case 53:
+        case 56:
             setup_navigation_diagnostic(
                 state, NavigationDiagnostic::library_administrator);
             break;
-        case 54:
+        case 57:
             setup_navigation_diagnostic(state, NavigationDiagnostic::tavern_gomoku);
             break;
-        case 55:
+        case 58:
             setup_navigation_diagnostic(state, NavigationDiagnostic::tavern_dice);
             break;
         default:
@@ -1158,7 +1170,7 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 57> ui_diagnostic_capture_paths{
+    const std::array<const char*, 60> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/store-prepare.png",
@@ -1210,6 +1222,9 @@ int main(int argc, char* argv[]) {
         "ui-diagnostics-captures/home-story-tutorial.png",
         "ui-diagnostics-captures/home-story-rainy-night.png",
         "ui-diagnostics-captures/home-story-day-ten.png",
+        "ui-diagnostics-captures/home-visitor-restaurant.png",
+        "ui-diagnostics-captures/home-visitor-store.png",
+        "ui-diagnostics-captures/home-visitor-library.png",
         "ui-diagnostics-captures/navigation-restaurant-owner.png",
         "ui-diagnostics-captures/navigation-store-owner.png",
         "ui-diagnostics-captures/navigation-library-administrator.png",

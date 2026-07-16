@@ -1,3 +1,4 @@
+// 对话领域契约和脚本目录接口；文本消费由 app 层 DialogueRuntime 完成。
 #pragma once
 
 #include <string>

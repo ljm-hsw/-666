@@ -1,3 +1,4 @@
+// 逻辑画布和窗口尺寸契约；保证 raylib 窗口缩放不改变游戏坐标。
 #pragma once
 
 #include <algorithm>

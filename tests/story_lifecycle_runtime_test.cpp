@@ -80,6 +80,7 @@ TEST_CASE("home reflection applies the existing rest result exactly once") {
     REQUIRE(runtime.open_home_rest(session));
     const auto tutorial = runtime.presentation();
     REQUIRE(tutorial.dialogue.has_value());
+    CHECK(tutorial.dialogue->speaker == "镇长");
     CHECK(tutorial.dialogue->text.find("消耗今晚") != std::string::npos);
     CHECK(tutorial.dialogue->text.find("恢复") != std::string::npos);
     const auto before_dialogue = session.snapshot();
@@ -112,8 +113,8 @@ TEST_CASE("returning home opens the deterministic story for the current day") {
     const auto view = runtime.presentation();
     REQUIRE(view.dialogue.has_value());
     CHECK(view.context == pixel_town::StoryLifecycleContext::home_rest);
-    CHECK(view.dialogue->speaker == "主角");
-    CHECK(view.dialogue->text.find("地图") != std::string::npos);
+    CHECK(view.dialogue->speaker == "餐馆老板");
+    CHECK(view.dialogue->text.find("热汤") != std::string::npos);
     CHECK(session.snapshot() == before_story);
 
     auto restored = pixel_town::GameSession::from_snapshot(before_story);

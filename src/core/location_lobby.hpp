@@ -1,3 +1,4 @@
+// 地点大厅的静态规格：把地点、热点和按钮几何提供给应用层。
 #pragma once
 
 #include <string>

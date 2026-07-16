@@ -1,3 +1,4 @@
+// 矩形碰撞和场景布局实现；不处理输入，也不拥有 NPC 或地点规则。
 #include "core/scene_collision.hpp"
 
 #include <algorithm>

@@ -156,3 +156,11 @@ TEST_CASE("closing and reopening navigation restores the scene spawn") {
     CHECK(reopened.player_position.y == doctest::Approx(layout->player_spawn.y));
     CHECK(reopened.animation_seconds == doctest::Approx(0.0F));
 }
+
+TEST_CASE("indoor navigation exposes every runtime notice to the font glyph list") {
+    const std::string glyphs = pixel_town::scene_navigation_glyphs();
+
+    CHECK(glyphs.find("前方被家具或墙体挡住了") != std::string::npos);
+    CHECK(glyphs.find("附近没有可以互动的目标") != std::string::npos);
+    CHECK(glyphs.find("室内导航收到非法帧时间") != std::string::npos);
+}

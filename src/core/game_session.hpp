@@ -1,3 +1,4 @@
+// 核心会话状态机：拥有全局状态，并是 ActionResult 的唯一应用入口。
 #pragma once
 
 #include <string>

@@ -1,3 +1,4 @@
+// 地图进入地点后的大厅配置；这里只描述展示和入口，不执行地点规则。
 #include "core/location_lobby.hpp"
 
 namespace pixel_town {
@@ -63,7 +64,7 @@ const LocationLobbySpec& home_lobby() {
     static const LocationLobbySpec spec{
         Location::home,
         "家",
-        "访客互动位（预留）",
+        "夜间访客",
         "准备休息",
         LobbyRect{468.0F, 152.0F, 104.0F, 110.0F},
         LobbyRect{364.0F, 312.0F, 110.0F, 34.0F},

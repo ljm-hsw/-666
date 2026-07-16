@@ -1,3 +1,4 @@
+// 最终库存清算与主结局判定；不负责 UI、不推进会话阶段。
 #include "core/ending_rules.hpp"
 
 #include <array>

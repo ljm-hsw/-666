@@ -1,3 +1,4 @@
+// 地点剧情脚本仓库；剧情只产生文本，不修改 GameSession。
 #include "core/location_story.hpp"
 
 namespace pixel_town {
@@ -47,7 +48,9 @@ DialogueScript finale_script(Location location) {
         case Location::tavern:
             return {trigger, {{"酒保", "棋子和骰盅都收好了。今晚先听镇长说几句。"}}};
         case Location::home:
-            return {trigger, {{"主角", "日记先合上。十天的事，晚上总能慢慢说。"}}};
+            return {trigger,
+                    {{"镇长", "十天走到今晚，我来看看你，也把大家记下的话带来了。"},
+                     {"主角", "谢谢。等今晚休息好，我会认真整理这十天的答案。"}}};
     }
     return {trigger, {}};
 }
@@ -72,6 +75,20 @@ DialogueScript location_script(Location location, const char* npc_text,
                                const char* protagonist_text) {
     return {tutorial_trigger_for(location),
             {{npc_speaker(location), npc_text}, {"主角", protagonist_text}}};
+}
+
+DialogueScript home_visitor_script(const char* speaker,
+                                   const char* visitor_text,
+                                   const char* protagonist_text) {
+    return {DialogueTrigger::home_rest_reflection,
+            {{speaker, visitor_text}, {"主角", protagonist_text}}};
+}
+
+DialogueScript home_visitor_tutorial() {
+    return home_visitor_script(
+        "镇长",
+        "晚上好。我是今晚的访客。确认休息会消耗今晚的行动，并恢复体力和心情。",
+        "明白。如果还没准备好，我可以先返回地图，不结算这次休息。");
 }
 
 DialogueScript daily_script(Location location, int day) {
@@ -124,20 +141,39 @@ DialogueScript daily_script(Location location, int day) {
                                "熟悉归熟悉，今晚的选择仍要认真。");
     }
     if (location == Location::home && day == 2) {
-        return location_script(location, "地图上还空着几条路，先把今天走过的地方补上。",
-                               "确认休息后再合上日记，明天继续。");
+        return home_visitor_script(
+            "餐馆老板", "收工后带了一碗热汤来看看你。第一天忙完，胃里别空着。",
+            "谢谢。喝完热汤，我就把今天走过的路补到地图上。");
+    }
+    if (location == Location::home && day == 3) {
+        return home_visitor_script(
+            "便利店店主", "送货时顺路带来一盏备用灯。旧集市传单的事，你也看见了吧？",
+            "看见了。我会先记下来，今晚不急着猜答案。");
     }
     if (location == Location::home && day == 4) {
-        return location_script(location, "借来的书放在灯下，屋里终于安静下来。",
-                               "今晚休息好，明天再把没读完的页数接上。");
+        return home_visitor_script(
+            "管理员", "借来的书我不催你还。只是路过，来看看灯下读到哪一页了。",
+            "还差几页。今晚休息好，明天再接着读。");
     }
-    if (location == Location::home && day == 9) {
-        return location_script(location, "已经知道哪盏灯会最晚熄，这间屋也更像住过。",
-                               "再休息一晚，就要整理这十天的答案了。");
+    if (location == Location::home && day == 5) {
+        return home_visitor_script(
+            "镇长", "今晚巡过街口，顺路来看看你。门窗都好，屋里的灯也很暖。",
+            "谢谢。今天的事已经记下，我准备休息了。");
+    }
+    if (location == Location::home && day == 6) {
+        return home_visitor_script(
+            "餐馆老板", "酒馆那枚黑棋子的传闻都传到后厨了。我来提醒你，别熬得太晚。",
+            "我只把今天的事记完就休息，明天还要早起。");
     }
     if (location == Location::home && day == 7) {
-        return {tutorial_trigger_for(location),
-                {{"主角", "窗边晾着今天用过的外套。把灯留暖一点，明天再继续。"}}};
+        return home_visitor_script(
+            "便利店店主", "店里多出一盒旧图钉，正好给你把墙上的地图固定牢。",
+            "来得正好。地图的折痕越来越多，也越来越像我走过的路。");
+    }
+    if (location == Location::home && day == 9) {
+        return home_visitor_script(
+            "镇长", "今晚的访客还是我。明晚大家会聚一聚，你不用提前准备漂亮答案。",
+            "好。我只把真实走过的十天带过去。");
     }
     return {};
 }
@@ -156,8 +192,9 @@ DialogueScript incident_script(Location location, int day, const std::string& we
                                "我会先把需要整理的书看清楚。");
     }
     if (location == Location::home && day == 5 && weather == "小雨") {
-        return location_script(location, "窗缝漏进几滴雨，灯下的日记先往里挪一挪。",
-                               "检查好窗边，再确认休息，恢复规则不变。");
+        return home_visitor_script(
+            "镇长", "雨下大了，我来看看窗缝。先把日记往里挪，别让纸页受潮。",
+            "窗边已经检查好了。谢谢你冒雨过来，我今晚会好好休息。");
     }
     if (location == Location::restaurant && day == 8) {
         return location_script(location, "旧集市用过的大汤锅擦出来了，今天先放在后厨别多问。",
@@ -176,8 +213,9 @@ DialogueScript incident_script(Location location, int day, const std::string& we
                                "我先把相框摆正，再选择今晚的玩法。");
     }
     if (location == Location::home && day == 8) {
-        return location_script(location, "旧海报的一角又翘起来了，灯也短暂闪了两下。",
-                               "把海报贴平就好，今晚仍只结算一次休息。");
+        return home_visitor_script(
+            "管理员", "旧地图和海报上的摊位能对上。我来把借书卡背面的编号给你看看。",
+            "线索越来越完整了。今晚先把它们收好，明天再继续。");
     }
     if (location == Location::tavern && day == 6) {
         return location_script(location, "昨晚有枚黑棋子卡在桌缝。先别急着坐，替我看看有没有别的落下。",
@@ -248,6 +286,10 @@ LocationStorySelection LocationStoryCatalog::select(
     const std::string prefix = location_id(context.location);
     const DialogueTrigger trigger = tutorial_trigger_for(context.location);
     const DialogueScript* script = StoryDialogueCatalog{}.find(trigger);
+    if (context.location == Location::home && context.completed_visits <= 0) {
+        return {LocationStoryEventKind::tutorial, prefix + "_tutorial",
+                home_visitor_tutorial()};
+    }
     if (context.completed_visits <= 0 && script != nullptr) {
         return {LocationStoryEventKind::tutorial, prefix + "_tutorial", *script};
     }
@@ -255,6 +297,16 @@ LocationStorySelection LocationStoryCatalog::select(
         return {LocationStoryEventKind::finale,
                 prefix + "_day_10_finale",
                 finale_script(context.location)};
+    }
+    if (context.location == Location::home) {
+        const DialogueScript incident =
+            incident_script(context.location, context.day, context.weather);
+        if (!incident.lines.empty()) {
+            return {LocationStoryEventKind::incident,
+                    incident_id(context.location, context.day,
+                                context.weather),
+                    incident};
+        }
     }
     const DialogueScript daily = daily_script(context.location, context.day);
     if (!daily.lines.empty()) {
@@ -276,6 +328,7 @@ LocationStorySelection LocationStoryCatalog::select(
 
 std::string LocationStoryCatalog::glyphs() const {
     std::string glyphs;
+    append_script_glyphs(glyphs, home_visitor_tutorial());
     for (const Location location : {Location::home, Location::restaurant,
                                     Location::convenience_store, Location::library,
                                     Location::tavern}) {
@@ -289,14 +342,16 @@ std::string LocationStoryCatalog::glyphs() const {
         append_script_glyphs(glyphs, incident_script(location, 5, "小雨"));
         append_script_glyphs(glyphs, incident_script(location, 8, "晴天"));
     }
-    append_script_glyphs(glyphs, daily_script(Location::home, 7));
     append_script_glyphs(glyphs, incident_script(Location::tavern, 6, "微风"));
-    for (const Location location : {Location::tavern, Location::home}) {
-        for (const int day : {2, 4, 9}) {
-            append_script_glyphs(glyphs, daily_script(location, day));
-        }
-        append_script_glyphs(glyphs, incident_script(location, 8, "晴天"));
+    for (const int day : {2, 4, 9}) {
+        append_script_glyphs(glyphs, daily_script(Location::tavern, day));
     }
+    append_script_glyphs(
+        glyphs, incident_script(Location::tavern, 8, "晴天"));
+    for (const int day : {2, 3, 4, 5, 6, 7, 9}) {
+        append_script_glyphs(glyphs, daily_script(Location::home, day));
+    }
+    append_script_glyphs(glyphs, incident_script(Location::home, 8, "晴天"));
     append_script_glyphs(glyphs, incident_script(Location::home, 5, "小雨"));
     return glyphs;
 }

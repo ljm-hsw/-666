@@ -132,7 +132,7 @@ const char* scene_interaction_prompt(Location location,
 
 std::string scene_navigation_prompt(const SceneNavigationPresentation& view) {
     if (!view.nearby_interaction.has_value()) {
-        return "WASD / 方向键移动，靠近目标后按 E / Space 互动";
+        return "WASD / 方向键移动 · E / Space 互动";
     }
     return scene_interaction_prompt(view.location, *view.nearby_interaction);
 }
@@ -194,7 +194,7 @@ constexpr std::array ui_texts{
     "今晚要休息吗？",
     "确认休息",
     "F3 显示或隐藏碰撞箱",
-    "WASD / 方向键移动，靠近目标后按 E / Space 互动",
+    "WASD / 方向键移动 · E / Space 互动",
     "E / Space：与餐馆老板交谈",
     "E / Space：与便利店店主交谈",
     "E / Space：与图书馆管理员交谈",
@@ -209,7 +209,8 @@ constexpr std::array ui_texts{
     "餐馆老板",
     "便利店店主",
     "图书馆管理员（预留）",
-    "访客互动位（预留）",
+    "夜间访客",
+    "今晚的访客来敲门了。",
     "进入餐馆工作",
     "开始经营",
     "开始图书馆工作",
@@ -1404,6 +1405,7 @@ const char* game_flow_glyphs() {
         result += tavern_ui_glyphs();
         result += StoryDialogueCatalog{}.glyphs();
         result += LocationStoryCatalog{}.glyphs();
+        result += scene_navigation_glyphs();
         return result;
     }();
     return glyphs.c_str();
@@ -1622,7 +1624,7 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
         if (activated(home_preview_rest_button(), logical_mouse, KEY_ENTER) ||
             IsKeyPressed(KEY_SPACE)) {
             if (state.locations.story_lifecycle.open_home_rest(state.session)) {
-                state.notice = "休息前，主角想和自己说几句话。";
+                state.notice = "今晚的访客来敲门了。";
             } else {
                 state.notice = "回家独白暂时不可用。";
             }
@@ -1810,8 +1812,20 @@ void draw_game_flow(const Font& font, const Texture2D& title_background,
                      audio_enabled, logical_mouse);
         }
         if (lifecycle.dialogue.has_value()) {
-            draw_npc_dialogue(font, *lifecycle.dialogue, logical_mouse, nullptr,
-                              NpcSpriteKind::salesclerk,
+            const Texture2D* visitor_texture = nullptr;
+            NpcSpriteKind visitor_kind = NpcSpriteKind::salesclerk;
+            if (lifecycle.dialogue->speaker == "餐馆老板") {
+                visitor_texture = &scene_assets.restaurant_npc;
+                visitor_kind = NpcSpriteKind::restaurant_chef;
+            } else if (lifecycle.dialogue->speaker == "便利店店主") {
+                visitor_texture = &scene_assets.convenience_store_npc;
+                visitor_kind = NpcSpriteKind::salesclerk;
+            } else if (lifecycle.dialogue->speaker == "管理员") {
+                visitor_texture = &scene_assets.library_npc;
+                visitor_kind = NpcSpriteKind::librarian;
+            }
+            draw_npc_dialogue(font, *lifecycle.dialogue, logical_mouse,
+                              visitor_texture, visitor_kind,
                               &scene_assets.protagonist, &scene_assets.mayor);
         }
         if (paused) {

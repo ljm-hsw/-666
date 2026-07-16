@@ -1,3 +1,4 @@
+// 地点剧情选择器：根据地点、日期、天气和访问次数选择只读对话脚本。
 #pragma once
 
 #include <string>

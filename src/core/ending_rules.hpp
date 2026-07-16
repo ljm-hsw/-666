@@ -1,3 +1,4 @@
+// 纯规则结局模块：读取最终状态和库存，返回唯一主结局及可解释依据。
 #pragma once
 
 #include <string>

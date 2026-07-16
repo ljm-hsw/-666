@@ -1,3 +1,4 @@
+// 日程、行动结果和结局的静态文案；与 raylib 和存档格式解耦。
 #include "core/story_text.hpp"
 
 #include <algorithm>

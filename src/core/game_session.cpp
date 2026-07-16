@@ -1,3 +1,4 @@
+// GameSession 的状态转移、结果幂等校验、每日结算与最终结局收口。
 #include "core/game_session.hpp"
 
 #include <algorithm>

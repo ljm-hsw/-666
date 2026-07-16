@@ -1,3 +1,4 @@
+// 规则结果到可展示叙事文本的纯函数接口；UI 不直接持有剧情分支。
 #pragma once
 
 #include <string>
