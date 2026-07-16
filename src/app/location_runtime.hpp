@@ -1,3 +1,9 @@
+// 地点应用适配层。
+//
+// 这一层持有短生命周期的地点 Runtime 和 UI 临时状态：例如餐馆计时器、
+// 便利店进货方案、图书馆模式和场景导航位置。它可以依赖 raylib，但不能把
+// 这些展示状态写入 GameSessionSnapshot。地点规则返回领域结果后，必须通过
+// LocationResultAdapter 或对应 Runtime 交给 GameSession::apply_action_result。
 #pragma once
 
 #include <array>

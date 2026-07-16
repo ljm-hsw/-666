@@ -1,3 +1,4 @@
+// 把剧情脚本接入日程边界；剧情结束后才允许继续地点或休息流程。
 #include "app/story_lifecycle_runtime.hpp"
 
 namespace pixel_town {

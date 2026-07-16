@@ -1,3 +1,4 @@
+// 图书馆 raylib UI 绘制接口：只读取 presentation 和输入状态。
 #pragma once
 
 #include <string>

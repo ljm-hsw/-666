@@ -1,3 +1,4 @@
+// 五子棋纯规则状态机：棋盘、合法落子、胜负和电脑决策均可无窗口测试。
 #pragma once
 
 #include <array>
@@ -49,4 +50,3 @@ private:
 };
 
 }  // namespace pixel_town
-

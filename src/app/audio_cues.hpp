@@ -1,3 +1,4 @@
+// 从只读 GameAppState 派生音频场景，不修改会话或地点 Runtime。
 #pragma once
 
 #include <optional>

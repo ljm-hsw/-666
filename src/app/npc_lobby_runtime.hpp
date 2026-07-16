@@ -1,3 +1,4 @@
+// 餐馆/便利店/NPC 大厅通用 Runtime：先完成 NPC 对话，再请求地点活动。
 #pragma once
 
 #include <optional>

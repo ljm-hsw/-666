@@ -1,3 +1,4 @@
+// 根据 AudioCueTracker 的场景提示加载、切换和更新背景音乐/音效。
 #include "app/audio_runtime.hpp"
 
 #include <array>

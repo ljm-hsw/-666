@@ -1,3 +1,4 @@
+// 确定性书籍整理任务；最后一本正确归位时返回 completed 结果。
 #include "locations/library_organizing.hpp"
 
 #include <algorithm>

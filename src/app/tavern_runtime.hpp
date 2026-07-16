@@ -1,3 +1,9 @@
+// 酒馆玩法 Runtime。
+//
+// 生命周期为 lobby → challenge_select → gomoku/liars_dice → settlement。
+// Runtime 负责输入、动画和局内状态，规则引擎负责对局合法性，Settlement
+// 负责把真实终局转换成一个 ActionResult。候选结果可以缓存，但只有
+// GameSession 接受后才关闭地点会话，确保拒绝/重试不会重复扣款或记战绩。
 #pragma once
 
 #include <array>

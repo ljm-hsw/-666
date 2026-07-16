@@ -1,3 +1,4 @@
+// 用户级轻量设置接口；当前主要保存静音偏好，与游戏存档分离。
 #pragma once
 
 #include <filesystem>

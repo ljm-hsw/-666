@@ -265,6 +265,7 @@ ActionResult GameSession::home_rest_result() {
 }
 
 ApplyResult GameSession::apply_action_result(const ActionResult& result) {
+    // 所有地点结果必须在这里收口：先校验会话身份和地点专属字段，再一次性写入全局状态。
     if (result.result_id == 0 || result.result_id != active_result_id_) {
         return {false, "行动结果不属于当前地点会话。"};
     }
@@ -300,6 +301,7 @@ ApplyResult GameSession::apply_action_result(const ActionResult& result) {
     }
 
     if (phase_ == GamePhase::day_location) {
+        // 白天结果应用后立即切换到夜晚选择；地点 Runtime 不负责推进阶段。
         if (result.slot != ActionSlot::day || day_action_done_) {
             return {false, "当前不能应用白天行动结果。"};
         }
@@ -321,6 +323,7 @@ ApplyResult GameSession::apply_action_result(const ActionResult& result) {
     }
 
     if (phase_ == GamePhase::night_location) {
+        // 夜晚结果应用后进入每日总结，下一次推进由 finish_day_summary() 处理。
         if (result.slot != ActionSlot::night || night_action_done_) {
             return {false, "当前不能应用夜晚行动结果。"};
         }

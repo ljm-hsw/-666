@@ -1,3 +1,4 @@
+// 剧情生命周期 Runtime：处理开场、地点剧情和回家剧情的打开/推进/结束。
 #pragma once
 
 #include <optional>

@@ -1,3 +1,8 @@
+// 便利店规则。
+//
+// 调用顺序是 validate plan → simulate_sales → build_store_action_result。
+// 规则只使用显式现金、跨日库存、天气/事件和确定性种子；它不直接修改
+// GameSession，库存更新必须随 ActionResult 一起交给核心会话校验。
 #pragma once
 
 #include <map>

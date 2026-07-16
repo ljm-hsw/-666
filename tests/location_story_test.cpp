@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 
+// 地点剧情选择契约：日期、天气、访问次数和地点决定脚本内容。
 #include "core/location_story.hpp"
 
 TEST_CASE("unvisited location always selects its tutorial before daily events") {

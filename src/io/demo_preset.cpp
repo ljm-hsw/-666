@@ -1,3 +1,4 @@
+// 解析 --demo-preset 并从 assets/data 恢复预置会话。
 #include "io/demo_preset.hpp"
 
 #include <string_view>

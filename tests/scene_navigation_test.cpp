@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+// 导航契约：确定性移动、碰撞滑动、出口/NPC 邻近互动和冻结行为。
 #include "core/scene_navigation.hpp"
 
 namespace {

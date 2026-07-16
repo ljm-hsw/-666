@@ -1,3 +1,4 @@
+// 结果适配边界：把地点专属结果映射成核心 GameSession 能接受的 ActionResult。
 #pragma once
 
 #include "core/game_session.hpp"

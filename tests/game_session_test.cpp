@@ -3,6 +3,7 @@
 #include <utility>
 #include <vector>
 
+// 核心状态机契约：阶段转移、结果幂等性、库存/战绩边界和结局入口。
 #include "core/game_session.hpp"
 #include "test_game_session_helpers.hpp"
 

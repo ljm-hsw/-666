@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 
+// 剧情生命周期契约：剧情只阻塞/释放流程，不直接修改规则状态。
 #include "app/story_lifecycle_runtime.hpp"
 
 namespace {

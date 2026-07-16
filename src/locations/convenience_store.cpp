@@ -1,3 +1,4 @@
+// 便利店需求、销售和库存结果计算；全局现金由 GameSession 统一应用。
 #include "locations/convenience_store.hpp"
 
 #include <algorithm>

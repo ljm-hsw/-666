@@ -2,6 +2,7 @@
 
 #include <array>
 
+// 场景布局契约：可行走边界、家具碰撞体和出口不被封堵。
 #include "core/scene_collision.hpp"
 
 TEST_CASE("indoor navigation layouts are valid and have free player spawns") {

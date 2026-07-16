@@ -1,3 +1,8 @@
+// 应用流程协调器。
+//
+// GameAppState 是页面层的组合状态，GameSession 是其中唯一的持久游戏状态。
+// update_game_flow 负责输入路由和页面切换，draw_game_flow 只读取状态绘制；
+// 两者都不应重新实现餐馆、便利店、图书馆或酒馆的领域规则。
 #pragma once
 
 #include <memory>

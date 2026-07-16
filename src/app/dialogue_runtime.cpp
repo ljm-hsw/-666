@@ -1,3 +1,4 @@
+// 线性对话游标和输入消费；对话 active 时阻止同帧其他游戏更新。
 #include "app/dialogue_runtime.hpp"
 
 namespace pixel_town {

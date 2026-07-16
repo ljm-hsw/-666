@@ -1,3 +1,8 @@
+// 图书馆读者咨询规则。
+//
+// LibraryRuleEngine 持有一次咨询的只读数据和局内统计，负责需求/类别匹配、
+// 正误计数和完成条件。它输出 LibraryWorkResult，由 LibraryRuntime 统一转成
+// 核心 ActionResult；题库内容来自 LibraryData，不由 UI 硬编码。
 #pragma once
 
 #include <cstdint>

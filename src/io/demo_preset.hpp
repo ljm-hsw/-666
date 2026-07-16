@@ -1,3 +1,4 @@
+// 只读演示预设入口：用于诊断和截图，不读取或覆盖正式自动存档。
 #pragma once
 
 #include <filesystem>

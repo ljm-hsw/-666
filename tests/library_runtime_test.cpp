@@ -2,6 +2,7 @@
 
 #include <doctest/doctest.h>
 
+// 图书馆 Runtime 契约：模式互斥、语义 intent、完成结算和主动放弃。
 #include "app/library_runtime.hpp"
 #include "locations/library_data.hpp"
 

@@ -1,3 +1,4 @@
+// 图书馆 NPC 展示数据和固定位置管理；不提供 NPC 行为模拟。
 #pragma once
 
 #include <string>

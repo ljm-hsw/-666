@@ -1,3 +1,4 @@
+// 从五子棋/骰子终局推导胜负和赌注结果，不负责开始挑战或修改会话。
 #include "locations/tavern_challenge_settlement.hpp"
 
 #include <cmath>

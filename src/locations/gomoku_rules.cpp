@@ -1,3 +1,4 @@
+// 五子棋局内规则；不处理赌注、金钱或酒馆页面。
 #include "locations/gomoku_rules.hpp"
 
 namespace pixel_town {
@@ -190,4 +191,3 @@ bool GomokuGame::computer_play() {
 }
 
 }  // namespace pixel_town
-

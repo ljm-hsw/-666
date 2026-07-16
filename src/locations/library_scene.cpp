@@ -1,3 +1,4 @@
+// 图书馆室内静态布局和可视元素初始化。
 #include "locations/library_scene.hpp"
 
 namespace pixel_town::library {

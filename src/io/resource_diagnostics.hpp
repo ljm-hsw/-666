@@ -1,3 +1,4 @@
+// 启动前资源契约检查：把缺失/损坏资源转换成可展示和可记录的报告。
 #pragma once
 
 #include <filesystem>

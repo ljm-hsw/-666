@@ -1,3 +1,4 @@
+// 图书馆场景几何和绘制数据；属于 raylib 展示侧，不承载图书馆规则。
 #pragma once
 
 #include <string>

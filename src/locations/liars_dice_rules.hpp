@@ -1,3 +1,4 @@
+// 骗子骰子纯规则状态机：隐藏骰子、叫点、质疑和淘汰。
 #pragma once
 
 #include <array>

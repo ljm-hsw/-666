@@ -7,6 +7,7 @@
 #include <string>
 
 #include "core/game_session.hpp"
+// 存档契约：版本化快照、损坏/缺字段处理、迁移和原子写入。
 #include "io/save_game.hpp"
 #include "locations/convenience_store.hpp"
 #include "test_game_session_helpers.hpp"

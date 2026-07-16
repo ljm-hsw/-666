@@ -1,3 +1,4 @@
+// 启动诊断日志接口：记录版本、启动阶段、资源报告和演示参数摘要。
 #pragma once
 
 #include <filesystem>

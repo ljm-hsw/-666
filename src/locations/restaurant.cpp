@@ -1,3 +1,4 @@
+// 餐馆规则引擎；不依赖 raylib，不直接修改 GameSession。
 #include "locations/restaurant.hpp"
 
 #include <string>

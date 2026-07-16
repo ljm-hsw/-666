@@ -1,3 +1,4 @@
+// 保持地点规则与核心会话模型解耦；这里只做字段映射，不做额外结算。
 #include "app/location_result_adapter.hpp"
 
 namespace pixel_town {
@@ -5,6 +6,7 @@ namespace pixel_town {
 ActionResult library_action_result(const library::LibraryWorkResult& result,
                                    int result_id,
                                    ActionSlot slot) {
+    // 窄适配器只复制地点结果，不重新计算奖励或修改会话。
     ActionResult game_result;
     game_result.result_id = result_id;
     game_result.slot = slot;

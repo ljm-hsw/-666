@@ -1,3 +1,4 @@
+// 资源清单校验；失败时阻止进入不完整运行态，但不修改游戏规则状态。
 #include "io/resource_diagnostics.hpp"
 
 #include <cctype>

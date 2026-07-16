@@ -1,3 +1,4 @@
+// 骗子骰子局内规则；随机种子由调用者传入，保证可复现。
 #include "locations/liars_dice_rules.hpp"
 
 namespace pixel_town {

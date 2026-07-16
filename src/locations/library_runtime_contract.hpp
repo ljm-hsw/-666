@@ -1,3 +1,4 @@
+// LibraryRuntime 的语义 intent/presentation 契约，隔离输入和规则内部状态。
 #pragma once
 
 #include <optional>

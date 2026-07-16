@@ -1,3 +1,4 @@
+// 图书馆内容仓库：题目、分类、书籍和任务数据，不包含展示流程。
 #pragma once
 
 #include <cstdint>

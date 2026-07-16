@@ -1,3 +1,4 @@
+// 图书馆室内展示 Runtime：负责管理员对话、导航和进入玩法选择的窄接口。
 #pragma once
 
 #include <optional>

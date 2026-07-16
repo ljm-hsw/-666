@@ -1,3 +1,4 @@
+// 通用线性对话 Runtime：只消费推进/跳过意图并返回只读 presentation。
 #pragma once
 
 #include <cstddef>

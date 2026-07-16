@@ -1,3 +1,4 @@
+// 酒馆输入到五子棋/骗子骰子规则的适配，以及终局 ActionResult 的提交。
 #include "app/tavern_runtime.hpp"
 
 #include <algorithm>
@@ -56,6 +57,7 @@ void TavernRuntime::reset() {
 }
 
 TavernOpenResult TavernRuntime::open(GameSession& session) {
+    // 酒馆入口先进入 night_location，但挑战尚未开始；剧情和大厅返回仍可放弃。
     if (active_) {
         return {TavernOpenStatus::already_active, "酒馆会话已经打开。"};
     }
@@ -82,6 +84,7 @@ TavernOpenResult TavernRuntime::open(GameSession& session) {
 
 TavernStepResult TavernRuntime::step(GameSession& session,
                                      const TavernFrameInput& input) {
+    // Runtime 只推进对局并缓存终局结果；全局属性和战绩仍由 Session 统一应用。
     if (!active_) {
         return step_result(TavernStepStatus::rejected, "酒馆会话尚未打开。");
     }
@@ -104,6 +107,7 @@ TavernStepResult TavernRuntime::step(GameSession& session,
 
     const TavernLayout layout = tavern_layout();
     if (screen_ == TavernScreen::lobby) {
+        // 大厅只负责 NPC 对话、返回和进入挑战选择，不直接产生收益。
         npc_animation_timer_ += elapsed;
         if (session.location_started()) {
             if (clicked(layout.back_button, input) || input.escape_pressed) {

@@ -1,3 +1,4 @@
+// 版本化行式存档、解析/迁移和原子替换写入实现。
 #include "io/save_game.hpp"
 
 #include <cstdio>
@@ -410,11 +411,13 @@ std::filesystem::path default_save_path(const std::filesystem::path& application
 }
 
 bool has_save(const std::filesystem::path& path) {
+    // 这里只判断文件存在；内容有效性由 load_session 的版本和字段解析负责。
     return std::filesystem::is_regular_file(path);
 }
 
 SaveResult save_session_atomic(const std::filesystem::path& path, const GameSession& session,
                                SaveOverwrite overwrite) {
+    // 先写临时文件再替换正式文件，避免中断留下半个可解析存档。
     std::error_code error;
     if (overwrite == SaveOverwrite::fail_if_exists && std::filesystem::exists(path, error)) {
         return {SaveStatus::already_exists, "save already exists; overwrite was not confirmed"};

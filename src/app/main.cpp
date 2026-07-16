@@ -1,3 +1,4 @@
+// 程序入口：初始化 raylib/资源/存档，并驱动唯一的单线程帧循环。
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -1265,6 +1266,7 @@ int main(int argc, char* argv[]) {
     std::size_t capture_index = 0;
     int capture_delay = 0;
     while (!WindowShouldClose()) {
+        // 每帧固定顺序：输入/状态更新 → 阶段边界存档 → 音频 → 离屏绘制 → 窗口呈现。
         if (!canvas_loaded) {
             BeginDrawing();
             draw_resource_error(resources, log_written);
@@ -1304,12 +1306,14 @@ int main(int argc, char* argv[]) {
 
         if (resources.can_start && log_written && !capture_game_flow && !capture_ui_diagnostics &&
             interaction_frame.game_updates_enabled) {
+            // 暂停、失焦或诊断截图时冻结游戏状态；绘制仍继续，保证窗口可响应。
             if (capture_prototype) {
                 pixel_town::update_visual_prototype(prototype, prototype_mouse);
             } else {
                 pixel_town::update_game_flow(game_flow, logical_mouse);
                 if (persistence_enabled && game_flow.has_session &&
                     is_save_boundary(game_flow.session)) {
+                    // 只在稳定阶段边界写存档，避免保存半个地点会话。
                     const auto current_snapshot = game_flow.session.snapshot();
                     if (!has_persisted_snapshot || persisted_snapshot != current_snapshot) {
                         const auto save_result =

@@ -1,3 +1,4 @@
+// 图书整理 UI 的几何和绘制辅助；交互语义由 LibraryRuntime 提供。
 #pragma once
 
 #include <array>

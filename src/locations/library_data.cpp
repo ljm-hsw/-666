@@ -1,3 +1,4 @@
+// 从数据文件加载并校验图书馆内容；规则层只消费已验证的数据。
 #include "locations/library_data.hpp"
 
 #include <algorithm>

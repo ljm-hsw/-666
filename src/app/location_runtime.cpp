@@ -1,3 +1,4 @@
+// 餐馆、便利店和图书馆入口的共享调度；不拥有全局状态，只调用 GameSession。
 #include "app/location_runtime.hpp"
 
 #include <algorithm>
@@ -67,6 +68,7 @@ store::DailyStoreContext make_store_context(const GameSession& session) {
 
 }  // namespace
 
+// ---- 页面几何：只返回逻辑画布坐标，不包含点击后的业务行为 ----
 Rectangle location_back_button(bool is_tavern) {
     return Rectangle{126, is_tavern ? 252.0F : 228.0F, 112, 34};
 }
@@ -169,6 +171,7 @@ std::optional<StorePlanAction> store_plan_action_at(Vector2 logical_mouse,
     return std::nullopt;
 }
 
+// ---- 地点 Runtime 初始化：建立临时对象，尚未消耗 GameSession 行动 ----
 void prepare_restaurant_runtime(LocationRuntimeState& runtime, unsigned int seed) {
     runtime.restaurant = std::make_unique<RestaurantSession>(seed);
     runtime.restaurant_timer = 0.0F;
@@ -350,6 +353,9 @@ void update_store_selection(LocationRuntimeState& runtime, const GameSession& se
     }
 }
 
+// ---- 统一启动/推进/结束边界 ----
+// start_pending_location 分配 active_result_id；update_started_location 最终把
+// 规则结果提交给 Session。返回地图只关闭临时 Runtime，不应改变白天/夜晚标志。
 bool start_pending_location(GameSession& session, LocationRuntimeState& runtime,
                             std::string& notice) {
     if (session.pending_location() == Location::library) {

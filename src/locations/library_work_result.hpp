@@ -1,3 +1,4 @@
+// 图书馆两种玩法共享的领域结果，之后由 app Adapter 转为 ActionResult。
 #pragma once
 
 #include <string>

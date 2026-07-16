@@ -1,4 +1,8 @@
-// raylib-free 主角导航 Runtime：消费显式移动/互动意图，返回只读展示状态。
+// raylib-free 主角导航 Runtime。
+//
+// 输入被限定为显式轴向移动和互动意图；Runtime 使用场景布局进行速度、斜向
+// 归一化、轴分离碰撞、出口和 NPC 邻近检测，最终只返回 presentation。它不拥有
+// 地点规则、NPC 对话正文、玩家属性或存档状态，因此可以被 app 层和无窗口测试复用。
 #pragma once
 
 #include <optional>

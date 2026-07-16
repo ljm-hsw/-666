@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include "app/tavern_layout.hpp"
+// 应用适配契约：地点输入如何启动、放弃并提交到 GameSession。
 #include "app/location_runtime.hpp"
 #include "app/ui_primitives.hpp"
 #include "ui/scene_viewport.hpp"

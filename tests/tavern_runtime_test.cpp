@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+// 酒馆 Runtime 契约：大厅/挑战流程、真实终局和一次性结算。
 #include "app/tavern_runtime.hpp"
 #include "app/tavern_layout.hpp"
 #include "test_game_session_helpers.hpp"

@@ -1,3 +1,4 @@
+// 全局页面路由和每帧输入分发；地点规则应留在 Runtime/locations 层。
 #include "app/game_flow.hpp"
 
 #include "app/tavern_view.hpp"
@@ -1412,6 +1413,7 @@ const char* game_flow_glyphs() {
 }
 
 void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
+    // 这里是应用层路由，不是规则层：先消费互斥的剧情/室内 Runtime，再处理地点和阶段。
     if (!state.has_session) {
         const Rectangle continue_button = title_continue_button();
         const Rectangle start_button = title_new_game_button(state.resume_available);
@@ -1464,6 +1466,7 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
     }
 
     if (state.locations.story_lifecycle.active()) {
+        // 对话 active 时整帧提前返回，避免同一输入同时移动、互动或提交行动。
         DialogueFrameInput input;
         input.advance_pressed =
             IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE) ||
@@ -1639,6 +1642,7 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
 
     if (state.session.phase() == GamePhase::day_choice ||
         state.session.phase() == GamePhase::night_choice) {
+        // 选择阶段只负责进入地点；真正消耗行动要等地点 Runtime 提交结果。
         const auto bounds = location_bounds();
         for (std::size_t index = 0; index < map_locations.size(); ++index) {
             if (!clicked(bounds[index], logical_mouse)) {

@@ -1,3 +1,4 @@
+// 图书馆咨询/整理界面绘制；不推断完成条件，不修改规则状态。
 #include "locations/library_ui.hpp"
 
 #include "locations/library_scene.hpp"

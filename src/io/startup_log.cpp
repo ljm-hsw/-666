@@ -1,3 +1,4 @@
+// 将启动结果落到 logs/latest.log，供资源错误和运行环境诊断使用。
 #include "io/startup_log.hpp"
 
 #include <fstream>

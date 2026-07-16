@@ -1,3 +1,4 @@
+// 图书馆 NPC 的只读展示状态和位置管理。
 #include "locations/library_npc.hpp"
 
 #include <algorithm>

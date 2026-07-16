@@ -1,3 +1,4 @@
+// 静音设置的跨平台读取和原子写入；失败不影响游戏会话本身。
 #include "io/app_settings.hpp"
 
 #include <cstdio>

@@ -1,3 +1,4 @@
+// 读者咨询规则实现；不绘制界面、不选择剧情、不直接写入会话。
 #include "locations/library_rules.hpp"
 
 #include <algorithm>

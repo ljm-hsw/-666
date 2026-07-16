@@ -1,3 +1,9 @@
+// 图书馆玩法 Runtime。
+//
+// open 阶段只建立一次白天地点会话；selection 阶段选择 reader_consultation
+// 或 book_organizing，之后所有操作都通过 LibraryIntent 进入对应无窗口规则。
+// 两种模式共享 settle()，因此完成和主动放弃都遵循同一套结果 ID、奖励和阶段
+// 校验，不由 UI 推断“最后一本书”或“咨询已完成”。
 #pragma once
 
 #include <memory>

@@ -1,3 +1,4 @@
+// raylib 音频资源生命周期和播放调度；音频不参与游戏规则和存档状态。
 #pragma once
 
 #include <array>

@@ -1,3 +1,4 @@
+// 图书馆模式生命周期和结算顺序；规则本身由 locations::library 模块提供。
 #include "app/library_runtime.hpp"
 
 #include <utility>
@@ -14,6 +15,7 @@ LibraryStepResult step_result(LibraryStepStatus status, std::string notice) {
 }  // namespace
 
 void LibraryRuntime::close() {
+    // close 只清理地点临时对象；核心阶段和玩家状态已经在 settle() 中完成收口。
     active_ = false;
     mode_ = LibraryRuntimeMode::selection;
     reader_.reset();
@@ -23,6 +25,7 @@ void LibraryRuntime::close() {
 
 LibraryStepResult LibraryRuntime::settle(
     GameSession& session, const library::LibraryWorkResult& work_result) {
+    // 两种图书馆模式共享同一结算口；Adapter 做字段映射，Session 决定最终接受/拒绝。
     const auto applied = session.apply_action_result(
         library_action_result(work_result, active_result_id_, ActionSlot::day));
     feedback_ = applied.accepted ? work_result.summary : applied.message;
@@ -35,6 +38,7 @@ LibraryStepResult LibraryRuntime::settle(
 
 LibraryOpenResult LibraryRuntime::open(GameSession& session,
                                        const library::LibraryData& data) {
+    // 先校验 Session 的地点阶段，再分配结果 ID；数据加载成功不等于行动已开始。
     if (active_) {
         return {LibraryOpenStatus::already_active, "图书馆会话已经打开。"};
     }
@@ -61,6 +65,7 @@ LibraryOpenResult LibraryRuntime::open(GameSession& session,
 
 LibraryStepResult LibraryRuntime::step(GameSession& session,
                                        const LibraryIntent& intent) {
+    // 每个 intent 只推进一个逻辑动作；完成/放弃最终都经过同一个 settle()。
     if (!active_) {
         return step_result(LibraryStepStatus::rejected, "图书馆会话尚未打开。");
     }

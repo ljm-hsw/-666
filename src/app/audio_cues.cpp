@@ -1,3 +1,4 @@
+// 音频场景状态与去重提示计算；将游戏状态变化转换为播放意图。
 #include "app/audio_cues.hpp"
 
 namespace pixel_town {

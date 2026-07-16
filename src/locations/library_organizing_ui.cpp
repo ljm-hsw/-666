@@ -1,3 +1,4 @@
+// 将整理 presentation 绘制成书本、书架和手中书槽，不包含整理规则。
 #include "locations/library_organizing_ui.hpp"
 
 #include <algorithm>

@@ -1,4 +1,9 @@
-// 核心会话状态机：拥有全局状态，并是 ActionResult 的唯一应用入口。
+// 核心会话状态机。
+//
+// GameSession 是应用层和地点规则之间的状态边界：地点模块只能生成
+// ActionResult，不能直接修改玩家属性、日期、库存或酒馆战绩。应用层通过
+// enter/start/apply/finish 这组窄接口推进流程，存档层只读取这里生成的快照。
+// 该类型不依赖 raylib，因此可以在无窗口测试中验证完整的十日阶段闭环。
 #pragma once
 
 #include <string>
@@ -84,6 +89,8 @@ struct StoreInventoryItem {
 }
 
 struct ActionResult {
+    // 地点一次完整行动的不可变提交单元。result_id 必须等于当前地点会话的
+    // active_result_id；GameSession 用它阻止重复应用和跨地点提交。
     int result_id{0};
     ActionSlot slot{ActionSlot::day};
     Location location{Location::restaurant};
@@ -107,6 +114,8 @@ struct ApplyResult {
 };
 
 struct GameSessionSnapshot {
+    // 持久化边界。这里保存“阶段边界事实”，不保存 raylib 资源、按钮状态、
+    // NPC 动画计时或地点 Runtime 的临时对象；恢复后由应用层重新打开展示 Runtime。
     int day{1};
     unsigned int seed{20260707};
     int next_result_id{1};
@@ -163,13 +172,19 @@ public:
         return store_inventory_;
     }
 
+    // 入口检查只回答“当前阶段能否进入”，不产生副作用。
     [[nodiscard]] ActionPermission can_enter(Location location) const;
+    // enter_location 只建立待处理地点；返回地图不会消耗行动。
     [[nodiscard]] bool enter_location(Location location);
     [[nodiscard]] bool return_to_map();
+    // start_location 分配唯一结果 ID，标志地点从准备页进入实际行动。
     [[nodiscard]] int start_location();
     [[nodiscard]] ActionResult abandon_current_location() const;
     [[nodiscard]] ActionResult home_rest_result();
+    // 唯一的全局写入口：校验结果身份、阶段、地点专属字段后，应用属性变化并
+    // 清理 pending location。地点 Runtime 不应绕过此函数直接写玩家状态。
     [[nodiscard]] ApplyResult apply_action_result(const ActionResult& result);
+    // 每日总结完成后进入下一日；第十日则调用结局模块并转入 ending。
     [[nodiscard]] bool finish_day_summary();
     [[nodiscard]] bool finish_day_summary(const EndingConfig& config);
     [[nodiscard]] GameSessionSnapshot snapshot() const;
