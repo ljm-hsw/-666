@@ -38,6 +38,19 @@ TEST_CASE("returning location selects its day ten finale before familiar dialogu
     CHECK(selection.script.lines.front().speaker == "管理员");
 }
 
+TEST_CASE("showcase story context treats day five as the final day") {
+    const pixel_town::LocationStoryContext context{
+        pixel_town::Location::home, 5, "小雨", "小镇节奏平稳", 1,
+        20260715U, 5};
+
+    const auto selection = pixel_town::LocationStoryCatalog{}.select(context);
+
+    CHECK(selection.kind == pixel_town::LocationStoryEventKind::finale);
+    CHECK(selection.id == "home_day_5_finale");
+    REQUIRE(selection.script.lines.size() >= 2);
+    CHECK(selection.script.lines.front().speaker == "镇长");
+}
+
 TEST_CASE("returning location selects a deterministic daily event") {
     pixel_town::LocationStoryContext context;
     context.location = pixel_town::Location::restaurant;

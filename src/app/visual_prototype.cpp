@@ -4,6 +4,8 @@
 #include <array>
 #include <string>
 
+#include "core/game_config.hpp"
+
 namespace pixel_town {
 namespace {
 
@@ -18,7 +20,7 @@ constexpr Color shadow{39, 48, 53, 120};
 
 constexpr std::array<const char*, 4> location_names{"餐馆", "便利店", "图书馆", "酒馆"};
 constexpr std::array<const char*, 3> variant_names{"A 地图优先", "B 日程侧栏", "C 地点卡片"};
-constexpr const char* title_full = "像素小镇 · 十日经营计划";
+constexpr const char* title_full = game_plan_title();
 constexpr const char* status_phase = "第 3 天  白天";
 constexpr const char* status_values_primary = "金钱 128  体力 72  声望 18";
 constexpr const char* status_values_secondary = "知识 9  心情 64";

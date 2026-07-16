@@ -185,12 +185,14 @@ pixel_town::AudioSceneState audio_scene_state(const pixel_town::GameAppState& st
 void advance_to_ending(pixel_town::GameAppState& state) {
     state.has_session = true;
     state.session = pixel_town::GameSession::new_game();
-    for (int day = 1; day <= 10 && !state.session.is_ended(); ++day) {
+    for (int day = 1; day <= state.session.day_limit() &&
+                      !state.session.is_ended();
+         ++day) {
         if (!complete_day_with_rest(state.session, pixel_town::Location::restaurant)) {
             break;
         }
     }
-    state.notice = "十日计划完成。";
+    state.notice = pixel_town::game_plan_completion_title();
 }
 
 void setup_restaurant_diagnostic(pixel_town::GameAppState& state, bool started) {

@@ -64,6 +64,9 @@ const char* opening_story() {
 }
 
 const char* daily_prompt(int day) {
+    if (is_five_day_showcase_build() && day == configured_game_day_limit()) {
+        return daily_prompts.back();
+    }
     if (day < 1 || day > static_cast<int>(daily_prompts.size())) {
         return daily_prompts.front();
     }
@@ -79,13 +82,21 @@ const char* location_result_summary(Location location, ActionOutcome outcome) {
 }
 
 const char* day_closing_summary(int day) {
+    if (is_five_day_showcase_build() && day == configured_game_day_limit()) {
+        return day_closings.back();
+    }
     if (day < 1 || day > static_cast<int>(day_closings.size())) {
         return day_closings.front();
     }
     return day_closings[static_cast<std::size_t>(day - 1)];
 }
 
-const char* council_opening() {
+const char* council_opening(int final_day) {
+    if (final_day == 5) {
+        return "第五天晚上，镇长把几张便签摊在桌上。\n"
+               "菜单、账本、借书卡和一副棋子被放在旁边。\n"
+               "“五天不长，”他说，“但也够大家记住一些事了。”";
+    }
     return "第十天晚上，镇长把几张便签摊在桌上。\n"
            "菜单、账本、借书卡和一副棋子被放在旁边。\n"
            "“十天不长，”他说，“但也够大家记住一些事了。”";
@@ -126,7 +137,8 @@ std::string story_text_glyphs() {
     glyphs += location_result_summary(Location::tavern, ActionOutcome::completed);
     glyphs += location_result_summary(Location::home, ActionOutcome::completed);
     glyphs += location_result_summary(Location::home, ActionOutcome::abandoned);
-    glyphs += council_opening();
+    glyphs += council_opening(5);
+    glyphs += council_opening(10);
     constexpr std::array endings{
         MainEnding::town_star,
         MainEnding::money_machine,

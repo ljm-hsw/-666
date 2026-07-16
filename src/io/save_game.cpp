@@ -398,7 +398,8 @@ bool is_valid_snapshot_combination(const GameSessionSnapshot& snapshot) {
             return !snapshot.has_pending_location && snapshot.day_action_done &&
                    snapshot.night_action_done;
         case GamePhase::ending:
-            return snapshot.day == 10 && !snapshot.has_pending_location &&
+            return snapshot.day == configured_game_day_limit() &&
+                   !snapshot.has_pending_location &&
                    !snapshot.main_ending.empty() && !snapshot.final_summary.empty();
     }
     return false;
@@ -528,7 +529,8 @@ LoadGameResult load_session(const std::filesystem::path& path) {
         !parse_store_inventory(store_inventory->second, snapshot.store_inventory)) {
         return {SaveStatus::corrupt, GameSession::new_game(), "save file has invalid values"};
     }
-    if (snapshot.day < 1 || snapshot.day > 10 || snapshot.next_result_id < 1 ||
+    if (snapshot.day < 1 || snapshot.day > configured_game_day_limit() ||
+        snapshot.next_result_id < 1 ||
         snapshot.active_result_id < 0 || snapshot.tavern_wins < 0 ||
         snapshot.tavern_losses < 0) {
         return {SaveStatus::corrupt, GameSession::new_game(), "save file has invalid values"};

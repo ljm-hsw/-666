@@ -40,17 +40,17 @@ DialogueScript finale_script(Location location) {
     const DialogueTrigger trigger = tutorial_trigger_for(location);
     switch (location) {
         case Location::restaurant:
-            return {trigger, {{"餐馆老板", "这张菜单我会带去晚上。十天里，总有几碗汤记得你的手。"}}};
+            return {trigger, {{"餐馆老板", "这张菜单我会带去晚上。这些天里，总有几碗汤记得你的手。"}}};
         case Location::convenience_store:
-            return {trigger, {{"便利店店主", "账本边角的勾都在。晚上聊十天时，这页也带上。"}}};
+            return {trigger, {{"便利店店主", "账本边角的勾都在。晚上聊这些天时，这页也带上。"}}};
         case Location::library:
-            return {trigger, {{"管理员", "我挑了几张借书卡。晚上大家会看看，这十天留下些什么。"}}};
+            return {trigger, {{"管理员", "我挑了几张借书卡。晚上大家会看看，这些天留下些什么。"}}};
         case Location::tavern:
             return {trigger, {{"酒保", "棋子和骰盅都收好了。今晚先听镇长说几句。"}}};
         case Location::home:
             return {trigger,
-                    {{"镇长", "十天走到今晚，我来看看你，也把大家记下的话带来了。"},
-                     {"主角", "谢谢。等今晚休息好，我会认真整理这十天的答案。"}}};
+                    {{"镇长", "计划走到今晚，我来看看你，也把大家记下的话带来了。"},
+                     {"主角", "谢谢。等今晚休息好，我会认真整理这些天的答案。"}}};
     }
     return {trigger, {}};
 }
@@ -278,7 +278,8 @@ LocationStoryContext location_story_context(const GameSession& session,
             day_context.event,
             completed_visits,
             session.location_seed(location,
-                                  static_cast<unsigned int>(completed_visits))};
+                                  static_cast<unsigned int>(completed_visits)),
+            session.day_limit()};
 }
 
 LocationStorySelection LocationStoryCatalog::select(
@@ -293,9 +294,10 @@ LocationStorySelection LocationStoryCatalog::select(
     if (context.completed_visits <= 0 && script != nullptr) {
         return {LocationStoryEventKind::tutorial, prefix + "_tutorial", *script};
     }
-    if (context.day == 10) {
+    if (context.day == context.final_day) {
         return {LocationStoryEventKind::finale,
-                prefix + "_day_10_finale",
+                prefix + "_day_" + std::to_string(context.final_day) +
+                    "_finale",
                 finale_script(context.location)};
     }
     if (context.location == Location::home) {

@@ -1,6 +1,8 @@
 // 固定对话脚本目录；不读取输入、不绘制窗口、不改变游戏状态。
 #include "core/story_dialogue.hpp"
 
+#include "core/game_config.hpp"
+
 namespace pixel_town {
 namespace {
 
@@ -44,7 +46,9 @@ const DialogueScript mayor_new_game_intro{
     DialogueTrigger::mayor_new_game_intro,
     {
         {"镇长", "欢迎来到像素小镇。这把钥匙和地图先交给你。"},
-        {"主角", "谢谢。我会在这里住十天，看看自己能过出怎样的日子。"},
+        {"主角", is_five_day_showcase_build()
+                       ? "谢谢。我会用这五天熟悉小镇，也看看自己能过出怎样的日子。"
+                       : "谢谢。我会在这里住十天，看看自己能过出怎样的日子。"},
         {"镇长", "不用急着证明什么。白天做事，晚上也记得照顾自己。"},
         {"主角", "好，我从今天开始，一天一天来。"},
     },

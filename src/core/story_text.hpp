@@ -13,7 +13,8 @@ enum class MainEnding;
 [[nodiscard]] const char* daily_prompt(int day);
 [[nodiscard]] const char* location_result_summary(Location location, ActionOutcome outcome);
 [[nodiscard]] const char* day_closing_summary(int day);
-[[nodiscard]] const char* council_opening();
+[[nodiscard]] const char* council_opening(
+    int final_day = configured_game_day_limit());
 [[nodiscard]] const char* ending_narrative(MainEnding ending);
 [[nodiscard]] std::string story_text_glyphs();
 

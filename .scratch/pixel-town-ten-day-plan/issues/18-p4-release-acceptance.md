@@ -37,3 +37,5 @@ User stories: 51, 52, 57, 60, 64-70, 75
 ## Comments
 
 <!-- 在此行下方追加发布验收记录。 -->
+
+- 2026-07-16：新增独立五日展示构建入口 `-DPIXEL_TOWN_DAY_LIMIT=5`。macOS Release 已生成 `build-five-day/pixel_town_five_day`；第五个完整昼夜后复用既有库存清算和正式结局。默认值仍为十日，展示版使用独立构建目录、输出名和便携存档目录。Windows 命令已文档化，目标 Windows 实机仍属于本 issue 的人工门禁。

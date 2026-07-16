@@ -132,9 +132,10 @@ bool operator==(const LocationVisitCounts& left, const LocationVisitCounts& righ
            left.library == right.library && left.tavern == right.tavern;
 }
 
-GameSession GameSession::new_game(unsigned int seed) {
+GameSession GameSession::new_game(unsigned int seed, int day_limit) {
     GameSession session;
     session.seed_ = seed;
+    session.day_limit_ = clamp_value(day_limit, 1, 10);
     return session;
 }
 
@@ -196,7 +197,7 @@ ActionPermission GameSession::can_enter(Location location) const {
     }
 
     if (phase_ == GamePhase::ending) {
-        return {false, "十日经营计划已经结束，不能继续选择地点。"};
+        return {false, "经营计划已经结束，不能继续选择地点。"};
     }
 
     return {false, "当前正在处理另一个阶段，不能选择新地点。"};
@@ -352,7 +353,7 @@ bool GameSession::finish_day_summary(const EndingConfig& config) {
     if (phase_ != GamePhase::day_summary) {
         return false;
     }
-    if (day_ < 10) {
+    if (day_ < day_limit_) {
         ++day_;
         day_action_done_ = false;
         night_action_done_ = false;
@@ -392,9 +393,11 @@ GameSessionSnapshot GameSession::snapshot() const {
                                location_visits_};
 }
 
-GameSession GameSession::from_snapshot(const GameSessionSnapshot& snapshot) {
+GameSession GameSession::from_snapshot(const GameSessionSnapshot& snapshot,
+                                       int day_limit) {
     GameSession session;
     session.day_ = snapshot.day;
+    session.day_limit_ = clamp_value(day_limit, 1, 10);
     session.seed_ = snapshot.seed;
     session.next_result_id_ = snapshot.next_result_id;
     session.active_result_id_ = snapshot.active_result_id;
@@ -465,7 +468,7 @@ bool GameSession::create_final_ending(const EndingConfig& config) {
     player_.money = clamp_value(player_.money + settlement.inventory_cash, 0, 999);
     store_inventory_.clear();
     main_ending_ = main_ending_label(settlement.ending);
-    final_summary_ = std::string{council_opening()} + "\n" +
+    final_summary_ = std::string{council_opening(day_limit_)} + "\n" +
                      ending_narrative(settlement.ending) + "\n库存清算 " +
                      std::to_string(settlement.inventory_cash) +
                      " 金币 · 成长路线：" + settlement.growth_route +

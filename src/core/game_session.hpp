@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "core/game_config.hpp"
+
 namespace pixel_town {
 
 struct EndingConfig;
@@ -149,9 +151,12 @@ struct GameSessionSnapshot {
 
 class GameSession {
 public:
-    [[nodiscard]] static GameSession new_game(unsigned int seed = 20260707);
+    [[nodiscard]] static GameSession new_game(
+        unsigned int seed = 20260707,
+        int day_limit = configured_game_day_limit());
 
     [[nodiscard]] int day() const noexcept { return day_; }
+    [[nodiscard]] int day_limit() const noexcept { return day_limit_; }
     [[nodiscard]] GamePhase phase() const noexcept { return phase_; }
     [[nodiscard]] const PlayerState& player() const noexcept { return player_; }
     [[nodiscard]] DayContext current_day_context() const;
@@ -184,16 +189,19 @@ public:
     // 唯一的全局写入口：校验结果身份、阶段、地点专属字段后，应用属性变化并
     // 清理 pending location。地点 Runtime 不应绕过此函数直接写玩家状态。
     [[nodiscard]] ApplyResult apply_action_result(const ActionResult& result);
-    // 每日总结完成后进入下一日；第十日则调用结局模块并转入 ending。
+    // 每日总结完成后进入下一日；配置的最终日调用结局模块并转入 ending。
     [[nodiscard]] bool finish_day_summary();
     [[nodiscard]] bool finish_day_summary(const EndingConfig& config);
     [[nodiscard]] GameSessionSnapshot snapshot() const;
-    [[nodiscard]] static GameSession from_snapshot(const GameSessionSnapshot& snapshot);
+    [[nodiscard]] static GameSession from_snapshot(
+        const GameSessionSnapshot& snapshot,
+        int day_limit = configured_game_day_limit());
 
 private:
     static constexpr Location none_{static_cast<Location>(-1)};
 
     int day_{1};
+    int day_limit_{configured_game_day_limit()};
     unsigned int seed_{20260707};
     int next_result_id_{1};
     int active_result_id_{0};

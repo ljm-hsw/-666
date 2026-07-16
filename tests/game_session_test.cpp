@@ -174,6 +174,23 @@ TEST_CASE("ten-day restaurant path ends with one formal money-route ending") {
     CHECK_FALSE(session.finish_day_summary());
 }
 
+TEST_CASE("five-day showcase session ends after the fifth complete day") {
+    auto session = pixel_town::GameSession::new_game(20260707, 5);
+
+    CHECK(session.day_limit() == 5);
+    for (int expected_day = 1; expected_day <= 5; ++expected_day) {
+        CHECK(session.day() == expected_day);
+        REQUIRE(session.phase() == pixel_town::GamePhase::day_choice);
+        complete_day_with_rest(session, pixel_town::Location::restaurant);
+    }
+
+    CHECK(session.day() == 5);
+    CHECK(session.phase() == pixel_town::GamePhase::ending);
+    CHECK(session.is_ended());
+    CHECK(session.final_summary().find("第五天晚上") != std::string::npos);
+    CHECK_FALSE(session.finish_day_summary());
+}
+
 TEST_CASE("day ten liquidates remaining inventory once before the ordinary ending") {
     pixel_town::PlayerState player;
     player.money = 50;

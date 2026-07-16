@@ -165,6 +165,7 @@ void apply_tavern_navigation_interaction(SceneInteractionKind interaction,
 constexpr std::array ui_texts{
     "像素小镇",
     "十日经营计划",
+    "五日展示版本",
     "新游戏",
     "继续游戏",
     "第 1 天",
@@ -175,6 +176,7 @@ constexpr std::array ui_texts{
     "夜晚地点",
     "每日总结",
     "最终结局",
+    "五日展示完成",
     "金钱",
     "体力",
     "声望",
@@ -212,6 +214,7 @@ constexpr std::array ui_texts{
     "图书馆管理员（预留）",
     "夜间访客",
     "今晚的访客来敲门了。",
+    "镇长正在介绍五日展示计划。",
     "进入餐馆工作",
     "开始经营",
     "开始图书馆工作",
@@ -446,7 +449,8 @@ void draw_title(const Font& font, const Texture2D& title_background, const GameA
     DrawRectangleLinesEx(scaled_rect(Rectangle{150, 54, 340, 112}), 3.0F,
                          Color{255, 224, 154, 230});
     text(font, "像素小镇", 210, 76, 36, RAYWHITE);
-    text(font, "十日经营计划", 220, 124, 22, Color{255, 224, 154, 255});
+    text(font, game_plan_subtitle(), 220, 124, 22,
+         Color{255, 224, 154, 255});
     if (state.resume_available && !state.confirm_new_game_overwrite) {
         const Rectangle continue_button = title_continue_button();
         panel(continue_button, hovered(continue_button, mouse) ? cream : green);
@@ -1291,8 +1295,9 @@ void draw_summary(const Font& font, const GameAppState& state, bool audio_enable
     text(font, "每日总结", 124, 116, 28, red);
     text_block(font, state.session.last_summary(), 124, 154, 14, 16, ink);
     text(font, day_closing_summary(state.session.day()), 124, 194, 14, Color{78, 78, 72, 255});
-    text(font, state.session.day() == 10 ? "确认后进入最终主结局。"
-                                         : "确认后进入下一游戏日。",
+    text(font, state.session.day() == state.session.day_limit()
+                   ? "确认后进入最终主结局。"
+                   : "确认后进入下一游戏日。",
          124, 214, 16, ink);
     const Rectangle next_button{242, 224, 156, 34};
     panel(next_button, hovered(next_button, mouse) ? paper : green);
@@ -1304,7 +1309,7 @@ void draw_ending(const Font& font, const GameAppState& state, bool audio_enabled
     draw_status(font, state.session, audio_enabled);
     panel(Rectangle{72, 82, 496, 276}, cream);
     const auto& player = state.session.player();
-    text(font, "十日计划完成", 118, 112, 28, red);
+    text(font, game_plan_completion_title(), 118, 112, 28, red);
     text(font, std::string{"主结局："} + state.session.main_ending(), 118, 154, 20, ink);
     text_block(font, state.session.final_summary(), 118, 188, 13, 15, ink);
     text(font, "最终状态", 118, 282, 18, Color{35, 83, 51, 255});
@@ -1453,7 +1458,7 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             state.confirm_new_game_overwrite = false;
             if (state.locations.story_lifecycle.open(
                     StoryLifecycleContext::new_game_opening)) {
-                state.notice = "镇长正在介绍十日计划。";
+                state.notice = game_plan_intro_notice();
             } else {
                 state.notice = "开场对话暂时不可用。";
             }

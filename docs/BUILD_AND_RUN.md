@@ -116,6 +116,16 @@ Release：
 
 ### 2.5 Windows 常用检查命令
 
+构建五日展示版（独立 Release 目录）：
+
+```powershell
+cmake -S . -B build-five-day -G "Visual Studio 17 2022" -A x64 -DPIXEL_TOWN_DAY_LIMIT=5 -DPIXEL_TOWN_BUILD_TESTS=OFF
+cmake --build build-five-day --target pixel_town --config Release --parallel
+.\build-five-day\Release\pixel_town_five_day.exe
+```
+
+该变体在第五个完整昼夜后进入库存清算与正式结局。输出名和构建目录均与十日版不同，因此便携存档位于 `build-five-day\Release\saves\`。完整回归套件仍由默认十日构建执行，五日边界另有核心单元测试；尚未在目标 Windows 机器完成实机验收。
+
 生成 P1 核心流程截图：
 
 ```powershell
@@ -206,6 +216,16 @@ ctest --test-dir build --output-on-failure
 应用默认打开 960×540 窗口，使用 960×540 逻辑画布。
 
 ### 3.5 macOS 常用检查命令
+
+构建五日展示版（已在 macOS Release 构建验证）：
+
+```bash
+cmake -S . -B build-five-day -DCMAKE_BUILD_TYPE=Release -DPIXEL_TOWN_DAY_LIMIT=5 -DPIXEL_TOWN_BUILD_TESTS=OFF
+cmake --build build-five-day --target pixel_town --parallel
+./build-five-day/pixel_town_five_day
+```
+
+该命令不会修改默认 `build/` 的十日版。五日版在第五个完整昼夜后进入同一套库存清算和正式结局，并把存档写入 `build-five-day/saves/`。完整回归套件仍由默认十日构建执行，五日边界另有核心单元测试。五日版不要加载为十日边界准备的 `ending-eve` 预设。
 
 生成 P1 核心流程截图：
 

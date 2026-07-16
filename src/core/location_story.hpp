@@ -27,6 +27,7 @@ struct LocationStoryContext {
     std::string day_event;
     int completed_visits{0};
     unsigned int seed{0};
+    int final_day{configured_game_day_limit()};
 };
 
 struct LocationStorySelection {

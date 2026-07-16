@@ -6,6 +6,16 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(PIXEL_TOWN_DAY_LIMIT "10" CACHE STRING
+    "Playable days before final settlement (10 for full game, 5 for showcase)")
+option(PIXEL_TOWN_BUILD_TESTS "Build the full ten-day regression suite" ON)
+if(NOT PIXEL_TOWN_DAY_LIMIT MATCHES "^[0-9]+$")
+  message(FATAL_ERROR "PIXEL_TOWN_DAY_LIMIT must be 5 or 10")
+endif()
+if(NOT PIXEL_TOWN_DAY_LIMIT EQUAL 5 AND NOT PIXEL_TOWN_DAY_LIMIT EQUAL 10)
+  message(FATAL_ERROR "PIXEL_TOWN_DAY_LIMIT must be 5 or 10")
+endif()
+
 add_library(pixel_town_core
   src/core/ending_rules.cpp
   src/core/game_session.cpp
@@ -18,6 +28,8 @@ add_library(pixel_town_core
   src/core/tavern_rules.cpp
 )
 target_include_directories(pixel_town_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_compile_definitions(pixel_town_core PUBLIC
+  PIXEL_TOWN_DAY_LIMIT=${PIXEL_TOWN_DAY_LIMIT})
 
 add_library(pixel_town_io
   src/io/app_settings.cpp
@@ -97,10 +109,14 @@ add_executable(pixel_town
 )
 target_link_libraries(pixel_town PRIVATE pixel_town_io pixel_town_app_logic)
 target_compile_definitions(pixel_town PRIVATE PIXEL_TOWN_VERSION="${PROJECT_VERSION}")
+if(PIXEL_TOWN_DAY_LIMIT EQUAL 5)
+  set_target_properties(pixel_town PROPERTIES OUTPUT_NAME "pixel_town_five_day")
+endif()
 
-enable_testing()
+if(PIXEL_TOWN_BUILD_TESTS)
+  enable_testing()
 
-add_executable(pixel_town_tests
+  add_executable(pixel_town_tests
   tests/audio_cues_test.cpp
   tests/dialogue_runtime_test.cpp
   tests/display_config_test.cpp
@@ -133,12 +149,13 @@ add_executable(pixel_town_tests
   tests/test_library.cpp
   tests/library_organizing_test.cpp
   tests/location_story_test.cpp
-)
-target_link_libraries(pixel_town_tests PRIVATE pixel_town_io pixel_town_app_logic)
-target_include_directories(pixel_town_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/doctest")
+  )
+  target_link_libraries(pixel_town_tests PRIVATE pixel_town_io pixel_town_app_logic)
+  target_include_directories(pixel_town_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/doctest")
 
-add_test(NAME pixel_town_tests COMMAND pixel_town_tests)
-set_tests_properties(pixel_town_tests PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+  add_test(NAME pixel_town_tests COMMAND pixel_town_tests)
+  set_tests_properties(pixel_town_tests PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
 
 if(MSVC)
   target_compile_options(pixel_town PRIVATE /W4 /permissive-)
@@ -149,7 +166,9 @@ if(MSVC)
   target_compile_options(pixel_town_tavern_logic PRIVATE /W4 /permissive-)
   target_compile_options(pixel_town_location_scene PRIVATE /W4 /permissive-)
   target_compile_options(pixel_town_app_logic PRIVATE /W4 /permissive-)
-  target_compile_options(pixel_town_tests PRIVATE /W4 /permissive-)
+  if(PIXEL_TOWN_BUILD_TESTS)
+    target_compile_options(pixel_town_tests PRIVATE /W4 /permissive-)
+  endif()
 else()
   target_compile_options(pixel_town PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(pixel_town_core PRIVATE -Wall -Wextra -Wpedantic)
@@ -159,5 +178,7 @@ else()
   target_compile_options(pixel_town_tavern_logic PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(pixel_town_location_scene PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(pixel_town_app_logic PRIVATE -Wall -Wextra -Wpedantic)
-  target_compile_options(pixel_town_tests PRIVATE -Wall -Wextra -Wpedantic)
+  if(PIXEL_TOWN_BUILD_TESTS)
+    target_compile_options(pixel_town_tests PRIVATE -Wall -Wextra -Wpedantic)
+  endif()
 endif()

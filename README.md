@@ -114,9 +114,25 @@ ctest --test-dir build -C Debug --output-on-failure
 .\build\Debug\pixel_town.exe
 ```
 
+五日展示版使用独立构建目录，第五个完整昼夜后进入同一套库存清算和正式结局；默认十日版不受影响。macOS：
+
+```bash
+cmake -S . -B build-five-day -DCMAKE_BUILD_TYPE=Release -DPIXEL_TOWN_DAY_LIMIT=5 -DPIXEL_TOWN_BUILD_TESTS=OFF
+cmake --build build-five-day --target pixel_town --parallel
+./build-five-day/pixel_town_five_day
+```
+
+Windows：
+
+```powershell
+cmake -S . -B build-five-day -G "Visual Studio 17 2022" -A x64 -DPIXEL_TOWN_DAY_LIMIT=5 -DPIXEL_TOWN_BUILD_TESTS=OFF
+cmake --build build-five-day --target pixel_town --config Release --parallel
+.\build-five-day\Release\pixel_town_five_day.exe
+```
+
 应用默认创建 960×540 窗口，并以 1:1 点采样显示 960×540 逻辑画布。删除 `build/` 后重复以上命令即可验证干净构建；构建目录和本机工具目录 `.tools/` 均不会提交。
 
-普通启动进入当前完整循环：标题页点击“新游戏”进入第一日地图，选择一个白天地点完成工作；夜晚可以回家，也可以在酒馆完成一局五子棋或一场骗子骰子淘汰赛；第十日总结后完成库存清算并进入唯一正式主结局，不进入第十一日。
+普通构建进入当前十日完整循环：标题页点击“新游戏”进入第一日地图，选择一个白天地点完成工作；夜晚可以回家，也可以在酒馆完成一局五子棋或一场骗子骰子淘汰赛；第十日总结后完成库存清算并进入唯一正式主结局。五日展示构建复用相同玩法与结局，只把最终日压缩为第 5 天。
 
 当前快捷键：室内大厅使用 `WASD` 或方向键移动，靠近 NPC、桌面、床铺或出口后按 `E`/`Space` 互动；`Enter` 确认/继续，`Esc` 返回、取消、跳过对话或放弃当前玩法（不会关闭整个游戏），`P` 暂停/继续，`M` 切换全局静音，`F3` 显示/隐藏当前可行走边界、静态碰撞体、出口和主角碰撞框。鼠标热点和按钮仍提供等价路径；窗口缩放使用整数倍显示，黑边区域点击不会触发控件。退出程序请使用系统窗口关闭按钮，静音设置保存到应用目录旁的 `saves/settings.ini`。
 

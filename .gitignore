@@ -19,6 +19,7 @@ Desktop.ini
 # CMake and build output
 /.tools/
 /build/
+/build-five-day/
 /out/
 /dist/
 /prototype-captures/
