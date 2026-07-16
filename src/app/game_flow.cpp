@@ -980,8 +980,8 @@ void draw_scene_navigation(const Font& font,
         draw_npc_sprite(
             protagonist_texture, NpcSpriteKind::protagonist,
             animation_seconds,
-            Rectangle{viewport_position.x - 22.0F,
-                      viewport_position.y - 66.0F, 44.0F, 66.0F});
+            Rectangle{viewport_position.x - 30.0F,
+                      viewport_position.y - 90.0F, 60.0F, 90.0F});
     } else {
         DrawCircleV(Vector2{viewport_position.x, viewport_position.y - 38.0F},
                     8.0F, Color{222, 188, 146, 255});
