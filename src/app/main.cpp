@@ -332,6 +332,7 @@ void setup_library_room_diagnostic(pixel_town::GameAppState& state,
         state.notice = "诊断：图书馆场景加载失败。";
         return;
     }
+    (void)state.locations.scene_navigation.open(pixel_town::Location::library);
 
     pixel_town::LibraryRoomInput input;
     if (diagnostic == LibraryRoomDiagnostic::idle_frame) {
@@ -384,6 +385,7 @@ void setup_location_lobby_diagnostic(pixel_town::GameAppState& state,
             return;
         }
     }
+    (void)state.locations.scene_navigation.open(location);
     state.location_lobby = location;
     if (location == pixel_town::Location::restaurant) {
         state.notice = "诊断：餐馆老板固定热点。";
@@ -527,6 +529,7 @@ void setup_tavern_diagnostic(pixel_town::GameAppState& state,
     day_result.summary = "诊断截图快速推进白天行动。";
     (void)state.session.apply_action_result(day_result);
     (void)state.locations.tavern.open(state.session);
+    (void)state.locations.scene_navigation.open(pixel_town::Location::tavern);
     pixel_town::ensure_tavern_assets_loaded(state.locations.tavern_assets);
     if (screen == pixel_town::TavernScreen::npc_dialog) {
         pixel_town::TavernFrameInput input;
@@ -621,6 +624,77 @@ void setup_npc_idle_frame_diagnostic(pixel_town::GameAppState& state,
         (void)state.locations.npc_lobby.step(input);
     }
     state.notice = "诊断：固定 NPC 第二待机帧。";
+}
+
+enum class NavigationDiagnostic {
+    restaurant_owner,
+    store_owner,
+    library_administrator,
+    tavern_gomoku,
+    tavern_dice,
+    home_bed,
+};
+
+void move_navigation(pixel_town::GameAppState& state, float seconds,
+                     bool left, bool right, bool up, bool down) {
+    pixel_town::SceneNavigationInput input;
+    input.elapsed_seconds = seconds;
+    input.move_left = left;
+    input.move_right = right;
+    input.move_up = up;
+    input.move_down = down;
+    (void)state.locations.scene_navigation.step(input);
+}
+
+void setup_navigation_diagnostic(pixel_town::GameAppState& state,
+                                 NavigationDiagnostic diagnostic) {
+    switch (diagnostic) {
+        case NavigationDiagnostic::restaurant_owner:
+            setup_location_lobby_diagnostic(state,
+                                            pixel_town::Location::restaurant);
+            move_navigation(state, 0.2F, false, true, false, false);
+            move_navigation(state, 1.3F, false, false, true, false);
+            move_navigation(state, 0.15F, true, false, false, false);
+            state.notice = "诊断：WASD 靠近餐馆老板。";
+            break;
+        case NavigationDiagnostic::store_owner:
+            setup_location_lobby_diagnostic(
+                state, pixel_town::Location::convenience_store);
+            // Leave the doorway first, then cross the aisle below the checkout
+            // counter. Moving right directly from the spawn is correctly
+            // blocked by the bottom wall and would keep the exit as the nearest
+            // interaction.
+            move_navigation(state, 0.4F, false, false, true, false);
+            move_navigation(state, 1.0F, false, true, false, false);
+            state.notice = "诊断：WASD 靠近便利店店主。";
+            break;
+        case NavigationDiagnostic::library_administrator:
+            setup_library_room_diagnostic(
+                state, LibraryRoomDiagnostic::static_npc);
+            move_navigation(state, 0.4F, false, true, false, false);
+            move_navigation(state, 2.0F, false, false, true, false);
+            state.notice = "诊断：WASD 绕过书车并靠近管理员。";
+            break;
+        case NavigationDiagnostic::tavern_gomoku:
+            setup_tavern_diagnostic(state, pixel_town::TavernScreen::lobby);
+            move_navigation(state, 1.0F, false, false, true, false);
+            state.notice = "诊断：WASD 靠近五子棋桌。";
+            break;
+        case NavigationDiagnostic::tavern_dice:
+            setup_tavern_diagnostic(state, pixel_town::TavernScreen::lobby);
+            move_navigation(state, 0.275F, false, false, true, false);
+            move_navigation(state, 0.425F, false, true, false, false);
+            move_navigation(state, 0.1F, false, false, true, false);
+            state.notice = "诊断：WASD 靠近骗子骰子桌。";
+            break;
+        case NavigationDiagnostic::home_bed:
+            setup_location_lobby_diagnostic(state, pixel_town::Location::home);
+            move_navigation(state, 0.125F, true, false, false, false);
+            move_navigation(state, 2.0F, false, false, true, false);
+            state.notice = "诊断：WASD 靠近床铺准备休息。";
+            break;
+    }
+    state.collision_debug_visible = true;
 }
 
 void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t capture_index) {
@@ -803,9 +877,29 @@ void setup_ui_diagnostic_capture(pixel_town::GameAppState& state, std::size_t ca
             setup_night_story_diagnostic(state, pixel_town::Location::home,
                                          5, 1, true);
             break;
-        default:
+        case 50:
             setup_night_story_diagnostic(state, pixel_town::Location::home,
                                          10, 1);
+            break;
+        case 51:
+            setup_navigation_diagnostic(
+                state, NavigationDiagnostic::restaurant_owner);
+            break;
+        case 52:
+            setup_navigation_diagnostic(state, NavigationDiagnostic::store_owner);
+            break;
+        case 53:
+            setup_navigation_diagnostic(
+                state, NavigationDiagnostic::library_administrator);
+            break;
+        case 54:
+            setup_navigation_diagnostic(state, NavigationDiagnostic::tavern_gomoku);
+            break;
+        case 55:
+            setup_navigation_diagnostic(state, NavigationDiagnostic::tavern_dice);
+            break;
+        default:
+            setup_navigation_diagnostic(state, NavigationDiagnostic::home_bed);
             break;
     }
 }
@@ -1064,7 +1158,7 @@ int main(int argc, char* argv[]) {
         "game-flow-captures/map.png",
         "game-flow-captures/ending.png",
     };
-    const std::array<const char*, 51> ui_diagnostic_capture_paths{
+    const std::array<const char*, 57> ui_diagnostic_capture_paths{
         "ui-diagnostics-captures/restaurant-instructions.png",
         "ui-diagnostics-captures/restaurant-order.png",
         "ui-diagnostics-captures/store-prepare.png",
@@ -1116,6 +1210,12 @@ int main(int argc, char* argv[]) {
         "ui-diagnostics-captures/home-story-tutorial.png",
         "ui-diagnostics-captures/home-story-rainy-night.png",
         "ui-diagnostics-captures/home-story-day-ten.png",
+        "ui-diagnostics-captures/navigation-restaurant-owner.png",
+        "ui-diagnostics-captures/navigation-store-owner.png",
+        "ui-diagnostics-captures/navigation-library-administrator.png",
+        "ui-diagnostics-captures/navigation-tavern-gomoku.png",
+        "ui-diagnostics-captures/navigation-tavern-dice.png",
+        "ui-diagnostics-captures/navigation-home-bed.png",
     };
     auto unload_resources = [&]() {
         pixel_town::unload_tavern_assets(game_flow.locations.tavern_assets);

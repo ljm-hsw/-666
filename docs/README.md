@@ -22,13 +22,13 @@
 - [`BUILD_AND_RUN.md`](BUILD_AND_RUN.md)：Windows/macOS 从零编译、测试、运行、截图和常见问题。
 - [`DESIGN.md`](DESIGN.md)：核心架构、状态机、模块契约、存档、随机性和测试边界。
 - [`UI_ASSET_STRATEGY.md`](UI_ASSET_STRATEGY.md)：P2/P3 占位 UI、imagegen 候选资产和 P4 统一视觉收尾策略。
-- [`CHARACTER_DIALOGUE_PLAN.md`](CHARACTER_DIALOGUE_PLAN.md)：P4 人物小人占位规格、共享对话、固定 NPC 待机动画、点击热点和 Issues 23-29 实施顺序。
+- [`CHARACTER_DIALOGUE_PLAN.md`](CHARACTER_DIALOGUE_PLAN.md)：P4 人物小人占位规格、共享对话、固定 NPC 待机、室内移动/邻近互动和 Issues 23-33 实施顺序。
 - [`RESTAURANT_VISUAL_SPEC.md`](RESTAURANT_VISUAL_SPEC.md)：餐馆 960×540 布局、背景、食物图标、倒计时和反馈资源槽位。
 - [`story/README.md`](story/README.md)：主线剧情、文案风格、MVP 文本草案、地点/NPC、结局回声和剧情接入规划。
 - [`story/LOCATION_EVENT_SCHEDULE.md`](story/LOCATION_EVENT_SCHEDULE.md)：地点首访教程、十日日常/意外事件矩阵、确定性选择和存档迁移边界。
 - [`VISUAL_PROTOTYPE.md`](VISUAL_PROTOTYPE.md)：P0 待审视觉方案、调色板、像素尺寸与资源命名候选。
 - [`IMAGEGEN_VISUAL_PLAN.md`](IMAGEGEN_VISUAL_PLAN.md)：960×540 画布迁移与 imagegen 页面背景/建筑资产规划。
-- [`SCENE_ASSET_PRODUCTION_PLAN.md`](SCENE_ASSET_PRODUCTION_PLAN.md)：酒馆、图书馆和便利店的 imagegen 分件批次、人工拼接、固定 NPC/玩法热点交接与恢复 Issue 门槛。
+- [`SCENE_ASSET_PRODUCTION_PLAN.md`](SCENE_ASSET_PRODUCTION_PLAN.md)：酒馆、图书馆和便利店的 imagegen 分件批次、人工拼接、固定 NPC/玩法热点、碰撞数据交接与恢复 Issue 门槛。
 - [`TEAM_BRANCH_INTEGRATION.md`](TEAM_BRANCH_INTEGRATION.md)：同学分支聚合、冲突处理、保留基线和后续风险。
 - [`adr/0001-adopt-raylib-and-doctest.md`](adr/0001-adopt-raylib-and-doctest.md)：raylib、doctest 与离线依赖策略。
 - [`adr/0002-use-explicit-tavern-runtime-and-settlement-modules.md`](adr/0002-use-explicit-tavern-runtime-and-settlement-modules.md)：酒馆显式运行期 Interface、隐藏信息 presentation 与独立结算边界。

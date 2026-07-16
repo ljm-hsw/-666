@@ -3,7 +3,7 @@
 Status: ready-for-human
 Milestone: P4
 Type: HITL
-User stories: 51, 52, 60, 64-70
+User stories: 51, 52, 57, 60, 64-70, 75
 
 ## What to build
 
@@ -18,6 +18,7 @@ User stories: 51, 52, 60, 64-70
 - [ ] 发布包从可写目录运行，自动存档、设置和日志只写入便携用户数据位置。
 - [ ] 缺失必要资源、损坏存档和非法演示预设产生明确错误，不崩溃或静默重置。
 - [ ] 正常游戏可从新游戏运行至第十日唯一主结局。
+- [ ] Windows 发布包中五个室内场景的 WASD/方向键移动、静态碰撞、E/Space 邻近互动和鼠标等价路径均通过实际键盘烟雾测试。
 - [ ] 演示预设可展示中期经营、酒馆和结局前状态，且不修改正式自动存档。
 - [ ] 发布包包含 `CREDITS.md` 和所有要求的第三方许可证。
 - [ ] 演示脚本和 PPT 覆盖产品定位、核心循环、四个地点、统一属性、测试证据和主结局。
@@ -31,6 +32,7 @@ User stories: 51, 52, 60, 64-70
 - [15 P3：完成库存清算与七种主结局](15-p3-endings.md)
 - [16 P4：完成内容扩充与数值平衡](16-p4-content-and-balance.md)
 - [17 P4：完成像素美术、音频、教程与署名](17-p4-presentation-and-credits.md)
+- [33 P4：接入五地点室内移动、静态碰撞与邻近互动](33-p4-indoor-navigation-and-collision.md)
 
 ## Comments
 

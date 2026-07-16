@@ -24,6 +24,7 @@ IndoorSceneLayout restaurant_layout() {
         960,
         540,
         SceneRect{12.0F, 78.0F, 936.0F, 442.0F},
+        ScenePoint{330.0F, 466.0F},
         SceneRect{278.0F, 448.0F, 104.0F, 82.0F},
         {
             {"wall_top", {0.0F, 0.0F, 960.0F, 78.0F}},
@@ -48,6 +49,7 @@ IndoorSceneLayout home_layout() {
         960,
         540,
         SceneRect{12.0F, 32.0F, 936.0F, 488.0F},
+        ScenePoint{232.0F, 432.0F},
         SceneRect{178.0F, 404.0F, 110.0F, 126.0F},
         {
             {"wall_top", {0.0F, 0.0F, 960.0F, 32.0F}},
@@ -74,6 +76,7 @@ IndoorSceneLayout convenience_store_layout() {
         960,
         540,
         SceneRect{14.0F, 106.0F, 930.0F, 420.0F},
+        ScenePoint{466.0F, 474.0F},
         SceneRect{394.0F, 400.0F, 142.0F, 140.0F},
         {
             {"wall_top", {0.0F, 0.0F, 960.0F, 106.0F}},
@@ -103,6 +106,7 @@ IndoorSceneLayout tavern_layout() {
         960,
         540,
         SceneRect{8.0F, 146.0F, 944.0F, 380.0F},
+        ScenePoint{182.0F, 474.0F},
         SceneRect{136.0F, 402.0F, 92.0F, 138.0F},
         {
             {"wall_top", {0.0F, 0.0F, 960.0F, 146.0F}},
@@ -131,6 +135,7 @@ IndoorSceneLayout library_layout() {
         960,
         540,
         SceneRect{30.0F, 80.0F, 900.0F, 430.0F},
+        ScenePoint{118.0F, 430.0F},
         SceneRect{48.0F, 390.0F, 142.0F, 140.0F},
         {
             {"wall_top", {0.0F, 0.0F, 960.0F, 80.0F}},
@@ -203,6 +208,78 @@ bool scene_rect_contains(SceneRect rect, ScenePoint point) noexcept {
            point.y >= rect.y && point.y <= bottom(rect);
 }
 
+SceneRect scene_actor_bounds(ScenePoint center, SceneSize size) noexcept {
+    return SceneRect{center.x - size.width * 0.5F,
+                     center.y - size.height * 0.5F, size.width, size.height};
+}
+
+bool scene_position_is_free(const IndoorSceneLayout& layout, ScenePoint center,
+                            SceneSize size) noexcept {
+    const SceneRect actor = scene_actor_bounds(center, size);
+    if (!contains(layout.walkable_bounds, actor)) {
+        return false;
+    }
+    for (const auto& collider : layout.static_colliders) {
+        if (scene_rects_overlap(actor, collider.bounds)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+ScenePoint move_with_scene_collisions(const IndoorSceneLayout& layout,
+                                      ScenePoint current, ScenePoint delta,
+                                      SceneSize size) noexcept {
+    const float half_width = size.width * 0.5F;
+    const float half_height = size.height * 0.5F;
+    ScenePoint result = current;
+
+    const float min_x = layout.walkable_bounds.x + half_width;
+    const float max_x = right(layout.walkable_bounds) - half_width;
+    float desired_x = std::clamp(current.x + delta.x, min_x, max_x);
+    const SceneRect current_x_bounds = scene_actor_bounds(current, size);
+    for (const auto& collider : layout.static_colliders) {
+        const SceneRect obstacle = collider.bounds;
+        const bool vertical_overlap =
+            current_x_bounds.y < bottom(obstacle) &&
+            bottom(current_x_bounds) > obstacle.y;
+        if (!vertical_overlap) {
+            continue;
+        }
+        if (delta.x > 0.0F && right(current_x_bounds) <= obstacle.x &&
+            desired_x + half_width > obstacle.x) {
+            desired_x = std::min(desired_x, obstacle.x - half_width);
+        } else if (delta.x < 0.0F && current_x_bounds.x >= right(obstacle) &&
+                   desired_x - half_width < right(obstacle)) {
+            desired_x = std::max(desired_x, right(obstacle) + half_width);
+        }
+    }
+    result.x = desired_x;
+
+    const float min_y = layout.walkable_bounds.y + half_height;
+    const float max_y = bottom(layout.walkable_bounds) - half_height;
+    float desired_y = std::clamp(current.y + delta.y, min_y, max_y);
+    const SceneRect current_y_bounds = scene_actor_bounds(result, size);
+    for (const auto& collider : layout.static_colliders) {
+        const SceneRect obstacle = collider.bounds;
+        const bool horizontal_overlap =
+            current_y_bounds.x < right(obstacle) &&
+            right(current_y_bounds) > obstacle.x;
+        if (!horizontal_overlap) {
+            continue;
+        }
+        if (delta.y > 0.0F && bottom(current_y_bounds) <= obstacle.y &&
+            desired_y + half_height > obstacle.y) {
+            desired_y = std::min(desired_y, obstacle.y - half_height);
+        } else if (delta.y < 0.0F && current_y_bounds.y >= bottom(obstacle) &&
+                   desired_y - half_height < bottom(obstacle)) {
+            desired_y = std::max(desired_y, bottom(obstacle) + half_height);
+        }
+    }
+    result.y = desired_y;
+    return result;
+}
+
 std::vector<std::string> validate_indoor_scene_layout(
     const IndoorSceneLayout& layout) {
     std::vector<std::string> errors;
@@ -211,10 +288,10 @@ std::vector<std::string> validate_indoor_scene_layout(
     if (layout.canvas_width <= 0 || layout.canvas_height <= 0) {
         errors.push_back("canvas dimensions must be positive");
     }
-    if (layout.review_bounds.width <= 0.0F ||
-        layout.review_bounds.height <= 0.0F ||
-        !contains(canvas, layout.review_bounds)) {
-        errors.push_back("review bounds must be positive and inside the canvas");
+    if (layout.walkable_bounds.width <= 0.0F ||
+        layout.walkable_bounds.height <= 0.0F ||
+        !contains(canvas, layout.walkable_bounds)) {
+        errors.push_back("walkable bounds must be positive and inside the canvas");
     }
     if (layout.exit_trigger.width <= 0.0F || layout.exit_trigger.height <= 0.0F ||
         !contains(canvas, layout.exit_trigger)) {
@@ -229,6 +306,10 @@ std::vector<std::string> validate_indoor_scene_layout(
             errors.push_back("collider must be positive and inside the canvas: " +
                              collider.id);
         }
+    }
+    if (!scene_position_is_free(layout, layout.player_spawn,
+                                SceneSize{24.0F, 24.0F})) {
+        errors.push_back("player spawn must be free for a 24x24 actor");
     }
     return errors;
 }

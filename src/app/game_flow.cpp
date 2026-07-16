@@ -23,6 +23,11 @@ constexpr std::array<Location, 5> map_locations{
     Location::restaurant, Location::convenience_store, Location::library, Location::tavern,
     Location::home};
 
+void draw_scene_navigation(const Font& font,
+                           const Texture2D& protagonist_texture,
+                           const SceneNavigationPresentation& navigation,
+                           bool collision_debug_visible);
+
 Rectangle scene_viewport_rectangle() {
     const auto viewport = ui::indoor_scene_viewport();
     return Rectangle{viewport.x, viewport.y, viewport.width, viewport.height};
@@ -69,7 +74,8 @@ TavernFrameInput tavern_frame_input(Vector2 logical_mouse, TavernScreen screen) 
     input.primary_pressed = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
     input.escape_pressed = IsKeyPressed(KEY_ESCAPE);
     input.enter_pressed = IsKeyPressed(KEY_ENTER);
-    input.space_pressed = IsKeyPressed(KEY_SPACE);
+    input.space_pressed =
+        screen != TavernScreen::lobby && IsKeyPressed(KEY_SPACE);
     for (int digit = 1; digit <= 5; ++digit) {
         if (IsKeyPressed(static_cast<KeyboardKey>(KEY_ONE + digit - 1))) {
             input.digit_pressed = digit;
@@ -77,6 +83,82 @@ TavernFrameInput tavern_frame_input(Vector2 logical_mouse, TavernScreen screen) 
         }
     }
     return input;
+}
+
+SceneNavigationInput scene_navigation_frame_input() {
+    SceneNavigationInput input;
+    input.elapsed_seconds = GetFrameTime();
+    input.move_left = IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT);
+    input.move_right = IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT);
+    input.move_up = IsKeyDown(KEY_W) || IsKeyDown(KEY_UP);
+    input.move_down = IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN);
+    input.interact_pressed =
+        IsKeyPressed(KEY_E) || IsKeyPressed(KEY_SPACE);
+    return input;
+}
+
+const char* scene_interaction_prompt(Location location,
+                                     SceneInteractionKind interaction) {
+    switch (interaction) {
+        case SceneInteractionKind::npc:
+            switch (location) {
+                case Location::restaurant:
+                    return "E / Space：与餐馆老板交谈";
+                case Location::convenience_store:
+                    return "E / Space：与便利店店主交谈";
+                case Location::library:
+                    return "E / Space：与图书馆管理员交谈";
+                case Location::tavern:
+                    return "E / Space：与酒保交谈";
+                case Location::home:
+                    return "E / Space：互动";
+            }
+            break;
+        case SceneInteractionKind::primary_activity:
+            if (location == Location::tavern) {
+                return "E / Space：进入五子棋桌";
+            }
+            if (location == Location::home) {
+                return "E / Space：准备休息";
+            }
+            return "E / Space：开始地点活动";
+        case SceneInteractionKind::secondary_activity:
+            return "E / Space：进入骗子骰子桌";
+        case SceneInteractionKind::exit:
+            return "E / Space：返回小镇地图";
+    }
+    return "WASD / 方向键移动 · E / Space 互动";
+}
+
+std::string scene_navigation_prompt(const SceneNavigationPresentation& view) {
+    if (!view.nearby_interaction.has_value()) {
+        return "WASD / 方向键移动，靠近目标后按 E / Space 互动";
+    }
+    return scene_interaction_prompt(view.location, *view.nearby_interaction);
+}
+
+void apply_tavern_navigation_interaction(SceneInteractionKind interaction,
+                                         TavernFrameInput& input) {
+    const TavernLayout layout = tavern_layout();
+    TavernRect target{};
+    switch (interaction) {
+        case SceneInteractionKind::npc:
+            target = layout.npc_hotspot;
+            break;
+        case SceneInteractionKind::primary_activity:
+            target = layout.gomoku_hotspot;
+            break;
+        case SceneInteractionKind::secondary_activity:
+            target = layout.dice_hotspot;
+            break;
+        case SceneInteractionKind::exit:
+            input.escape_pressed = true;
+            return;
+    }
+    input.pointer = TavernCanvasPoint{
+        (target.x + target.width * 0.5F) * ui::design_to_canvas_scale,
+        (target.y + target.height * 0.5F) * ui::design_to_canvas_scale, true};
+    input.primary_pressed = true;
 }
 
 constexpr std::array ui_texts{
@@ -112,6 +194,15 @@ constexpr std::array ui_texts{
     "今晚要休息吗？",
     "确认休息",
     "F3 显示或隐藏碰撞箱",
+    "WASD / 方向键移动，靠近目标后按 E / Space 互动",
+    "E / Space：与餐馆老板交谈",
+    "E / Space：与便利店店主交谈",
+    "E / Space：与图书馆管理员交谈",
+    "E / Space：与酒保交谈",
+    "E / Space：进入五子棋桌",
+    "E / Space：进入骗子骰子桌",
+    "E / Space：准备休息",
+    "E / Space：返回小镇地图",
     "餐馆大厅",
     "便利店大厅",
     "图书馆大厅",
@@ -729,8 +820,15 @@ void draw_location(const Font& font, const GameAppState& state, bool audio_enabl
                            location == Location::tavern;
 
     if (is_tavern) {
-        draw_tavern_view(font, state.locations.tavern.presentation(),
+        const TavernPresentation tavern = state.locations.tavern.presentation();
+        draw_tavern_view(font, tavern,
                          state.locations.tavern_assets, mouse);
+        if (tavern.screen == TavernScreen::lobby) {
+            draw_scene_navigation(
+                font, scene_assets.protagonist,
+                state.locations.scene_navigation.presentation(),
+                state.collision_debug_visible);
+        }
         draw_status(font, state.session, audio_enabled);
         return;
     }
@@ -851,7 +949,7 @@ void draw_collision_debug(Location location) {
         return scene_canvas_rectangle(
             Rectangle{value.x, value.y, value.width, value.height});
     };
-    DrawRectangleLinesEx(to_rectangle(layout->review_bounds), 3.0F,
+    DrawRectangleLinesEx(to_rectangle(layout->walkable_bounds), 3.0F,
                          Color{75, 255, 120, 255});
     for (const auto& collider : layout->static_colliders) {
         const Rectangle bounds = to_rectangle(collider.bounds);
@@ -861,6 +959,52 @@ void draw_collision_debug(Location location) {
     DrawRectangleRec(to_rectangle(layout->exit_trigger), Color{70, 150, 255, 85});
     DrawRectangleLinesEx(to_rectangle(layout->exit_trigger), 3.0F,
                          Color{80, 170, 255, 255});
+}
+
+void draw_scene_navigation(const Font& font,
+                           const Texture2D& protagonist_texture,
+                           const SceneNavigationPresentation& navigation,
+                           bool collision_debug_visible) {
+    if (!navigation.active) {
+        return;
+    }
+    const auto viewport_position = ui::scene_canvas_to_viewport(
+        ui::SceneViewportPoint{navigation.player_position.x,
+                               navigation.player_position.y});
+    const float animation_seconds =
+        navigation.moving ? navigation.animation_seconds : 0.0F;
+    DrawEllipse(static_cast<int>(viewport_position.x),
+                static_cast<int>(viewport_position.y - 2.0F), 14.0F, 5.0F,
+                Color{20, 24, 25, 105});
+    if (protagonist_texture.id != 0) {
+        draw_npc_sprite(
+            protagonist_texture, NpcSpriteKind::protagonist,
+            animation_seconds,
+            Rectangle{viewport_position.x - 22.0F,
+                      viewport_position.y - 66.0F, 44.0F, 66.0F});
+    } else {
+        DrawCircleV(Vector2{viewport_position.x, viewport_position.y - 38.0F},
+                    8.0F, Color{222, 188, 146, 255});
+        DrawRectangleRec(
+            Rectangle{viewport_position.x - 9.0F,
+                      viewport_position.y - 30.0F, 18.0F, 28.0F},
+            green);
+    }
+
+    if (collision_debug_visible) {
+        const SceneRect actor = scene_actor_bounds(
+            navigation.player_position, SceneSize{24.0F, 24.0F});
+        const Rectangle actor_bounds = scene_canvas_rectangle(
+            Rectangle{actor.x, actor.y, actor.width, actor.height});
+        DrawRectangleLinesEx(actor_bounds, 2.0F, Color{80, 210, 255, 255});
+    }
+
+    // Keep the navigation hint in the bottom HUD lane. The previous top
+    // overlay covered scene windows and wall art in every indoor background.
+    const Rectangle prompt{348.0F, 288.0F, 274.0F, 24.0F};
+    panel(prompt, Color{46, 58, 57, 235}, Color{255, 224, 154, 220});
+    centered_text(font, scene_navigation_prompt(navigation).c_str(), prompt,
+                  12.0F, RAYWHITE);
 }
 
 void draw_npc_dialogue(const Font& font,
@@ -896,6 +1040,7 @@ void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets
 
     const Rectangle npc_hotspot =
         scene_design_rectangle(lobby_rectangle(spec->npc_hotspot));
+    const bool has_fixed_npc = location != Location::home;
     const bool uses_npc_lobby =
         location == Location::restaurant ||
         location == Location::convenience_store;
@@ -903,40 +1048,53 @@ void draw_location_lobby(const Font& font, const SceneVisualAssets& scene_assets
         uses_npc_lobby ? state.locations.npc_lobby.presentation()
                        : NpcLobbyPresentation{};
     const bool dialogue_active = npc_lobby.dialogue.has_value();
-    const bool npc_hovered = !dialogue_active && hovered(npc_hotspot, mouse);
-    if (npc_hovered) {
-        DrawRectangleRec(scaled_rect(npc_hotspot), Color{255, 224, 154, 55});
-        DrawRectangleLinesEx(scaled_rect(npc_hotspot), 3.0F, gold);
-    }
-    const float npc_center_x = npc_hotspot.x + npc_hotspot.width * 0.5F;
-    const int idle_frame =
-        static_cast<int>(npc_lobby.npc_animation_seconds / 0.18F) % 4;
-    const float bob = idle_frame == 1 ? -1.0F : (idle_frame == 3 ? 1.0F : 0.0F);
-    const float npc_base_y =
-        npc_hotspot.y + npc_hotspot.height - 28.0F + bob;
-    const Rectangle npc_label{npc_hotspot.x, npc_hotspot.y + npc_hotspot.height - 22.0F,
-                              npc_hotspot.width, 24.0F};
+    const bool npc_hovered =
+        has_fixed_npc && !dialogue_active && hovered(npc_hotspot, mouse);
     const Texture2D& npc_texture = scene_npc_texture(scene_assets, location);
     const NpcSpriteKind npc_kind =
         location == Location::restaurant ? NpcSpriteKind::restaurant_chef
                                          : NpcSpriteKind::salesclerk;
-    if (npc_texture.id != 0) {
-        draw_npc_sprite(
-            npc_texture, npc_kind, npc_lobby.npc_animation_seconds,
-            scaled_rect(Rectangle{npc_center_x - 22.0F,
-                                  npc_label.y - 64.0F + bob, 44.0F, 66.0F}));
-    } else {
-        DrawCircleV(scaled_point(Vector2{npc_center_x, npc_base_y - 18.0F}),
-                    scaled(7.0F), Color{242, 207, 159, 220});
-        DrawRectangleRec(
-            scaled_rect(Rectangle{npc_center_x - 7.0F, npc_base_y - 11.0F,
-                                  14.0F, 18.0F}),
-            Color{67, 78, 74, 220});
+    if (has_fixed_npc) {
+        if (npc_hovered) {
+            DrawRectangleRec(scaled_rect(npc_hotspot),
+                             Color{255, 224, 154, 55});
+            DrawRectangleLinesEx(scaled_rect(npc_hotspot), 3.0F, gold);
+        }
+        const float npc_center_x =
+            npc_hotspot.x + npc_hotspot.width * 0.5F;
+        const int idle_frame =
+            static_cast<int>(npc_lobby.npc_animation_seconds / 0.18F) % 4;
+        const float bob =
+            idle_frame == 1 ? -1.0F : (idle_frame == 3 ? 1.0F : 0.0F);
+        const float npc_base_y =
+            npc_hotspot.y + npc_hotspot.height - 28.0F + bob;
+        const Rectangle npc_label{
+            npc_hotspot.x, npc_hotspot.y + npc_hotspot.height - 22.0F,
+            npc_hotspot.width, 24.0F};
+        if (npc_texture.id != 0) {
+            draw_npc_sprite(
+                npc_texture, npc_kind, npc_lobby.npc_animation_seconds,
+                scaled_rect(Rectangle{npc_center_x - 22.0F,
+                                      npc_label.y - 64.0F + bob, 44.0F,
+                                      66.0F}));
+        } else {
+            DrawCircleV(
+                scaled_point(Vector2{npc_center_x, npc_base_y - 18.0F}),
+                scaled(7.0F), Color{242, 207, 159, 220});
+            DrawRectangleRec(
+                scaled_rect(Rectangle{npc_center_x - 7.0F,
+                                      npc_base_y - 11.0F, 14.0F, 18.0F}),
+                Color{67, 78, 74, 220});
+        }
+        panel(npc_label, npc_hovered ? Color{250, 238, 203, 248}
+                                     : Color{46, 58, 57, 230});
+        centered_text(font, spec->npc_label.c_str(), npc_label, 13,
+                      npc_hovered ? ink : RAYWHITE);
     }
-    panel(npc_label, npc_hovered ? Color{250, 238, 203, 248}
-                                 : Color{46, 58, 57, 230});
-    centered_text(font, spec->npc_label.c_str(), npc_label, 13,
-                  npc_hovered ? ink : RAYWHITE);
+
+    draw_scene_navigation(font, scene_assets.protagonist,
+                          state.locations.scene_navigation.presentation(),
+                          state.collision_debug_visible);
 
     panel(Rectangle{18, 288, 330, 58}, Color{46, 58, 57, 232});
     const auto notice_lines = wrap_text_lines(state.notice, 22, 2);
@@ -1086,6 +1244,10 @@ void draw_library_room(const Font& font, const Texture2D& background,
                                 : Color{46, 58, 57, 230});
     centered_text(font, "图书馆管理员", administrator_label, 13,
                   administrator_hovered ? ink : RAYWHITE);
+
+    draw_scene_navigation(font, protagonist_texture,
+                          state.locations.scene_navigation.presentation(),
+                          state.collision_debug_visible);
 
     panel(Rectangle{12, 318, 616, 30}, Color{46, 58, 57, 232});
     text(font, "点击管理员或按 Space 交谈 · Esc 返回地图", 24, 326, 12,
@@ -1335,12 +1497,27 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 spec == nullptr
                     ? Rectangle{48.0F, 62.0F, 160.0F, 100.0F}
                     : scene_design_rectangle(lobby_rectangle(spec->npc_hotspot));
+            const SceneNavigationStepResult navigation =
+                state.locations.scene_navigation.step(
+                    scene_navigation_frame_input());
+            if (!navigation.notice.empty()) {
+                state.notice = navigation.notice;
+            }
+            const bool navigation_administrator =
+                navigation.interaction == SceneInteractionKind::npc;
+            const bool navigation_exit =
+                navigation.interaction == SceneInteractionKind::exit;
             input.administrator_activated =
-                activated(administrator_hotspot, logical_mouse, KEY_SPACE);
-            input.back_pressed = IsKeyPressed(KEY_ESCAPE);
+                clicked(administrator_hotspot, logical_mouse) ||
+                navigation_administrator;
+            input.back_pressed = IsKeyPressed(KEY_ESCAPE) || navigation_exit;
         }
-        (void)step_library_room(state.session, state.locations, input,
-                                state.notice);
+        const LibraryRoomStepResult stepped = step_library_room(
+            state.session, state.locations, input, state.notice);
+        if (stepped.status == LibraryRoomStepStatus::work_requested ||
+            stepped.status == LibraryRoomStepStatus::closed) {
+            state.locations.scene_navigation.close();
+        }
         return;
     }
 
@@ -1368,12 +1545,19 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                     IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
                 input.dialogue.skip_pressed = IsKeyPressed(KEY_ESCAPE);
             } else {
+                const SceneNavigationStepResult navigation =
+                    state.locations.scene_navigation.step(
+                        scene_navigation_frame_input());
+                if (!navigation.notice.empty()) {
+                    state.notice = navigation.notice;
+                }
                 input.interaction_activated =
                     clicked(npc, logical_mouse) ||
-                    activated(action, logical_mouse, KEY_SPACE) ||
-                    IsKeyPressed(KEY_ENTER);
+                    clicked(action, logical_mouse) ||
+                    navigation.interaction == SceneInteractionKind::npc;
                 input.back_pressed =
-                    activated(back, logical_mouse, KEY_ESCAPE);
+                    clicked(back, logical_mouse) || IsKeyPressed(KEY_ESCAPE) ||
+                    navigation.interaction == SceneInteractionKind::exit;
             }
             const auto stepped =
                 location == Location::restaurant
@@ -1384,21 +1568,31 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
             if (stepped.status == NpcLobbyStepStatus::activity_requested ||
                 stepped.status == NpcLobbyStepStatus::closed) {
                 state.location_lobby.reset();
+                state.locations.scene_navigation.close();
             }
             return;
         }
-        if (activated(back, logical_mouse, KEY_ESCAPE)) {
+        const SceneNavigationStepResult navigation =
+            state.locations.scene_navigation.step(scene_navigation_frame_input());
+        if (!navigation.notice.empty()) {
+            state.notice = navigation.notice;
+        }
+        if (clicked(back, logical_mouse) || IsKeyPressed(KEY_ESCAPE) ||
+            navigation.interaction == SceneInteractionKind::exit) {
             state.location_lobby.reset();
+            state.locations.scene_navigation.close();
             state.notice = "已返回地图：阶段未消耗。";
             return;
         }
-        if (clicked(npc, logical_mouse)) {
+        if (location != Location::home && clicked(npc, logical_mouse)) {
             state.notice = spec->npc_label + "：对话接口已预留，后续接入正式 NPC 内容。";
             return;
         }
-        if (activated(action, logical_mouse, KEY_SPACE) || IsKeyPressed(KEY_ENTER)) {
+        if (clicked(action, logical_mouse) ||
+            navigation.interaction == SceneInteractionKind::primary_activity) {
             if (location == Location::home) {
                 state.location_lobby.reset();
+                state.locations.scene_navigation.close();
                 state.home_preview_open = true;
                 state.notice = "已回到家中；确认休息后才会消耗夜晚阶段。";
                 return;
@@ -1458,13 +1652,21 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                 ensure_tavern_assets_loaded(state.locations.tavern_assets);
                 const auto opened = state.locations.tavern.open(state.session);
                 state.notice = opened.message;
+                if (opened.status == TavernOpenStatus::opened &&
+                    !state.locations.scene_navigation.open(location)) {
+                    state.notice = "酒馆已打开，但主角导航初始化失败。";
+                }
                 return;
             }
             if (location == Location::library) {
                 if (open_daytime_story_lobby(state.session, state.locations, location,
                                              state.notice)) {
+                    if (!state.locations.scene_navigation.open(location)) {
+                        state.notice = "图书馆已打开，但主角导航初始化失败。";
+                        return;
+                    }
                     state.notice =
-                        "已进入图书馆：点击柜台管理员开始交谈。";
+                        "已进入图书馆：用 WASD 靠近柜台管理员后按 E 交谈。";
                 } else {
                     state.notice = "图书馆场景加载失败。";
                 }
@@ -1480,17 +1682,27 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                             : "便利店店主对话暂时不可用。";
                     return;
                 }
+                if (!state.locations.scene_navigation.open(location)) {
+                    state.notice = "地点已打开，但主角导航初始化失败。";
+                    return;
+                }
             }
             state.location_lobby = location;
+            if (location == Location::home &&
+                !state.locations.scene_navigation.open(location)) {
+                state.location_lobby.reset();
+                state.notice = "家中场景的主角导航初始化失败。";
+                return;
+            }
             if (location == Location::restaurant) {
                 state.notice =
-                    "已进入餐馆大厅：点击老板或进入工作按钮开始交谈。";
+                    "已进入餐馆：用 WASD 靠近老板后按 E 交谈。";
             } else if (location == Location::convenience_store) {
                 state.notice =
-                    "已进入便利店大厅：点击店主或开始经营按钮开始交谈。";
+                    "已进入便利店：用 WASD 靠近店主后按 E 交谈。";
             } else {
                 state.notice = std::string{"已进入"} + location_label(location) +
-                               "大厅；可先查看场景或尝试 NPC 预留互动。";
+                               "；使用 WASD 移动，靠近目标后按 E 互动。";
             }
             return;
         }
@@ -1503,12 +1715,29 @@ void update_game_flow(GameAppState& state, Vector2 logical_mouse) {
                                state.session.pending_location() == Location::tavern;
 
         if (is_tavern) {
-            const auto result = state.locations.tavern.step(
-                state.session,
-                tavern_frame_input(logical_mouse,
-                                   state.locations.tavern.presentation().screen));
+            const TavernScreen screen =
+                state.locations.tavern.presentation().screen;
+            TavernFrameInput input = tavern_frame_input(logical_mouse, screen);
+            if (screen == TavernScreen::lobby) {
+                const SceneNavigationStepResult navigation =
+                    state.locations.scene_navigation.step(
+                        scene_navigation_frame_input());
+                if (!navigation.notice.empty()) {
+                    state.notice = navigation.notice;
+                }
+                if (navigation.interaction.has_value()) {
+                    apply_tavern_navigation_interaction(
+                        *navigation.interaction, input);
+                }
+            }
+            const auto result =
+                state.locations.tavern.step(state.session, input);
             if (result.notice.has_value()) {
                 state.notice = *result.notice;
+            }
+            if (result.status == TavernStepStatus::returned_to_map ||
+                result.status == TavernStepStatus::settled) {
+                state.locations.scene_navigation.close();
             }
             return;
         }

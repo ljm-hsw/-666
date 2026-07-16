@@ -18,8 +18,8 @@ This is the repository-level instruction set for this workspace. Read it before 
 - `docs/README.md`: documentation map and source-of-truth order.
 - `docs/PROJECT_PLAN.md`: P0-P4 milestone gates and issue dependency map.
 - `docs/DESIGN.md`: core architecture, state flow, contracts, and subsystem design.
-- `docs/CHARACTER_DIALOGUE_PLAN.md`: P4 placeholder character specification, lightweight dialogue, fixed NPC idle animation, click hotspots, and issue sequence.
-- `docs/SCENE_ASSET_PRODUCTION_PLAN.md`: modular imagegen asset batches, manual scene compositing, collision handoff, and visual approval gates.
+- `docs/CHARACTER_DIALOGUE_PLAN.md`: P4 placeholder character specification, lightweight dialogue, fixed NPC idle animation, indoor navigation/proximity interaction, and issue sequence.
+- `docs/SCENE_ASSET_PRODUCTION_PLAN.md`: modular imagegen asset batches, manual scene compositing, hotspot/collision handoff, and visual approval gates.
 - `docs/VISUAL_PROTOTYPE.md`: unapproved P0 visual variants and candidate asset rules.
 - `docs/adr/`: accepted architectural decisions and their rationale.
 - `docs/agents/`: repository-local issue tracker, triage, and domain-doc conventions.

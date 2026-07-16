@@ -12,6 +12,7 @@ add_library(pixel_town_core
   src/core/location_lobby.cpp
   src/core/location_story.cpp
   src/core/scene_collision.cpp
+  src/core/scene_navigation.cpp
   src/core/story_dialogue.cpp
   src/core/story_text.cpp
   src/core/tavern_rules.cpp
@@ -120,6 +121,7 @@ add_executable(pixel_town_tests
   tests/library_runtime_test.cpp
   tests/restaurant_ui_model_test.cpp
   tests/scene_collision_test.cpp
+  tests/scene_navigation_test.cpp
   tests/app_settings_test.cpp
   tests/convenience_store_test.cpp
   tests/resource_diagnostics_test.cpp

@@ -3,7 +3,7 @@
 Status: ready-for-human
 Milestone: P4
 Type: HITL
-User stories: 37, 38, 62, 71, 72, 74
+User stories: 37, 38, 62, 71, 72, 74, 75
 
 ## What to build
 
@@ -45,6 +45,7 @@ User stories: 37, 38, 62, 71, 72, 74
 - [30 P4：建立地点剧情上下文与存档迁移](30-p4-location-story-context.md)
 - [31 P4：接入白天地点首访教程与剧情事件](31-p4-day-location-story-events.md)
 - [32 P4：接入酒馆与家首访教程和剧情事件](32-p4-night-home-story-events.md)
+- [33 P4：接入五地点室内移动、静态碰撞与邻近互动](33-p4-indoor-navigation-and-collision.md)
 
 ## Comments
 

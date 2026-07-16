@@ -38,3 +38,4 @@ User stories: 23, 27, 54, 57, 58, 71, 72
 - 2026-07-14：固定管理员方案接通“地图 -> 固定场景 -> 点击管理员 -> 共享对话 -> 读者咨询/书籍整理选择”。`pixel_town_dialogue_logic` 不链接 raylib；最终管理员 sprite 和动画仍留给 Issue 17 HITL。
 - 2026-07-14：macOS 本地完整构建、229 个 doctest 用例（2484 个断言）和 CTest 1/1 通过；31 张 UI 诊断截图全部成功导出。`library-room-static-npc.png`、`library-room-idle-frame.png` 与 `library-room-dialogue.png` 已复查，待机帧 hash 不同且对话框无缺字、重叠或越框。
 - 2026-07-15：固定管理员对话重新定义为图书馆首访教程基线；后续借书卡、旧地图、错架书和天气事件由 Issue 30/31 扩展，固定热点与两种工作模式交接保持不变。
+- 2026-07-16：本 Issue 的固定管理员/共享对话验收保持历史完成，不重新打开；后续恢复的主角有限移动、静态碰撞和邻近 E/Space 互动统一由 Issue 33 承接，不恢复管理员巡逻、路点或寻路。
